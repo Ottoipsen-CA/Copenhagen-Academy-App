@@ -109,7 +109,7 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
 
   Future<void> _toggleFavorite(Exercise exercise) async {
     try {
-      final updatedExercise = await _exerciseService.toggleFavorite(exercise.id!);
+      final updatedExercise = await _exerciseService.toggleFavorite(_getExerciseNumericId(exercise.id));
       setState(() {
         // Update in all exercises list
         final index = _allExercises.indexWhere((e) => e.id == exercise.id);

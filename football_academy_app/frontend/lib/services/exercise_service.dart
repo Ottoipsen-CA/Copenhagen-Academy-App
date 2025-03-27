@@ -73,7 +73,7 @@ class ExerciseService {
     }
   }
   
-  Future<Exercise> toggleFavorite(String exerciseId) async {
+  Future<Exercise> toggleFavorite(int exerciseId) async {
     // Simulate a network delay
     await Future.delayed(const Duration(milliseconds: 300));
     
@@ -81,7 +81,7 @@ class ExerciseService {
       // In a real app, we would make a network request here
       // For now, update the mock data
       final exercises = _getMockExercises();
-      final index = exercises.indexWhere((e) => e.id == exerciseId);
+      final index = exercises.indexWhere((e) => e.id == exerciseId.toString());
       
       if (index == -1) {
         throw Exception('Exercise not found');
@@ -237,32 +237,32 @@ class ExerciseService {
       Exercise(
         id: 'ex9',
         title: 'Sprint Training',
-        description: 'Develop explosive acceleration and top speed with various sprint distances and recovery periods. Focuses on proper running technique and body position.',
+        description: 'Develop straight-line speed with these progressive sprint exercises. Perfect for enhancing acceleration and top-end speed over various distances.',
         category: 'Pace',
-        difficulty: 'Intermediate',
+        difficulty: 'Advanced',
         videoUrl: null,
-        imageUrl: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3',
+        imageUrl: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.0.3',
         durationMinutes: 25,
         equipment: ['Cones', 'Stopwatch'],
-        skills: ['Speed', 'Acceleration', 'Running Technique'],
+        skills: ['Speed', 'Acceleration', 'Explosiveness'],
         isFavorite: false,
-        createdBy: 'Coach Alex',
-        createdAt: DateTime(2023, 9, 5),
+        createdBy: 'Coach Max',
+        createdAt: DateTime(2023, 7, 5),
       ),
       Exercise(
         id: 'ex10',
         title: 'Balance and Coordination Drill',
-        description: 'Improve body control and spatial awareness through a series of balance challenges and coordination exercises. Enhances overall body movements on and off the ball.',
+        description: 'Improve general body control with this sequence of balance-focused exercises. Crucial for maintaining stability during complex movements.',
         category: 'Body Movements',
-        difficulty: 'Beginner',
+        difficulty: 'Intermediate',
         videoUrl: null,
-        imageUrl: 'https://images.unsplash.com/photo-1517637382994-f02da38c6728?q=80&w=2066&auto=format&fit=crop&ixlib=rb-4.0.3',
-        durationMinutes: 15,
-        equipment: ['Balance Board', 'Agility Ladder', 'Balls'],
+        imageUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3',
+        durationMinutes: 20,
+        equipment: ['Balance board', 'Agility ladder'],
         skills: ['Balance', 'Coordination', 'Body Control'],
-        isFavorite: true,
-        createdBy: 'Coach Maria',
-        createdAt: DateTime(2023, 10, 12),
+        isFavorite: false,
+        createdBy: 'Coach Laura',
+        createdAt: DateTime(2023, 8, 12),
       ),
       Exercise(
         id: 'ex11',
@@ -271,7 +271,7 @@ class ExerciseService {
         category: 'Physical',
         difficulty: 'Advanced',
         videoUrl: null,
-        imageUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3',
+        imageUrl: 'https://images.unsplash.com/photo-1579126038374-6064e9370f0f?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3',
         durationMinutes: 40,
         equipment: ['Weights', 'Resistance Bands', 'Medicine Balls'],
         skills: ['Strength', 'Power', 'Endurance'],
@@ -331,7 +331,7 @@ class ExerciseService {
         category: 'Pace',
         difficulty: 'Beginner',
         videoUrl: null,
-        imageUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3',
+        imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3',
         durationMinutes: 20,
         equipment: ['Agility Ladder', 'Cones'],
         skills: ['Footwork', 'Agility', 'Coordination'],

@@ -76,7 +76,7 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
     if (_exercise == null) return;
 
     try {
-      final updatedExercise = await _exerciseService.toggleFavorite(_exercise!.id!);
+      final updatedExercise = await _exerciseService.toggleFavorite(_getExerciseNumericId(_exercise!.id));
       setState(() {
         _exercise = updatedExercise;
       });
@@ -87,6 +87,23 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  // Helper method to convert string IDs to integers
+  int _getExerciseNumericId(String? stringId) {
+    if (stringId == null) return 0;
+    
+    // Strip "ex" prefix and parse to int
+    try {
+      if (stringId.startsWith('ex')) {
+        return int.parse(stringId.substring(2));
+      } else {
+        return int.parse(stringId);
+      }
+    } catch (e) {
+      // Fallback to using hash code
+      return stringId.hashCode;
     }
   }
 
