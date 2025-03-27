@@ -13,7 +13,7 @@ class ApiService {
     required this.secureStorage,
   }) {
     // Use localhost for web, 10.0.2.2 for Android emulator
-    baseUrl = kIsWeb ? 'http://localhost:8080' : 'http://10.0.2.2:8080';
+    baseUrl = kIsWeb ? 'http://localhost:8000' : 'http://10.0.2.2:8000';
   }
 
   // Helper method to get headers with auth token

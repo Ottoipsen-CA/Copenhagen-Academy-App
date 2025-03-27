@@ -27,47 +27,35 @@ class CustomNavigationDrawer extends StatelessWidget {
                   'dashboard',
                   'Dashboard',
                   Icons.dashboard_outlined,
-                  () => _navigateTo(context, const DashboardPage()),
+                  () => _navigateTo(context, 'dashboard'),
                 ),
                 _buildNavItem(
                   context,
                   'training',
                   'Training Plan',
                   Icons.fitness_center,
-                  () {
-                    // TODO: Navigate to training plan
-                    Navigator.pop(context); // Close drawer
-                  },
+                  () => _navigateTo(context, 'training'),
                 ),
                 _buildNavItem(
                   context,
                   'exercises',
                   'Exercise Library',
                   Icons.video_library_outlined,
-                  () {
-                    // TODO: Navigate to exercises
-                    Navigator.pop(context); // Close drawer
-                  },
+                  () => _navigateTo(context, 'exercises'),
                 ),
                 _buildNavItem(
                   context,
                   'achievements',
                   'Achievements',
                   Icons.emoji_events_outlined,
-                  () {
-                    // TODO: Navigate to achievements
-                    Navigator.pop(context); // Close drawer
-                  },
+                  () => _navigateTo(context, 'achievements'),
                 ),
                 _buildNavItem(
                   context,
                   'chat',
                   'Chat with Coach',
                   Icons.chat_outlined,
-                  () {
-                    // TODO: Navigate to chat
-                    Navigator.pop(context); // Close drawer
-                  },
+                  () => _navigateTo(context, 'chat'),
                 ),
                 const Divider(),
                 _buildNavItem(
@@ -75,20 +63,14 @@ class CustomNavigationDrawer extends StatelessWidget {
                   'profile',
                   'My Profile',
                   Icons.person_outline,
-                  () {
-                    // TODO: Navigate to profile
-                    Navigator.pop(context); // Close drawer
-                  },
+                  () => _navigateTo(context, 'profile'),
                 ),
                 _buildNavItem(
                   context,
                   'settings',
                   'Settings',
                   Icons.settings_outlined,
-                  () {
-                    // TODO: Navigate to settings
-                    Navigator.pop(context); // Close drawer
-                  },
+                  () => _navigateTo(context, 'settings'),
                 ),
               ],
             ),
@@ -231,16 +213,34 @@ class CustomNavigationDrawer extends StatelessWidget {
     );
   }
 
-  void _navigateTo(BuildContext context, Widget page) {
-    // Close drawer
-    Navigator.pop(context);
+  void _navigateTo(BuildContext context, String page) {
+    Navigator.pop(context); // Close the drawer
     
-    // Navigate to page if not current page
-    if (context.mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => page),
-      );
+    // Check if we're already on the target page to avoid unnecessary navigation
+    if (currentPage == page) return;
+    
+    switch (page) {
+      case 'dashboard':
+        Navigator.pushReplacementNamed(context, '/dashboard');
+        break;
+      case 'training':
+        Navigator.pushReplacementNamed(context, '/training');
+        break;
+      case 'exercises':
+        Navigator.pushReplacementNamed(context, '/exercises');
+        break;
+      case 'achievements':
+        Navigator.pushReplacementNamed(context, '/achievements');
+        break;
+      case 'chat':
+        Navigator.pushReplacementNamed(context, '/chat');
+        break;
+      case 'profile':
+        Navigator.pushReplacementNamed(context, '/profile');
+        break;
+      case 'settings':
+        Navigator.pushReplacementNamed(context, '/settings');
+        break;
     }
   }
 } 
