@@ -147,19 +147,19 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
   }
 
   // Helper method to convert string IDs to integers
-  int _getExerciseNumericId(String? id) {
-    if (id == null) return 0;
+  int _getExerciseNumericId(String? stringId) {
+    if (stringId == null) return 0;
     
     // Strip "ex" prefix and parse to int
     try {
-      if (id.startsWith('ex')) {
-        return int.parse(id.substring(2));
+      if (stringId.startsWith('ex')) {
+        return int.parse(stringId.substring(2));
       } else {
-        return int.parse(id);
+        return int.parse(stringId);
       }
     } catch (e) {
       // Fallback to using hash code
-      return id.hashCode;
+      return stringId.hashCode;
     }
   }
 
@@ -312,9 +312,7 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ExerciseDetailPage(
-              exerciseId: _getExerciseNumericId(exercise.id),
-            ),
+            builder: (context) => ExerciseDetailPage(exerciseId: _getExerciseNumericId(exercise.id)),
           ),
         ).then((_) => _loadExercises()); // Refresh after returning from detail page
       },

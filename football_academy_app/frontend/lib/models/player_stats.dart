@@ -1,6 +1,6 @@
 class PlayerStats {
   final int? id;
-  final int playerId;
+  final String playerId;
   final double pace;
   final double shooting;
   final double passing;
@@ -26,7 +26,7 @@ class PlayerStats {
   factory PlayerStats.fromJson(Map<String, dynamic> json) {
     return PlayerStats(
       id: json['id'],
-      playerId: json['player_id'],
+      playerId: json['player_id'].toString(),
       pace: json['pace']?.toDouble() ?? 50,
       shooting: json['shooting']?.toDouble() ?? 50,
       passing: json['passing']?.toDouble() ?? 50,

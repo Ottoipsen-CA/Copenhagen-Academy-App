@@ -6,11 +6,8 @@ import 'package:http/http.dart' as http;
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'screens/auth/landing_page.dart';
-import 'screens/auth/login_page.dart';
-import 'screens/auth/register_page.dart';
 import 'screens/dashboard/dashboard_page.dart';
 import 'screens/exercises/exercises_page.dart';
-import 'screens/training/training_plans_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,52 +52,27 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: (() async {
-        final authService = Provider.of<AuthService>(context, listen: false);
-        return await authService.isLoggedIn();
-      })(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-          );
-        }
-
-        final isLoggedIn = snapshot.data ?? false;
-        
-        return MaterialApp(
-          title: 'Copenhagen Academy',
-          theme: _buildTheme(),
-          initialRoute: isLoggedIn ? '/dashboard' : '/login',
-          routes: {
-            '/login': (context) => const LoginPage(),
-            '/register': (context) => const RegisterPage(),
-            '/dashboard': (context) => const DashboardPage(),
-            '/exercises': (context) => const ExercisesPage(),
-            '/training': (context) => const TrainingPlansPage(),
-          },
-        );
+    return MaterialApp(
+      title: 'Football Academy',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.light,
+        ),
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+        ),
+      ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/dashboard': (context) => const DashboardPage(),
+        '/exercises': (context) => const ExercisesPage(),
       },
-    );
-  }
-
-  ThemeData _buildTheme() {
-    return ThemeData(
-      primarySwatch: Colors.blue,
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.blue,
-        brightness: Brightness.light,
-      ),
-      appBarTheme: const AppBarTheme(
-        centerTitle: true,
-        elevation: 0,
-      ),
     );
   }
 }

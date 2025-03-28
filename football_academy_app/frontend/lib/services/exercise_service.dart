@@ -1,20 +1,14 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../models/exercise.dart';
 import '../services/auth_service.dart';
 import '../config/api_config.dart';
 
 class ExerciseService {
   final AuthService _authService;
-  // Use a class field to store mock exercises so changes persist
-  final List<Exercise> _mockExercises = [];
-  bool _initialized = false;
   
-  ExerciseService(this._authService) {
-    _initializeMockData();
-  }
+  ExerciseService(this._authService);
   
   Future<List<Exercise>> getExercises({
     String? category,
@@ -22,103 +16,103 @@ class ExerciseService {
     String? search,
     List<String>? skills,
   }) async {
-    // Simulate API call delay
+    // Simulate a network delay
     await Future.delayed(const Duration(milliseconds: 800));
     
     try {
-      // Apply filters
-      List<Exercise> filteredExercises = List.from(_mockExercises);
+      // In a real app, we would make a network request here
+      // For now, return mock data
+      List<Exercise> exercises = _getMockExercises();
       
+      // Apply filters
       if (category != null) {
-        filteredExercises = filteredExercises.where((e) => e.category == category).toList();
+        exercises = exercises.where((e) => e.category == category).toList();
       }
       
       if (difficulty != null) {
-        filteredExercises = filteredExercises.where((e) => e.difficulty == difficulty).toList();
+        exercises = exercises.where((e) => e.difficulty == difficulty).toList();
       }
       
       if (search != null && search.isNotEmpty) {
         final searchLower = search.toLowerCase();
-        filteredExercises = filteredExercises.where((e) =>
+        exercises = exercises.where((e) =>
           e.title.toLowerCase().contains(searchLower) ||
           e.description.toLowerCase().contains(searchLower)
         ).toList();
       }
       
       if (skills != null && skills.isNotEmpty) {
-        filteredExercises = filteredExercises.where((e) =>
+        exercises = exercises.where((e) =>
           e.skills != null &&
           skills.any((skill) => e.skills!.contains(skill))
         ).toList();
       }
       
-      return filteredExercises;
+      return exercises;
     } catch (e) {
       throw Exception('Failed to load exercises: $e');
     }
   }
   
-  Future<Exercise> getExercise(int id) async {
+  Future<Exercise> getExercise(int exerciseId) async {
+    // Simulate a network delay
+    await Future.delayed(const Duration(milliseconds: 500));
+    
     try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(milliseconds: 800));
-      
-      // In a real app, we would call the API
+      // In a real app, we would make a network request here
       // For now, return mock data
-      final exercise = _mockExercises.firstWhere(
-        (exercise) => exercise.id == id.toString(),
-        orElse: () => throw Exception('Exercise not found with ID: $id'),
+      final exercises = _getMockExercises();
+      final exercise = exercises.firstWhere(
+        (e) => e.id == exerciseId.toString(),
+        orElse: () => throw Exception('Exercise not found'),
       );
       
       return exercise;
     } catch (e) {
-      throw Exception('Failed to fetch exercise: $e');
+      throw Exception('Failed to load exercise: $e');
     }
   }
   
-  Future<Exercise> toggleFavorite(int id) async {
+  Future<Exercise> toggleFavorite(int exerciseId) async {
+    // Simulate a network delay
+    await Future.delayed(const Duration(milliseconds: 300));
+    
     try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(milliseconds: 800));
-      
-      // Find exercise by ID
-      final index = _mockExercises.indexWhere((exercise) => exercise.id == id.toString());
+      // In a real app, we would make a network request here
+      // For now, update the mock data
+      final exercises = _getMockExercises();
+      final index = exercises.indexWhere((e) => e.id == exerciseId.toString());
       
       if (index == -1) {
-        throw Exception('Exercise not found with ID: $id');
+        throw Exception('Exercise not found');
       }
       
-      // Toggle favorite status
-      final exercise = _mockExercises[index];
-      final updatedExercise = exercise.copyWith(
-        isFavorite: !exercise.isFavorite,
+      final updatedExercise = exercises[index].copyWith(
+        isFavorite: !exercises[index].isFavorite,
       );
-      
-      // Update in mock data
-      _mockExercises[index] = updatedExercise;
       
       return updatedExercise;
     } catch (e) {
-      throw Exception('Failed to toggle favorite: $e');
+      throw Exception('Failed to update favorite status: $e');
     }
   }
   
   Future<List<Exercise>> getFavorites() async {
-    // Simulate API call delay
-    await Future.delayed(const Duration(milliseconds: 800));
+    // Simulate a network delay
+    await Future.delayed(const Duration(milliseconds: 500));
     
     try {
-      return _mockExercises.where((e) => e.isFavorite).toList();
+      // In a real app, we would make a network request here
+      // For now, return mock data
+      final exercises = _getMockExercises();
+      return exercises.where((e) => e.isFavorite).toList();
     } catch (e) {
       throw Exception('Failed to load favorites: $e');
     }
   }
   
-  void _initializeMockData() {
-    if (_initialized) return;
-    
-    _initialized = true;
-    _mockExercises.addAll([
+  List<Exercise> _getMockExercises() {
+    return [
       Exercise(
         id: 'ex1',
         title: 'Precision Dribbling Circuit',
@@ -345,6 +339,6 @@ class ExerciseService {
         createdBy: 'Coach Sophie',
         createdAt: DateTime(2024, 3, 1),
       ),
-    ]);
+    ];
   }
 } 

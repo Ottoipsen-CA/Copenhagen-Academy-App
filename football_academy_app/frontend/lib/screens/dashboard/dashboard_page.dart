@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/user.dart';
 import '../../models/player_stats.dart';
+import '../../models/challenge.dart';
+import '../../models/badge.dart';
 import '../../services/auth_service.dart';
+import '../../services/challenge_service.dart';
 import '../../widgets/navigation_drawer.dart';
 import '../../widgets/player_stats_radar_chart.dart';
 import '../../widgets/fifa_player_card.dart';
 import '../../widgets/skill_progress_bar.dart';
 import 'dart:math' as math;
+
+// Import pages
+import '../badges/badges_page.dart';
+import '../challenges/weekly_challenge_page.dart';
+import '../challenges/challenge_leaderboard_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -19,10 +27,13 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   User? _user;
   PlayerStats? _playerStats;
+  Challenge? _activeChallenge;
+  List<UserBadge> _badges = [];
   bool _isLoading = true;
   String? _errorMessage;
   int _xpProgress = 440;
   int _xpTarget = 1200;
+  late ChallengeService _challengeService;
 
   @override
   void initState() {
@@ -38,6 +49,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
+      _challengeService = ChallengeService();
       
       // Load user data
       final user = await authService.getCurrentUser();
@@ -45,7 +57,7 @@ class _DashboardPageState extends State<DashboardPage> {
       // TODO: Implement loading player stats from API
       // For now, we'll use sample data
       final playerStats = PlayerStats(
-        playerId: int.parse(user.id!),
+        playerId: user.id?.toString() ?? "1",
         pace: 75,
         shooting: 68,
         passing: 72,
@@ -55,9 +67,17 @@ class _DashboardPageState extends State<DashboardPage> {
         overallRating: 70,
       );
       
+      // Load active challenge
+      final activeChallenge = await _challengeService.getActiveWeeklyChallenge();
+      
+      // Load badges (just get the top 4 for dashboard)
+      final badges = await _challengeService.getUserBadges();
+      
       setState(() {
         _user = user;
         _playerStats = playerStats;
+        _activeChallenge = activeChallenge;
+        _badges = badges;
         _isLoading = false;
       });
     } catch (e) {
@@ -72,14 +92,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildLogo(36),
-            const SizedBox(width: 10),
-            const Text('Copenhagen Academy'),
-          ],
-        ),
+        title: const Text('Dashboard'),
         centerTitle: true,
         backgroundColor: const Color(0xFF0B0057),
         leading: Builder(
@@ -126,79 +139,6 @@ class _DashboardPageState extends State<DashboardPage> {
                     : _buildDashboardContent(),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildLogo(double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: Colors.black,
-        shape: BoxShape.circle,
-      ),
-      child: Stack(
-        children: [
-          // Soccer ball top part
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: size * 0.4,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(size * 0.5),
-                  topRight: Radius.circular(size * 0.5),
-                ),
-              ),
-            ),
-          ),
-          
-          // Text placeholders for "COPENHAGEN" and "ACADEMY"
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(height: size * 0.05),
-                Container(
-                  width: size * 0.7,
-                  height: size * 0.07,
-                  color: Colors.transparent,
-                ),
-                SizedBox(height: size * 0.05),
-                Container(
-                  width: size * 0.7,
-                  height: size * 0.07,
-                  color: Colors.transparent,
-                ),
-              ],
-            ),
-          ),
-          
-          // Stars at the bottom
-          Positioned(
-            bottom: size * 0.1,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                5,
-                (index) => Padding(
-                  padding: EdgeInsets.symmetric(horizontal: size * 0.01),
-                  child: Icon(
-                    Icons.star,
-                    color: Colors.white,
-                    size: size * 0.1,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -283,37 +223,14 @@ class _DashboardPageState extends State<DashboardPage> {
                       const SizedBox(height: 10),
                       
                       // XP Progress Bar
-                      Container(
-                        height: 20,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: const Color(0xFF173968), // Dark blue
-                        ),
-                        child: Stack(
-                          children: [
-                            // Gradient progress
-                            FractionallySizedBox(
-                              alignment: Alignment.centerLeft,
-                              widthFactor: _xpProgress / _xpTarget,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF02D39A), // Teal
-                                      Color(0xFF06F0FF), // Cyan
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      LinearProgressIndicator(
+                        value: _xpProgress / _xpTarget,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
+                        minHeight: 18,
+                        borderRadius: BorderRadius.circular(9),
                       ),
-                      
-                      const SizedBox(height: 10),
-                      // Progression text
+                      const SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -340,6 +257,16 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ],
             ),
+            
+            const SizedBox(height: 30),
+            
+            // Weekly Challenge Section
+            _buildWeeklyChallengeCard(),
+            
+            const SizedBox(height: 20),
+            
+            // Badges Section
+            _buildBadgesSection(),
             
             const SizedBox(height: 30),
             
@@ -400,18 +327,12 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ),
                               ),
                               // Stat Rating explanation
-                              Container(
-                                margin: const EdgeInsets.only(top: 10),
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  'Overall Rating: 70 (Silver)',
+                              const Center(
+                                child: Text(
+                                  'Your skill ratings by area',
                                   style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white70,
+                                    fontSize: 14,
                                   ),
                                 ),
                               ),
@@ -419,43 +340,24 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ),
                         
-                        // Right column - Challenges & Goals
+                        // Right column - Skill bars
                         Expanded(
                           flex: 3,
-                          child: _buildChallengesColumn(),
+                          child: _buildSkillProgressBars(),
                         ),
                       ],
                     ),
-                    
-                    const SizedBox(height: 20),
-                    
-                    // Individual skill progress bars
-                    _buildSkillProgressBars(),
                   ],
                 ),
               ),
             ),
             
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             
-            // Daily Challenge and Gold Level
-            Row(
-              children: [
-                // Daily Challenge Card
-                Expanded(
-                  flex: 7,
-                  child: _buildDailyChallenge(),
-                ),
-                const SizedBox(width: 16),
-                // Gold Level
-                Expanded(
-                  flex: 3,
-                  child: _buildGoldLevel(),
-                ),
-              ],
-            ),
+            // Challenge Winners Section
+            _buildChallengeWinnersSection(),
             
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             
             // Recent activities
             _buildRecentActivitiesCard(),
@@ -463,6 +365,559 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 40),
           ],
         ),
+      ),
+    );
+  }
+  
+  Widget _buildWeeklyChallengeCard() {
+    if (_activeChallenge == null) {
+      return Card(
+        elevation: 3,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        color: Colors.black.withOpacity(0.5),
+        child: const Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Weekly Challenge',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'No active challenge at the moment.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white70,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Check back soon for new challenges!',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white70,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      color: Colors.black.withOpacity(0.5),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => WeeklyChallengePage(challenge: _activeChallenge!),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            // Card content
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFD700).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: const Color(0xFFFFD700).withOpacity(0.5),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              color: Color(0xFFFFD700),
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'WEEKLY CHALLENGE',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFFFD700),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        _activeChallenge!.timeRemaining,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _activeChallenge!.title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _activeChallenge!.description,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      // Participants count
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.people,
+                            color: Colors.white60,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${_activeChallenge!.participantCount} participants',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.white60,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      // User status
+                      if (_activeChallenge!.userSubmission != null)
+                        // Already submitted
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.green.withOpacity(0.5),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 12,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'SUBMITTED',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        // Not submitted yet
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.orange.withOpacity(0.5),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.access_time,
+                                color: Colors.orange,
+                                size: 12,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'PARTICIPATE',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            
+            // Progress indicator at the bottom
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: LinearProgressIndicator(
+                value: _activeChallenge!.progressPercentage,
+                backgroundColor: Colors.transparent,
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
+                minHeight: 3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildBadgesSection() {
+    // Filter to only show earned badges and take the first 3
+    final earnedBadges = _badges.where((badge) => badge.isEarned).take(3).toList();
+    
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      color: Colors.black.withOpacity(0.5),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'My Badges',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => BadgesPage(badges: _badges),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'See All',
+                    style: TextStyle(
+                      color: Color(0xFFFFD700),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            earnedBadges.isEmpty
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12.0),
+                      child: Text(
+                        'Complete challenges to earn badges!',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: earnedBadges.map((badge) {
+                      return Column(
+                        children: [
+                          // Badge icon
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: badge.color.withOpacity(0.2),
+                              border: Border.all(
+                                color: badge.color,
+                                width: 2,
+                              ),
+                            ),
+                            child: Icon(
+                              badge.icon,
+                              color: badge.color,
+                              size: 30,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          
+                          // Badge name
+                          SizedBox(
+                            width: 80,
+                            child: Text(
+                              badge.name,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildChallengeWinnersSection() {
+    // Check if we have a leaderboard in the active challenge
+    if (_activeChallenge == null || _activeChallenge!.leaderboard.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    
+    final topThree = _activeChallenge!.leaderboard.take(3).toList();
+    
+    return Card(
+      color: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFF3D007A), width: 2),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF0B0057).withOpacity(0.6),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.emoji_events,
+                      color: Color(0xFFFFD700),
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${_activeChallenge!.title} Leaders',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChallengeLeaderboardPage(challenge: _activeChallenge!),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    children: const [
+                      Text(
+                        'Full Leaderboard',
+                        style: TextStyle(
+                          color: Color(0xFFFFA500),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward,
+                        color: Color(0xFFFFA500),
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Leaderboard entries
+            ...topThree.map((submission) => _buildLeaderboardEntry(submission)),
+            
+            // User position if not in top 3
+            if (_activeChallenge!.userSubmission != null && 
+                _activeChallenge!.userSubmission!.rank > 3)
+              Column(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Divider(
+                      color: Color(0xFF3D007A),
+                      thickness: 1,
+                    ),
+                  ),
+                  _buildLeaderboardEntry(_activeChallenge!.userSubmission!, isUser: true),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildLeaderboardEntry(ChallengeSubmission submission, {bool isUser = false}) {
+    final rankColors = {
+      1: const Color(0xFFFFD700), // Gold
+      2: const Color(0xFFC0C0C0), // Silver
+      3: const Color(0xFFCD7F32), // Bronze
+    };
+    
+    final rankColor = rankColors[submission.rank] ?? Colors.white.withOpacity(0.7);
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          // Rank
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: rankColor.withOpacity(0.2),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: rankColor,
+                width: 1,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                '${submission.rank}',
+                style: TextStyle(
+                  color: rankColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          
+          // User avatar
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.2),
+              image: submission.userImageUrl != null
+                  ? DecorationImage(
+                      image: NetworkImage(submission.userImageUrl!),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
+            child: submission.userImageUrl == null
+                ? Center(
+                    child: Text(
+                      submission.userName.substring(0, 1),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 12),
+          
+          // Name and score
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  submission.userName,
+                  style: TextStyle(
+                    color: isUser ? Colors.green : Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                Text(
+                  'Score: ${submission.value}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Rank icon for top 3
+          if (submission.rank <= 3)
+            Icon(
+              Icons.emoji_events,
+              color: rankColor,
+              size: 24,
+            ),
+        ],
       ),
     );
   }
@@ -659,292 +1114,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildChallengesColumn() {
-    return Padding(
-      padding: const EdgeInsets.only(left: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Weekly challenge
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFFFF5757).withOpacity(0.1),
-                  const Color(0xFFFF8C8C).withOpacity(0.05),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFFF5757).withOpacity(0.3)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      color: Color(0xFFFF5757),
-                      size: 16,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      'Weekly Challenge',
-                      style: TextStyle(
-                        color: Color(0xFFFF5757),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Score 5 goals in practice',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                // Progress bar
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 6,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(3),
-                          color: Colors.white.withOpacity(0.1),
-                        ),
-                        child: const FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: 0.6, // 3 out of 5
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.all(Radius.circular(3)),
-                              color: Color(0xFFFF5757),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      '3/5',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Reward: 150 XP + Speed badge',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Unlocked badges
-          const Text(
-            'Your Badges',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              _buildBadge(
-                icon: Icons.speed,
-                color: const Color(0xFF02D39A),
-                isActive: true,
-                label: 'Speedster',
-              ),
-              const SizedBox(width: 8),
-              _buildBadge(
-                icon: Icons.sports_soccer,
-                color: const Color(0xFFFFD700),
-                isActive: true,
-                label: 'Finisher',
-              ),
-              const SizedBox(width: 8),
-              _buildBadge(
-                icon: Icons.fitness_center,
-                color: const Color(0xFFD48A29),
-                isActive: false,
-                label: 'Power',
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Next unlock
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFFFFD700).withOpacity(0.1),
-                  const Color(0xFFEBC137).withOpacity(0.05),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.lock_open,
-                      color: Color(0xFFFFD700),
-                      size: 16,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      'Next Unlock',
-                      style: TextStyle(
-                        color: Color(0xFFFFD700),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFD700).withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.sports_soccer,
-                        color: Color(0xFFFFD700),
-                        size: 14,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Unlock Shooting Badge when SHO > 70',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActiveBoost({
-    required String label,
-    required String duration,
-    required Color color,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-        Text(
-          duration,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
-            fontSize: 10,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBadge({
-    required IconData icon,
-    required Color color,
-    required bool isActive,
-    required String label,
-  }) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: isActive ? color.withOpacity(0.2) : Colors.white.withOpacity(0.1),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isActive ? color : Colors.white.withOpacity(0.3),
-              width: 2,
-            ),
-          ),
-          child: Icon(
-            icon,
-            color: isActive ? color : Colors.white.withOpacity(0.3),
-            size: 18,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: isActive ? Colors.white : Colors.white.withOpacity(0.5),
-            fontSize: 10,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildSkillProgressBars() {
     final Map<String, Color> skillColors = {
       'Pace': const Color(0xFF02D39A),
@@ -1001,129 +1170,42 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildDailyChallenge() {
-    return Card(
-      color: Colors.transparent,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFF3D007A), width: 2),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: const Color(0xFF0B0057).withOpacity(0.6),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildActiveBoost({
+    required String label,
+    required String duration,
+    required Color color,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFFFFD700),
-                  ),
-                  child: const Icon(
-                    Icons.shield,
-                    color: Color(0xFF0B0057),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Daily Challenge',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: const Color(0xFFFF5757),
-                  ),
-                  child: const Text(
-                    'VIEW',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color,
+              ),
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'Complete 3 drills',
-              style: TextStyle(
-                fontSize: 16,
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
                 color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Row(
-              children: [
-                Icon(Icons.star, color: Color(0xFFFFD700), size: 28),
-                Icon(Icons.star, color: Color(0xFFFFD700), size: 28),
-                Icon(Icons.star, color: Color(0xFFFFD700), size: 28),
-                Icon(Icons.star_border, color: Color(0xFFFFD700), size: 28),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGoldLevel() {
-    return Card(
-      color: Colors.transparent,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFF3D007A), width: 2),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: const Color(0xFF0B0057).withOpacity(0.6),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.emoji_events,
-              color: Color(0xFFFFD700),
-              size: 48,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Gold III',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFFFD700),
-              ),
-            ),
-            const Text(
-              '2 hours ago',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white70,
+                fontSize: 12,
               ),
             ),
           ],
         ),
-      ),
+        Text(
+          duration,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 10,
+          ),
+        ),
+      ],
     );
   }
 
@@ -1240,6 +1322,35 @@ class _DashboardPageState extends State<DashboardPage> {
         if (showDivider)
           const Divider(color: Color(0xFF3D007A), thickness: 1),
       ],
+    );
+  }
+
+  // Build the academy logo
+  Widget _buildLogo(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          'CA',
+          style: TextStyle(
+            fontSize: size * 0.4,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF0B0057),
+          ),
+        ),
+      ),
     );
   }
 }
