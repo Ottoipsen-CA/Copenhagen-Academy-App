@@ -224,7 +224,7 @@ class CustomNavigationDrawer extends StatelessWidget {
         Navigator.pushReplacementNamed(context, '/dashboard');
         break;
       case 'training':
-        Navigator.pushReplacementNamed(context, '/training');
+        Navigator.pushReplacementNamed(context, '/training-schedule');
         break;
       case 'exercises':
         Navigator.pushReplacementNamed(context, '/exercises');

@@ -171,8 +171,9 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
         centerTitle: true,
         backgroundColor: const Color(0xFF0B0057),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(96.0),
+          preferredSize: const Size.fromHeight(120.0),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Main tabs (All Exercises/Favorites)
               TabBar(
@@ -184,16 +185,19 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
                 ],
               ),
               // Category tabs (scrollable)
-              TabBar(
-                controller: _categoriesTabController,
-                isScrollable: true,
-                indicatorColor: const Color(0xFF02D39A),
-                indicatorWeight: 3.0,
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white70,
-                tabs: _technicalAreas.map((area) => Tab(
-                  text: area,
-                )).toList(),
+              SizedBox(
+                height: 40,
+                child: TabBar(
+                  controller: _categoriesTabController,
+                  isScrollable: true,
+                  indicatorColor: const Color(0xFF02D39A),
+                  indicatorWeight: 3.0,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
+                  tabs: _technicalAreas.map((area) => Tab(
+                    text: area,
+                  )).toList(),
+                ),
               ),
             ],
           ),
@@ -288,13 +292,13 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
         : RefreshIndicator(
             onRefresh: _loadExercises,
             child: Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(8.0),
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.75,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
+                  crossAxisCount: 5,
+                  childAspectRatio: 0.65,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 12,
                 ),
                 itemCount: exercises.length,
                 itemBuilder: (context, index) {
@@ -317,9 +321,10 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
         ).then((_) => _loadExercises()); // Refresh after returning from detail page
       },
       child: Card(
-        elevation: 4,
+        elevation: 3,
+        margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
         ),
         clipBehavior: Clip.antiAlias,
         child: Stack(
@@ -329,7 +334,7 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
               children: [
                 // Exercise image
                 AspectRatio(
-                  aspectRatio: 1.33,
+                  aspectRatio: 1.0,
                   child: Image.network(
                     exercise.imageUrl ?? 'https://via.placeholder.com/300x200?text=No+Image',
                     fit: BoxFit.cover,
@@ -337,7 +342,7 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
                       return Container(
                         color: Colors.grey[300],
                         child: const Center(
-                          child: Icon(Icons.image_not_supported, size: 50),
+                          child: Icon(Icons.image_not_supported, size: 24),
                         ),
                       );
                     },
@@ -346,7 +351,7 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
                 // Exercise info
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(12.0),
+                    padding: const EdgeInsets.all(6.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -354,30 +359,32 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
                           exercise.title,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                            fontSize: 11,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         // Category and difficulty
-                        Row(
+                        Wrap(
+                          spacing: 2,
                           children: [
-                            _buildCategoryChip(exercise.category),
-                            const SizedBox(width: 4),
                             _buildDifficultyChip(exercise.difficulty),
+                            if (exercise.videoUrl != null)
+                              _buildVideoChip(),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         // Duration
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.timer_outlined, size: 14, color: Colors.grey),
-                            const SizedBox(width: 4),
+                            const Icon(Icons.timer_outlined, size: 10, color: Colors.grey),
+                            const SizedBox(width: 2),
                             Text(
                               '${exercise.durationMinutes} min',
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: 9,
                                 color: Colors.grey,
                               ),
                             ),
@@ -391,12 +398,12 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
             ),
             // Favorite button
             Positioned(
-              top: 8,
-              right: 8,
+              top: 4,
+              right: 4,
               child: InkWell(
                 onTap: () => _toggleFavorite(exercise),
                 child: Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.5),
                     shape: BoxShape.circle,
@@ -404,7 +411,7 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
                   child: Icon(
                     exercise.isFavorite ? Icons.favorite : Icons.favorite_border,
                     color: exercise.isFavorite ? Colors.red : Colors.white,
-                    size: 20,
+                    size: 14,
                   ),
                 ),
               ),
@@ -415,35 +422,42 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
     );
   }
 
-  Widget _buildCategoryChip(String category) {
+  Widget _buildVideoChip() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: BoxDecoration(
-        color: _getCategoryColor(category).withOpacity(0.2),
-        borderRadius: BorderRadius.circular(4),
+        color: Colors.red.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(3),
       ),
-      child: Text(
-        category,
-        style: TextStyle(
-          fontSize: 10,
-          color: _getCategoryColor(category),
-          fontWeight: FontWeight.bold,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(Icons.play_circle_outline, size: 8, color: Colors.red),
+          SizedBox(width: 2),
+          Text(
+            'Video',
+            style: TextStyle(
+              fontSize: 8,
+              color: Colors.red,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildDifficultyChip(String difficulty) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: BoxDecoration(
         color: _getDifficultyColor(difficulty).withOpacity(0.2),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(3),
       ),
       child: Text(
         difficulty,
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 8,
           color: _getDifficultyColor(difficulty),
           fontWeight: FontWeight.bold,
         ),

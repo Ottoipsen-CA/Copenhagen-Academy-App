@@ -8,6 +8,7 @@ import 'services/auth_service.dart';
 import 'screens/auth/landing_page.dart';
 import 'screens/dashboard/dashboard_page.dart';
 import 'screens/exercises/exercises_page.dart';
+import 'screens/training_schedule/training_schedule_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +73,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const SplashScreen(),
         '/dashboard': (context) => const DashboardPage(),
         '/exercises': (context) => const ExercisesPage(),
+        '/training-schedule': (context) => const TrainingSchedulePage(),
       },
     );
   }
