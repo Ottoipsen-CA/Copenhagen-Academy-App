@@ -111,7 +111,7 @@ class _BadgesPageState extends State<BadgesPage> with SingleTickerProviderStateM
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: badge.isEarned
-              ? badge.color.withOpacity(0.5)
+              ? badge.badgeColor.withOpacity(0.5)
               : Colors.white.withOpacity(0.1),
           width: 1,
         ),
@@ -128,10 +128,10 @@ class _BadgesPageState extends State<BadgesPage> with SingleTickerProviderStateM
               end: Alignment.bottomRight,
               colors: [
                 badge.isEarned
-                    ? badge.color.withOpacity(0.1)
+                    ? badge.badgeColor.withOpacity(0.1)
                     : Colors.white.withOpacity(0.05),
                 badge.isEarned
-                    ? badge.color.withOpacity(0.15)
+                    ? badge.badgeColor.withOpacity(0.15)
                     : Colors.black.withOpacity(0.1),
               ],
             ),
@@ -146,26 +146,26 @@ class _BadgesPageState extends State<BadgesPage> with SingleTickerProviderStateM
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: badge.isEarned
-                      ? badge.color.withOpacity(0.2)
+                      ? badge.badgeColor.withOpacity(0.2)
                       : Colors.white.withOpacity(0.05),
                   border: Border.all(
                     color: badge.isEarned
-                        ? badge.color
+                        ? badge.badgeColor
                         : Colors.white.withOpacity(0.1),
                     width: 2,
                   ),
                 ),
                 child: badge.isEarned
                     ? Icon(
-                        badge.icon,
-                        color: badge.color,
+                        badge.badgeIcon,
+                        color: badge.badgeColor,
                         size: 40,
                       )
                     : Stack(
                         alignment: Alignment.center,
                         children: [
                           Icon(
-                            badge.icon,
+                            badge.badgeIcon,
                             color: Colors.white.withOpacity(0.3),
                             size: 40,
                           ),
@@ -205,12 +205,12 @@ class _BadgesPageState extends State<BadgesPage> with SingleTickerProviderStateM
                 ),
                 decoration: BoxDecoration(
                   color: badge.isEarned
-                      ? badge.color.withOpacity(0.1)
+                      ? badge.badgeColor.withOpacity(0.1)
                       : Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: badge.isEarned
-                        ? badge.color.withOpacity(0.3)
+                        ? badge.badgeColor.withOpacity(0.3)
                         : Colors.white.withOpacity(0.1),
                   ),
                 ),
@@ -218,7 +218,7 @@ class _BadgesPageState extends State<BadgesPage> with SingleTickerProviderStateM
                   badge.category.toUpperCase(),
                   style: TextStyle(
                     color: badge.isEarned
-                        ? badge.color
+                        ? badge.badgeColor
                         : Colors.white.withOpacity(0.5),
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -269,26 +269,26 @@ class _BadgesPageState extends State<BadgesPage> with SingleTickerProviderStateM
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: badge.isEarned
-                      ? badge.color.withOpacity(0.2)
+                      ? badge.badgeColor.withOpacity(0.2)
                       : Colors.white.withOpacity(0.05),
                   border: Border.all(
                     color: badge.isEarned
-                        ? badge.color
+                        ? badge.badgeColor
                         : Colors.white.withOpacity(0.1),
                     width: 3,
                   ),
                 ),
                 child: badge.isEarned
                     ? Icon(
-                        badge.icon,
-                        color: badge.color,
+                        badge.badgeIcon,
+                        color: badge.badgeColor,
                         size: 60,
                       )
                     : Stack(
                         alignment: Alignment.center,
                         children: [
                           Icon(
-                            badge.icon,
+                            badge.badgeIcon,
                             color: Colors.white.withOpacity(0.3),
                             size: 60,
                           ),
@@ -326,16 +326,16 @@ class _BadgesPageState extends State<BadgesPage> with SingleTickerProviderStateM
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: badge.color.withOpacity(0.1),
+                      color: badge.badgeColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: badge.color.withOpacity(0.3),
+                        color: badge.badgeColor.withOpacity(0.3),
                       ),
                     ),
                     child: Text(
                       _formatRarity(badge.rarity),
                       style: TextStyle(
-                        color: badge.color,
+                        color: badge.badgeColor,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -466,7 +466,7 @@ class _BadgesPageState extends State<BadgesPage> with SingleTickerProviderStateM
         LinearProgressIndicator(
           value: progress,
           backgroundColor: Colors.white.withOpacity(0.1),
-          valueColor: AlwaysStoppedAnimation<Color>(badge.color),
+          valueColor: AlwaysStoppedAnimation<Color>(badge.badgeColor),
           minHeight: 10,
           borderRadius: BorderRadius.circular(5),
         ),

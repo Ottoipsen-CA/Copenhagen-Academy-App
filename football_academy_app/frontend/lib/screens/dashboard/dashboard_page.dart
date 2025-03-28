@@ -682,15 +682,15 @@ class _DashboardPageState extends State<DashboardPage> {
                             height: 60,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: badge.color.withOpacity(0.2),
+                              color: badge.badgeColor.withOpacity(0.2),
                               border: Border.all(
-                                color: badge.color,
+                                color: badge.badgeColor,
                                 width: 2,
                               ),
                             ),
                             child: Icon(
-                              badge.icon,
-                              color: badge.color,
+                              badge.badgeIcon,
+                              color: badge.badgeColor,
                               size: 30,
                             ),
                           ),

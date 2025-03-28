@@ -8,10 +8,12 @@ class UserBadge {
   final String description;
   final String category; // e.g., 'skills', 'challenges', 'consistency'
   final BadgeRarity rarity;
-  final String imageUrl;
-  final String iconName;
   final bool isEarned;
   final DateTime? earnedDate;
+  final IconData badgeIcon;
+  final Color badgeColor;
+  final String? imageUrl;
+  final String? iconName;
   final BadgeRequirement requirement;
 
   const UserBadge({
@@ -20,14 +22,129 @@ class UserBadge {
     required this.description,
     required this.category,
     required this.rarity,
-    required this.imageUrl,
-    required this.iconName,
-    this.isEarned = false,
+    required this.isEarned,
     this.earnedDate,
+    required this.badgeIcon,
+    required this.badgeColor,
+    this.imageUrl,
+    this.iconName,
     required this.requirement,
   });
 
-  Color get color {
+  factory UserBadge.fromJson(Map<String, dynamic> json) {
+    final iconName = json['iconName'] ?? 'trophy';
+    final rarityValue = rarityFromString(json['rarity']);
+    
+    return UserBadge(
+      id: json['id'],
+      name: json['name'],
+      description: json['description'],
+      category: json['category'],
+      rarity: rarityValue,
+      isEarned: json['isEarned'] ?? false,
+      earnedDate: json['earnedDate'] != null ? DateTime.parse(json['earnedDate']) : null,
+      badgeIcon: getIconForType(iconName),
+      badgeColor: getColorForRarity(rarityValue),
+      imageUrl: json['imageUrl'],
+      iconName: iconName,
+      requirement: BadgeRequirement.fromJson(json['requirement']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'category': category,
+      'rarity': rarityToString(rarity),
+      'isEarned': isEarned,
+      'earnedDate': earnedDate?.toIso8601String(),
+      'iconName': iconName ?? getTypeForIcon(badgeIcon),
+      'imageUrl': imageUrl,
+      'requirement': requirement.toJson(),
+    };
+  }
+
+  static BadgeRarity rarityFromString(String rarity) {
+    switch (rarity.toLowerCase()) {
+      case 'common':
+        return BadgeRarity.common;
+      case 'uncommon':
+        return BadgeRarity.uncommon;
+      case 'rare':
+        return BadgeRarity.rare;
+      case 'epic':
+        return BadgeRarity.epic;
+      case 'legendary':
+        return BadgeRarity.legendary;
+      default:
+        return BadgeRarity.common;
+    }
+  }
+
+  static String rarityToString(BadgeRarity rarity) {
+    switch (rarity) {
+      case BadgeRarity.common:
+        return 'common';
+      case BadgeRarity.uncommon:
+        return 'uncommon';
+      case BadgeRarity.rare:
+        return 'rare';
+      case BadgeRarity.epic:
+        return 'epic';
+      case BadgeRarity.legendary:
+        return 'legendary';
+    }
+  }
+
+  static IconData getIconForType(String type) {
+    switch (type) {
+      case 'trophy':
+        return Icons.emoji_events;
+      case 'star':
+        return Icons.star;
+      case 'crown':
+        return Icons.king_bed;
+      case 'medal':
+        return Icons.military_tech;
+      case 'achievement':
+        return Icons.workspace_premium;
+      case 'streak':
+        return Icons.local_fire_department;
+      case 'skills':
+        return Icons.sports_soccer;
+      case 'team':
+        return Icons.people;
+      case 'leadership':
+        return Icons.escalator_warning;
+      case 'dribbling':
+        return Icons.directions_run;
+      case 'shooting':
+        return Icons.sports_soccer;
+      case 'passing':
+        return Icons.swap_calls;
+      default:
+        return Icons.emoji_events;
+    }
+  }
+
+  static String getTypeForIcon(IconData icon) {
+    if (icon == Icons.emoji_events) return 'trophy';
+    if (icon == Icons.star) return 'star';
+    if (icon == Icons.king_bed) return 'crown';
+    if (icon == Icons.military_tech) return 'medal';
+    if (icon == Icons.workspace_premium) return 'achievement';
+    if (icon == Icons.local_fire_department) return 'streak';
+    if (icon == Icons.sports_soccer) return 'skills';
+    if (icon == Icons.people) return 'team';
+    if (icon == Icons.escalator_warning) return 'leadership';
+    if (icon == Icons.directions_run) return 'dribbling';
+    if (icon == Icons.swap_calls) return 'passing';
+    return 'trophy';
+  }
+
+  static Color getColorForRarity(BadgeRarity rarity) {
     switch (rarity) {
       case BadgeRarity.common:
         return Colors.green;
@@ -41,63 +158,6 @@ class UserBadge {
         return Colors.red;
     }
   }
-
-  IconData get icon {
-    // This is a simplification - in a real app, you'd map icon names to IconData
-    switch (iconName) {
-      case 'juggling':
-        return Icons.sports_soccer;
-      case 'shooting':
-        return Icons.sports_soccer;
-      case 'passing':
-        return Icons.swap_horiz;
-      case 'dribbling':
-        return Icons.move_down;
-      case 'streak':
-        return Icons.local_fire_department;
-      case 'trophy':
-        return Icons.emoji_events;
-      case 'star':
-        return Icons.star;
-      default:
-        return Icons.emoji_events;
-    }
-  }
-
-  factory UserBadge.fromJson(Map<String, dynamic> json) {
-    return UserBadge(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      category: json['category'],
-      rarity: BadgeRarity.values.firstWhere(
-        (e) => e.toString().split('.').last == json['rarity'],
-        orElse: () => BadgeRarity.common,
-      ),
-      imageUrl: json['image_url'],
-      iconName: json['icon_name'],
-      isEarned: json['is_earned'] ?? false,
-      earnedDate: json['earned_date'] != null
-          ? DateTime.parse(json['earned_date'])
-          : null,
-      requirement: BadgeRequirement.fromJson(json['requirement']),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'description': description,
-      'category': category,
-      'rarity': rarity.toString().split('.').last,
-      'image_url': imageUrl,
-      'icon_name': iconName,
-      'is_earned': isEarned,
-      'earned_date': earnedDate?.toIso8601String(),
-      'requirement': requirement.toJson(),
-    };
-  }
 }
 
 enum BadgeRarity {
@@ -108,20 +168,19 @@ enum BadgeRarity {
   legendary,
 }
 
-@immutable
 class BadgeRequirement {
-  final String type; // e.g., 'challenge_wins', 'skill_level', 'streak'
+  final String type;
   final int targetValue;
   final int currentValue;
-  final double progress;
-
+  
   const BadgeRequirement({
     required this.type,
     required this.targetValue,
-    this.currentValue = 0,
-    this.progress = 0.0,
+    required this.currentValue,
   });
-
+  
+  double get progress => currentValue / targetValue;
+  
   factory BadgeRequirement.fromJson(Map<String, dynamic> json) {
     return BadgeRequirement(
       type: json['type'],
@@ -129,7 +188,7 @@ class BadgeRequirement {
       currentValue: json['currentValue'] ?? 0,
     );
   }
-
+  
   Map<String, dynamic> toJson() {
     return {
       'type': type,

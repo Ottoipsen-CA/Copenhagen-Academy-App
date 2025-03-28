@@ -28,13 +28,83 @@ class ChallengeService {
         final jsonData = json.decode(response.body);
         return Challenge.fromJson(jsonData);
       } else {
-        // No active challenge or error
-        return null;
+        // Return a mock challenge for development
+        return _getMockActiveChallenge();
       }
     } catch (e) {
       print('Error fetching active weekly challenge: $e');
-      return null;
+      // Return a mock challenge for development
+      return _getMockActiveChallenge();
     }
+  }
+  
+  // Generate a mock active challenge for development
+  Challenge _getMockActiveChallenge() {
+    final now = DateTime.now();
+    final startDate = now.subtract(const Duration(days: 3));
+    final endDate = now.add(const Duration(days: 4));
+    
+    return Challenge(
+      id: 'challenge-juggle-001',
+      title: '7 Days Juggle Challenge',
+      description: 'How many consecutive juggles can you do? Record your best streak over the 7-day period!',
+      startDate: startDate,
+      endDate: endDate,
+      challengeType: 'juggling',
+      metric: 'count',
+      imageUrl: 'https://example.com/juggling-challenge.jpg',
+      participantCount: 47,
+      leaderboard: [
+        ChallengeSubmission(
+          userId: 'user123',
+          userName: 'Alex Johnson',
+          userImageUrl: 'https://example.com/alex.jpg',
+          value: 156.0,
+          submittedAt: now.subtract(const Duration(hours: 12)),
+          rank: 1,
+        ),
+        ChallengeSubmission(
+          userId: 'user456',
+          userName: 'Maria Silva',
+          userImageUrl: 'https://example.com/maria.jpg',
+          value: 132.0,
+          submittedAt: now.subtract(const Duration(hours: 24)),
+          rank: 2,
+        ),
+        ChallengeSubmission(
+          userId: 'user789',
+          userName: 'David Lee',
+          userImageUrl: 'https://example.com/david.jpg',
+          value: 118.0,
+          submittedAt: now.subtract(const Duration(hours: 36)),
+          rank: 3,
+        ),
+        ChallengeSubmission(
+          userId: 'user101',
+          userName: 'Sophie Chen',
+          userImageUrl: 'https://example.com/sophie.jpg',
+          value: 105.0,
+          submittedAt: now.subtract(const Duration(hours: 5)),
+          rank: 4,
+        ),
+        ChallengeSubmission(
+          userId: 'user202',
+          userName: 'Carlos Rodriguez',
+          userImageUrl: 'https://example.com/carlos.jpg',
+          value: 92.0,
+          submittedAt: now.subtract(const Duration(hours: 18)),
+          rank: 5,
+        ),
+      ],
+      userSubmission: ChallengeSubmission(
+        userId: 'user123',
+        userName: 'Alex Johnson',
+        userImageUrl: 'https://example.com/alex.jpg',
+        value: 156.0,
+        submittedAt: now.subtract(const Duration(hours: 12)),
+        rank: 1,
+      ),
+    );
   }
   
   // Get all past weekly challenges
@@ -160,10 +230,12 @@ class ChallengeService {
         description: 'Complete a sprint drill under 5 seconds',
         category: 'skills',
         rarity: BadgeRarity.rare,
-        imageUrl: 'https://example.com/badge1.png',
-        iconName: 'dribbling',
         isEarned: true,
         earnedDate: now.subtract(const Duration(days: 5)),
+        badgeIcon: UserBadge.getIconForType('dribbling'),
+        badgeColor: UserBadge.getColorForRarity(BadgeRarity.rare),
+        imageUrl: 'https://example.com/badge1.png',
+        iconName: 'dribbling',
         requirement: const BadgeRequirement(
           type: 'skill_level',
           targetValue: 80,
@@ -176,10 +248,12 @@ class ChallengeService {
         description: 'Score 50 goals in practice sessions',
         category: 'skills',
         rarity: BadgeRarity.epic,
-        imageUrl: 'https://example.com/badge2.png',
-        iconName: 'shooting',
         isEarned: true,
         earnedDate: now.subtract(const Duration(days: 12)),
+        badgeIcon: UserBadge.getIconForType('shooting'),
+        badgeColor: UserBadge.getColorForRarity(BadgeRarity.epic),
+        imageUrl: 'https://example.com/badge2.png',
+        iconName: 'shooting',
         requirement: const BadgeRequirement(
           type: 'challenge_completions',
           targetValue: 50,
@@ -192,10 +266,12 @@ class ChallengeService {
         description: 'Log in for 7 consecutive days',
         category: 'consistency',
         rarity: BadgeRarity.uncommon,
-        imageUrl: 'https://example.com/badge3.png',
-        iconName: 'streak',
         isEarned: true,
         earnedDate: now.subtract(const Duration(days: 3)),
+        badgeIcon: UserBadge.getIconForType('streak'),
+        badgeColor: UserBadge.getColorForRarity(BadgeRarity.uncommon),
+        imageUrl: 'https://example.com/badge3.png',
+        iconName: 'streak',
         requirement: const BadgeRequirement(
           type: 'login_streak',
           targetValue: 7,
@@ -208,10 +284,12 @@ class ChallengeService {
         description: 'Lead your team to victory 5 times',
         category: 'leadership',
         rarity: BadgeRarity.legendary,
-        imageUrl: 'https://example.com/badge4.png',
-        iconName: 'trophy',
         isEarned: true,
         earnedDate: now.subtract(const Duration(days: 20)),
+        badgeIcon: UserBadge.getIconForType('trophy'),
+        badgeColor: UserBadge.getColorForRarity(BadgeRarity.legendary),
+        imageUrl: 'https://example.com/badge4.png',
+        iconName: 'trophy',
         requirement: const BadgeRequirement(
           type: 'leadership',
           targetValue: 5,
@@ -224,9 +302,11 @@ class ChallengeService {
         description: 'Achieve 90% passing accuracy',
         category: 'skills',
         rarity: BadgeRarity.epic,
+        isEarned: false,
+        badgeIcon: UserBadge.getIconForType('passing'),
+        badgeColor: UserBadge.getColorForRarity(BadgeRarity.epic),
         imageUrl: 'https://example.com/badge5.png',
         iconName: 'passing',
-        isEarned: false,
         requirement: const BadgeRequirement(
           type: 'skill_level',
           targetValue: 90,
@@ -239,9 +319,11 @@ class ChallengeService {
         description: 'Win 3 weekly challenges',
         category: 'challenges',
         rarity: BadgeRarity.legendary,
+        isEarned: false,
+        badgeIcon: UserBadge.getIconForType('trophy'),
+        badgeColor: UserBadge.getColorForRarity(BadgeRarity.legendary),
         imageUrl: 'https://example.com/badge6.png',
         iconName: 'trophy',
-        isEarned: false,
         requirement: const BadgeRequirement(
           type: 'challenge_wins',
           targetValue: 3,
