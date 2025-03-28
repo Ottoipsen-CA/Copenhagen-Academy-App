@@ -310,18 +310,18 @@ class ChallengeService {
       // Weekly challenge
       Challenge(
         id: _uuid.v4(),
-        title: 'Complete 10 Training Sessions',
-        description: 'This week\'s challenge is to complete 10 training sessions. Record each session after you complete it.',
+        title: '7 Days Juggle Challenge',
+        description: 'This week\'s challenge is to juggle the ball every day for 7 days. Record each day\'s best juggling streak.',
         category: ChallengeCategory.weekly,
         level: 1,
-        targetValue: 10,
-        unit: 'sessions',
+        targetValue: 7,
+        unit: 'days',
         deadline: weeklyDeadline,
         isWeekly: true,
         tips: [
-          'Spread your sessions throughout the week',
-          'Mix high and low intensity training',
-          'Include at least one recovery session'
+          'Try to improve your record each day',
+          'Practice different juggling techniques',
+          'Record a video of your best attempt'
         ],
       ),
       
