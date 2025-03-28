@@ -63,14 +63,24 @@ class PlayerCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Overall Rating
-              Text(
-                stats.overallRating.round().toString(),
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              Container(
+                width: 55,
+                height: 55,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E22AA), // Dark blue
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  stats.overallRating.round().toString(),
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
+              const SizedBox(height: 5),
               // Position
               if (playerPosition != null)
                 Text(
@@ -78,28 +88,32 @@ class PlayerCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Color(0xFF1E22AA),
                   ),
                 ),
             ],
           ),
           // Avatar/Image
-          CircleAvatar(
-            radius: 35,
-            backgroundColor: Colors.white,
+          Container(
+            width: 100,
+            height: 100,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFFFF9500),
+            ),
             child: imageUrl != null
                 ? ClipOval(
                     child: Image.network(
                       imageUrl!,
-                      width: 70,
-                      height: 70,
+                      width: 100,
+                      height: 100,
                       fit: BoxFit.cover,
                     ),
                   )
                 : const Icon(
                     Icons.person,
-                    size: 40,
-                    color: Colors.blueGrey,
+                    size: 70,
+                    color: Colors.white,
                   ),
           ),
         ],
@@ -111,14 +125,16 @@ class PlayerCard extends StatelessWidget {
     return Column(
       children: [
         // Player Name
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          alignment: Alignment.center,
           child: Text(
-            playerName,
+            playerName.toUpperCase(),
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 26,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Color(0xFF1E22AA),
             ),
             textAlign: TextAlign.center,
           ),
@@ -126,24 +142,32 @@ class PlayerCard extends StatelessWidget {
         
         // Stats
         Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Column(
             children: [
-              _buildStatColumn(context, 'PAC', stats.pace.round()),
-              _buildStatColumn(context, 'SHO', stats.shooting.round()),
-              _buildStatColumn(context, 'PAS', stats.passing.round()),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildStatColumn(context, 'DRI', stats.dribbling.round()),
-              _buildStatColumn(context, 'DEF', stats.defense.round()),
-              _buildStatColumn(context, 'PHY', stats.physical.round()),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildStat(context, "80", "PC"),
+                  _buildStat(context, "81", "DRI"),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildStat(context, "79", "SHO"),
+                  _buildStat(context, "49", "DEF"),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildStat(context, "76", "PAS"),
+                  _buildStat(context, "70", "PHY"),
+                ],
+              ),
             ],
           ),
         ),
@@ -157,7 +181,7 @@ class PlayerCard extends StatelessWidget {
               'Last updated: ${_formatDate(stats.lastUpdated!)}',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.grey[700],
               ),
             ),
           ),
@@ -173,11 +197,11 @@ class PlayerCard extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Text(
-            playerName,
+            playerName.toUpperCase(),
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Color(0xFF1E22AA),
             ),
             textAlign: TextAlign.center,
           ),
@@ -188,100 +212,52 @@ class PlayerCard extends StatelessWidget {
           padding: const EdgeInsets.all(8.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: _getTopThreeStats().entries.map((entry) {
-              return _buildStatColumn(context, entry.key, entry.value.round());
-            }).toList(),
+            children: [
+              _buildStat(context, stats.pace.round().toString(), "PAC"),
+              _buildStat(context, stats.dribbling.round().toString(), "DRI"),
+              _buildStat(context, stats.shooting.round().toString(), "SHO"),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildStatColumn(BuildContext context, String label, int value) {
-    return Column(
+  Widget _buildStat(BuildContext context, String value, String label) {
+    return Row(
       children: [
         Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
+          value,
+          style: const TextStyle(
+            color: Color(0xFF1E22AA),
+            fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: Colors.white.withOpacity(0.8),
           ),
         ),
-        const SizedBox(height: 4),
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: _getStatColor(value),
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(
-              value.toString(),
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF1E22AA),
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ],
     );
-  }
-
-  Map<String, double> _getTopThreeStats() {
-    final Map<String, double> allStats = {
-      'PAC': stats.pace,
-      'SHO': stats.shooting,
-      'PAS': stats.passing,
-      'DRI': stats.dribbling,
-      'DEF': stats.defense,
-      'PHY': stats.physical,
-    };
-    
-    // Sort by value
-    final sortedStats = allStats.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    
-    // Return top 3
-    return Map.fromEntries(sortedStats.take(3));
   }
 
   Color _getRatingColor(double rating) {
-    if (rating >= 86) {
-      return Colors.red[700]!; // High rated
-    } else if (rating >= 80) {
-      return Colors.orange[700]!; // Gold
+    if (rating >= 83) {
+      return const Color(0xFFFFD700); // Gold color for 83+
     } else if (rating >= 75) {
-      return Colors.yellow[700]!; // Silver elite
-    } else if (rating >= 70) {
-      return Colors.amber; // Silver
-    } else if (rating >= 65) {
-      return Colors.green; // Bronze elite
+      return Colors.grey[300]!; // Silver color for 75-82
     } else {
-      return Colors.brown; // Bronze
+      return const Color(0xFFCD7F32); // Bronze color for below 75
     }
   }
-
-  Color _getStatColor(int value) {
-    if (value >= 90) {
-      return Colors.green[700]!;
-    } else if (value >= 80) {
-      return Colors.green;
-    } else if (value >= 70) {
-      return Colors.lime;
-    } else if (value >= 60) {
-      return Colors.amber;
-    } else if (value >= 50) {
-      return Colors.orange;
-    } else {
-      return Colors.red;
-    }
-  }
-
+  
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    return "${date.day}/${date.month}/${date.year}";
   }
 } 

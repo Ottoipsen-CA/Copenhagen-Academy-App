@@ -5,6 +5,7 @@ import '../../models/player_stats.dart';
 import '../../models/challenge.dart';
 import '../../models/badge.dart';
 import '../../services/auth_service.dart';
+import '../../services/player_stats_service.dart';
 import '../../services/challenge_service.dart';
 import '../../widgets/navigation_drawer.dart';
 import '../../widgets/player_stats_radar_chart.dart';
@@ -52,18 +53,11 @@ class _DashboardPageState extends State<DashboardPage> {
       // Load user data
       final user = await authService.getCurrentUser();
       
-      // TODO: Implement loading player stats from API
-      // For now, we'll use sample data
-      final playerStats = PlayerStats(
-        playerId: user.id?.toString() ?? "1",
-        pace: 75,
-        shooting: 68,
-        passing: 72,
-        dribbling: 80,
-        defense: 60,
-        physical: 65,
-        overallRating: 70,
-      );
+      // Load player stats from the service
+      final playerStats = await PlayerStatsService.getPlayerStats();
+      if (playerStats == null) {
+        throw Exception("Failed to load player stats");
+      }
       
       // Initialize challenges
       await ChallengeService.initializeUserChallenges();

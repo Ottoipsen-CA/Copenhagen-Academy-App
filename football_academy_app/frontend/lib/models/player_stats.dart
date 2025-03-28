@@ -13,13 +13,13 @@ class PlayerStats {
   PlayerStats({
     this.id,
     required this.playerId,
-    this.pace = 50,
-    this.shooting = 50,
-    this.passing = 50,
-    this.dribbling = 50,
-    this.defense = 50,
-    this.physical = 50,
-    this.overallRating = 50,
+    this.pace = 80,
+    this.shooting = 79,
+    this.passing = 76,
+    this.dribbling = 81,
+    this.defense = 49,
+    this.physical = 70,
+    this.overallRating = 83,
     this.lastUpdated,
   });
 
@@ -27,13 +27,13 @@ class PlayerStats {
     return PlayerStats(
       id: json['id'],
       playerId: json['player_id'].toString(),
-      pace: json['pace']?.toDouble() ?? 50,
-      shooting: json['shooting']?.toDouble() ?? 50,
-      passing: json['passing']?.toDouble() ?? 50,
-      dribbling: json['dribbling']?.toDouble() ?? 50,
-      defense: json['defense']?.toDouble() ?? 50,
-      physical: json['physical']?.toDouble() ?? 50,
-      overallRating: json['overall_rating']?.toDouble() ?? 50,
+      pace: json['pace']?.toDouble() ?? 80,
+      shooting: json['shooting']?.toDouble() ?? 79,
+      passing: json['passing']?.toDouble() ?? 76,
+      dribbling: json['dribbling']?.toDouble() ?? 81,
+      defense: json['defense']?.toDouble() ?? 49,
+      physical: json['physical']?.toDouble() ?? 70,
+      overallRating: json['overall_rating']?.toDouble() ?? 83,
       lastUpdated: json['last_updated'] != null
           ? DateTime.parse(json['last_updated'])
           : null,

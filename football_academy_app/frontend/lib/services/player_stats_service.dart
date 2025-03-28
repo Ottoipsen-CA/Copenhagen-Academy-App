@@ -48,13 +48,13 @@ class PlayerStatsService {
     
     final stats = PlayerStats(
       playerId: currentUserId,
-      pace: 50.0,
-      shooting: 50.0,
-      passing: 50.0,
-      dribbling: 50.0,
-      defense: 50.0,
-      physical: 50.0,
-      overallRating: 50.0,
+      pace: 80.0,
+      shooting: 79.0,
+      passing: 76.0,
+      dribbling: 81.0,
+      defense: 49.0,
+      physical: 70.0,
+      overallRating: 83.0,
       lastUpdated: DateTime.now(),
     );
     

@@ -3,6 +3,9 @@ import '../../models/player_stats.dart';
 import '../../services/player_stats_service.dart';
 import '../../widgets/player_card.dart';
 import '../../widgets/navigation_drawer.dart';
+import '../../widgets/custom_app_bar.dart';
+import '../../theme/colors.dart';
+import '../../widgets/gradient_background.dart';
 
 class PlayerStatsPage extends StatefulWidget {
   const PlayerStatsPage({Key? key}) : super(key: key);
@@ -45,28 +48,33 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Player Stats'),
+      appBar: CustomAppBar(
+        title: 'Player Stats',
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _loadPlayerStats,
           ),
         ],
       ),
       drawer: const CustomNavigationDrawer(currentPage: 'player_stats'),
-      body: _isLoading 
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty 
-              ? Center(child: Text(_errorMessage, style: const TextStyle(color: Colors.red)))
-              : _buildContent(),
+      body: GradientBackground(
+        child: _isLoading 
+            ? const Center(child: CircularProgressIndicator(color: Colors.white))
+            : _errorMessage.isNotEmpty 
+                ? Center(child: Text(_errorMessage, style: const TextStyle(color: Colors.white)))
+                : _buildContent(),
+      ),
     );
   }
   
   Widget _buildContent() {
     if (_playerStats == null) {
       return const Center(
-        child: Text('No player stats available'),
+        child: Text(
+          'No player stats available',
+          style: TextStyle(color: Colors.white),
+        ),
       );
     }
     
@@ -81,7 +89,7 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
               child: PlayerCard(
                 stats: _playerStats!,
                 playerName: 'Your Player', // In a real app, fetch user's name
-                playerPosition: 'CM', // In a real app, fetch position from user profile
+                playerPosition: 'RW', // Match the login screen position
               ),
             ),
             
@@ -93,6 +101,7 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 16),
@@ -113,27 +122,47 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
             const SizedBox(height: 24),
             
             // Info text
-            const Card(
+            Card(
+              color: AppColors.cardBackground,
               child: Padding(
-                padding: EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'How to Improve Your Rating',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
+                    const SizedBox(height: 8),
+                    const Text(
                       '• Complete challenges to improve your stats\n'
                       '• Higher completion scores give bigger rating boosts\n'
                       '• Different challenges affect different stats\n'
                       '• Consistently complete challenges to reach top ratings',
                       style: TextStyle(
                         fontSize: 14,
+                        color: Colors.white70,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Current Overall Rating: ${_playerStats!.overallRating.round()}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Last Updated: ${_playerStats!.lastUpdated != null ? _formatDate(_playerStats!.lastUpdated!) : "Not available"}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.white54,
                       ),
                     ),
                   ],
@@ -157,6 +186,7 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
             label,
             style: const TextStyle(
               fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
         ),
@@ -171,7 +201,7 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
                   Container(
                     height: 20,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: Colors.grey[800],
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
@@ -231,5 +261,9 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
     } else {
       return Colors.red;
     }
+  }
+  
+  String _formatDate(DateTime date) {
+    return "${date.day}/${date.month}/${date.year}";
   }
 } 
