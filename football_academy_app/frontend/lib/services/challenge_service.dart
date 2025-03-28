@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/challenge.dart';
 import '../models/badge.dart';
+import '../models/player_stats.dart';
 import 'package:uuid/uuid.dart';
+import 'player_stats_service.dart';
 
 class ChallengeService {
   static const String _challengesKey = 'challenges';
@@ -193,6 +195,18 @@ class ChallengeService {
         
         // Unlock next challenge in the same category
         await _unlockNextChallenge(challenge);
+        
+        // Update player stats based on challenge completion
+        try {
+          await PlayerStatsService.updateStatsFromChallenge(challenge, userChallenge.copyWith(
+            status: newStatus,
+            completedAt: completedAt,
+            currentValue: newCurrentValue,
+          ));
+          print('Player stats updated after completing challenge: ${challenge.title}');
+        } catch (e) {
+          print('Error updating player stats: $e');
+        }
       }
       
       // Update user challenge
@@ -220,6 +234,18 @@ class ChallengeService {
         
         // Unlock next challenge in the same category
         await _unlockNextChallenge(challenge);
+        
+        // Update player stats based on challenge completion
+        try {
+          await PlayerStatsService.updateStatsFromChallenge(challenge, userChallenge.copyWith(
+            status: newStatus,
+            completedAt: completedAt,
+            currentValue: newCurrentValue,
+          ));
+          print('Player stats updated after completing challenge: ${challenge.title}');
+        } catch (e) {
+          print('Error updating player stats: $e');
+        }
       }
       
       // Update user challenge

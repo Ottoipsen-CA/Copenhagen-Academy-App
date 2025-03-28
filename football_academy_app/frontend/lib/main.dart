@@ -12,6 +12,7 @@ import 'screens/training_schedule/training_schedule_page.dart';
 import 'screens/challenges/challenges_page.dart';
 import 'screens/league_table/league_table_page.dart';
 import 'screens/communication/chat_page.dart';
+import 'screens/player_stats/player_stats_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,6 +79,7 @@ class MyApp extends StatelessWidget {
         '/training-schedule': (context) => const TrainingSchedulePage(),
         '/league-table': (context) => const LeagueTablePage(),
         '/chat': (context) => const ChatPage(),
+        '/player-stats': (context) => const PlayerStatsPage(),
       },
     );
   }

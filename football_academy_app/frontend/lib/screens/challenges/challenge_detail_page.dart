@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/challenge.dart';
 import '../../services/challenge_service.dart';
+import '../../services/player_stats_service.dart';
 import '../../theme/colors.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/gradient_background.dart';
@@ -102,7 +103,52 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
     }
   }
   
-  void _showCompletionDialog() {
+  void _showCompletionDialog() async {
+    // Try to get player stats
+    String improvedStat = '';
+    String performanceText = '';
+    
+    // Determine which stat improved based on challenge category
+    switch (_challenge.category) {
+      case ChallengeCategory.passing:
+        improvedStat = 'Passing';
+        break;
+      case ChallengeCategory.shooting:
+        improvedStat = 'Shooting';
+        break;
+      case ChallengeCategory.dribbling:
+        improvedStat = 'Dribbling';
+        break;
+      case ChallengeCategory.fitness:
+        improvedStat = 'Pace and Physical';
+        break;
+      case ChallengeCategory.defense:
+        improvedStat = 'Defense';
+        break;
+      case ChallengeCategory.goalkeeping:
+        improvedStat = 'Defense and Physical';
+        break;
+      case ChallengeCategory.tactical:
+        improvedStat = 'Multiple stats';
+        break;
+      default:
+        improvedStat = 'Overall Rating';
+        break;
+    }
+    
+    // Calculate performance score for feedback message
+    final double performanceScore = _userChallenge.currentValue / _challenge.targetValue.toDouble();
+    
+    if (performanceScore >= 1.0) {
+      performanceText = 'Perfect score! Maximum rating boost!';
+    } else if (performanceScore >= 0.8) {
+      performanceText = 'Great performance! Significant rating boost!';
+    } else if (performanceScore >= 0.6) {
+      performanceText = 'Good effort! Moderate rating boost.';
+    } else {
+      performanceText = 'Completed! Small rating improvement.';
+    }
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -136,6 +182,37 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
                 fontSize: 14,
               ),
             ),
+            const SizedBox(height: 16),
+            const Divider(color: Colors.white24),
+            const SizedBox(height: 8),
+            const Text(
+              'Player Stats Improved!',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$improvedStat has increased',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              performanceText,
+              style: const TextStyle(
+                fontStyle: FontStyle.italic,
+                color: Colors.green,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 8),
             if (!_challenge.isWeekly) ...[
               const Text(
@@ -156,6 +233,16 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
             child: const Text(
               'Close',
               style: TextStyle(color: Colors.white70),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pushReplacementNamed(context, '/player-stats');
+            },
+            child: const Text(
+              'View Stats',
+              style: TextStyle(color: Colors.white),
             ),
           ),
         ],
