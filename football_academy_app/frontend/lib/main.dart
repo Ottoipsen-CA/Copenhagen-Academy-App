@@ -9,6 +9,7 @@ import 'screens/auth/landing_page.dart';
 import 'screens/dashboard/dashboard_page.dart';
 import 'screens/exercises/exercises_page.dart';
 import 'screens/training_schedule/training_schedule_page.dart';
+import 'screens/challenges/challenges_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -74,6 +75,7 @@ class MyApp extends StatelessWidget {
         '/dashboard': (context) => const DashboardPage(),
         '/exercises': (context) => const ExercisesPage(),
         '/training-schedule': (context) => const TrainingSchedulePage(),
+        '/challenges': (context) => const ChallengesPage(),
       },
     );
   }

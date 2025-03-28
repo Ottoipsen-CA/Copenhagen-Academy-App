@@ -91,12 +91,39 @@ class TrainingScheduleService {
       ),
     ];
     
+    // Create mock matches
     final saturdayMatch = Match(
       opponent: 'City FC',
       isHomeGame: true,
       dateTime: DateTime.now().add(const Duration(days: 5, hours: 15)),
       location: 'Home Stadium',
       competition: 'League',
+      description: 'Important league match against a strong opponent',
+      preMatchNotes: 'Focus on defensive stability and counter-attacks',
+      preMatchRating: 4,
+    );
+    
+    final wednesdayMatch = Match(
+      opponent: 'United SC',
+      isHomeGame: false,
+      dateTime: DateTime.now().add(const Duration(days: 2, hours: 18)),
+      location: 'Away Stadium',
+      competition: 'Cup',
+      description: 'First round of the cup competition',
+      preMatchNotes: 'Rest key players, give youth a chance',
+      preMatchRating: 3,
+      postMatchAnalysis: 'Good performance from the young players',
+      postMatchRating: 4,
+    );
+    
+    final sundayMatch = Match(
+      opponent: 'Academy FC',
+      isHomeGame: true,
+      dateTime: DateTime.now().add(const Duration(days: 6, hours: 12)),
+      location: 'Training Ground',
+      competition: 'Friendly',
+      description: 'Preparation match for next week',
+      performanceRating: 3,
     );
     
     // Update the days in the schedule
@@ -105,13 +132,15 @@ class TrainingScheduleService {
         case 'Monday':
           return day.copyWith(sessions: mondaySessions);
         case 'Wednesday':
-          return day.copyWith(sessions: wednesdaySessions);
+          return day.copyWith(sessions: wednesdaySessions, matches: [wednesdayMatch]);
         case 'Thursday':
           return day.copyWith(sessions: thursdaySessions);
         case 'Friday':
           return day.copyWith(sessions: fridaySessions);
         case 'Saturday':
           return day.copyWith(matches: [saturdayMatch]);
+        case 'Sunday':
+          return day.copyWith(matches: [sundayMatch]);
         default:
           return day;
       }

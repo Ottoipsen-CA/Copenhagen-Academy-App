@@ -80,6 +80,7 @@ class TrainingSession {
   final int intensity; // 1-5 scale
   final String? preEvaluation; // Player's goals before training
   final String? postEvaluation; // Player's reflection after training
+  final int? performanceRating; // Player's self-rating (1-5 stars)
   
   const TrainingSession({
     this.id,
@@ -92,6 +93,7 @@ class TrainingSession {
     this.intensity = 3,
     this.preEvaluation,
     this.postEvaluation,
+    this.performanceRating,
   });
 
   int get durationMinutes {
@@ -121,6 +123,7 @@ class TrainingSession {
     int? intensity,
     String? preEvaluation,
     String? postEvaluation,
+    int? performanceRating,
   }) {
     return TrainingSession(
       id: id ?? this.id,
@@ -133,6 +136,7 @@ class TrainingSession {
       intensity: intensity ?? this.intensity,
       preEvaluation: preEvaluation ?? this.preEvaluation,
       postEvaluation: postEvaluation ?? this.postEvaluation,
+      performanceRating: performanceRating ?? this.performanceRating,
     );
   }
 
@@ -148,6 +152,7 @@ class TrainingSession {
       intensity: json['intensity'] ?? 3,
       preEvaluation: json['preEvaluation'],
       postEvaluation: json['postEvaluation'],
+      performanceRating: json['performanceRating'],
     );
   }
 
@@ -163,6 +168,7 @@ class TrainingSession {
       'intensity': intensity,
       'preEvaluation': preEvaluation,
       'postEvaluation': postEvaluation,
+      'performanceRating': performanceRating,
     };
   }
 }
@@ -175,6 +181,12 @@ class Match {
   final DateTime dateTime;
   final String? location;
   final String? competition; // e.g., League, Cup, Friendly
+  final String? description; // Match description or notes
+  final int? performanceRating; // Player's self-rating (1-5 stars)
+  final String? preMatchNotes; // Pre-match preparation notes
+  final String? postMatchAnalysis; // Post-match analysis
+  final int? preMatchRating; // Pre-match self-rating (1-5 stars)
+  final int? postMatchRating; // Post-match self-rating (1-5 stars)
   
   const Match({
     this.id,
@@ -183,9 +195,45 @@ class Match {
     required this.dateTime,
     this.location,
     this.competition,
+    this.description,
+    this.performanceRating,
+    this.preMatchNotes,
+    this.postMatchAnalysis,
+    this.preMatchRating,
+    this.postMatchRating,
   });
 
   String get matchTitle => isHomeGame ? 'vs $opponent (H)' : 'vs $opponent (A)';
+
+  Match copyWith({
+    String? id,
+    String? opponent,
+    bool? isHomeGame,
+    DateTime? dateTime,
+    String? location,
+    String? competition,
+    String? description,
+    int? performanceRating,
+    String? preMatchNotes,
+    String? postMatchAnalysis,
+    int? preMatchRating,
+    int? postMatchRating,
+  }) {
+    return Match(
+      id: id ?? this.id,
+      opponent: opponent ?? this.opponent,
+      isHomeGame: isHomeGame ?? this.isHomeGame,
+      dateTime: dateTime ?? this.dateTime,
+      location: location ?? this.location,
+      competition: competition ?? this.competition,
+      description: description ?? this.description,
+      performanceRating: performanceRating ?? this.performanceRating,
+      preMatchNotes: preMatchNotes ?? this.preMatchNotes,
+      postMatchAnalysis: postMatchAnalysis ?? this.postMatchAnalysis,
+      preMatchRating: preMatchRating ?? this.preMatchRating,
+      postMatchRating: postMatchRating ?? this.postMatchRating,
+    );
+  }
 
   factory Match.fromJson(Map<String, dynamic> json) {
     return Match(
@@ -195,6 +243,12 @@ class Match {
       dateTime: DateTime.parse(json['dateTime']),
       location: json['location'],
       competition: json['competition'],
+      description: json['description'],
+      performanceRating: json['performanceRating'],
+      preMatchNotes: json['preMatchNotes'],
+      postMatchAnalysis: json['postMatchAnalysis'],
+      preMatchRating: json['preMatchRating'],
+      postMatchRating: json['postMatchRating'],
     );
   }
 
@@ -206,6 +260,12 @@ class Match {
       'dateTime': dateTime.toIso8601String(),
       'location': location,
       'competition': competition,
+      'description': description,
+      'performanceRating': performanceRating,
+      'preMatchNotes': preMatchNotes,
+      'postMatchAnalysis': postMatchAnalysis,
+      'preMatchRating': preMatchRating,
+      'postMatchRating': postMatchRating,
     };
   }
 }

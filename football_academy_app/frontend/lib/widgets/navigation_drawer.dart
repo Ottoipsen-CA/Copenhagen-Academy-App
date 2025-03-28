@@ -45,6 +45,13 @@ class CustomNavigationDrawer extends StatelessWidget {
                 ),
                 _buildNavItem(
                   context,
+                  'challenges',
+                  'Challenges',
+                  Icons.emoji_events,
+                  () => _navigateTo(context, 'challenges'),
+                ),
+                _buildNavItem(
+                  context,
                   'achievements',
                   'Achievements',
                   Icons.emoji_events_outlined,
@@ -228,6 +235,9 @@ class CustomNavigationDrawer extends StatelessWidget {
         break;
       case 'exercises':
         Navigator.pushReplacementNamed(context, '/exercises');
+        break;
+      case 'challenges':
+        Navigator.pushReplacementNamed(context, '/challenges');
         break;
       case 'achievements':
         Navigator.pushReplacementNamed(context, '/achievements');

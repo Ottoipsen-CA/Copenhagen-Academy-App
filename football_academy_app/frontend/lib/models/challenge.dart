@@ -1,173 +1,228 @@
 import 'package:flutter/foundation.dart';
 
+enum ChallengeCategory {
+  passing,
+  shooting,
+  dribbling,
+  fitness,
+  defense,
+  goalkeeping,
+  tactical,
+  weekly
+}
+
+extension ChallengeCategoryExtension on ChallengeCategory {
+  String get displayName {
+    switch (this) {
+      case ChallengeCategory.passing:
+        return 'Passing';
+      case ChallengeCategory.shooting:
+        return 'Shooting';
+      case ChallengeCategory.dribbling:
+        return 'Dribbling';
+      case ChallengeCategory.fitness:
+        return 'Fitness';
+      case ChallengeCategory.defense:
+        return 'Defense';
+      case ChallengeCategory.goalkeeping:
+        return 'Goalkeeping';
+      case ChallengeCategory.tactical:
+        return 'Tactical';
+      case ChallengeCategory.weekly:
+        return 'Weekly Challenge';
+    }
+  }
+  
+  String get icon {
+    switch (this) {
+      case ChallengeCategory.passing:
+        return 'assets/icons/passing.png';
+      case ChallengeCategory.shooting:
+        return 'assets/icons/shooting.png';
+      case ChallengeCategory.dribbling:
+        return 'assets/icons/dribbling.png';
+      case ChallengeCategory.fitness:
+        return 'assets/icons/fitness.png';
+      case ChallengeCategory.defense:
+        return 'assets/icons/defense.png';
+      case ChallengeCategory.goalkeeping:
+        return 'assets/icons/goalkeeping.png';
+      case ChallengeCategory.tactical:
+        return 'assets/icons/tactical.png';
+      case ChallengeCategory.weekly:
+        return 'assets/icons/weekly.png';
+    }
+  }
+}
+
+enum ChallengeStatus {
+  locked,
+  available,
+  inProgress,
+  completed
+}
+
 @immutable
 class Challenge {
   final String id;
   final String title;
   final String description;
-  final DateTime startDate;
-  final DateTime endDate;
-  final String challengeType; // e.g., 'juggling', 'shooting', 'passing'
-  final String metric; // e.g., 'count', 'time', 'distance'
-  final String? imageUrl;
-  final int participantCount;
-  final List<ChallengeSubmission> leaderboard;
-  final ChallengeSubmission? userSubmission;
+  final ChallengeCategory category;
+  final int level;
+  final int targetValue;
+  final String unit;
+  final DateTime? deadline;
+  final bool isWeekly;
+  final List<String>? tips;
+  final String? videoUrl;
 
   const Challenge({
     required this.id,
     required this.title,
     required this.description,
-    required this.startDate,
-    required this.endDate,
-    required this.challengeType,
-    required this.metric,
-    this.imageUrl,
-    required this.participantCount,
-    required this.leaderboard,
-    this.userSubmission,
+    required this.category,
+    required this.level,
+    required this.targetValue,
+    required this.unit,
+    this.deadline,
+    this.isWeekly = false,
+    this.tips,
+    this.videoUrl,
   });
-
-  String get timeRemaining {
-    final now = DateTime.now();
-    if (now.isAfter(endDate)) {
-      return 'Ended';
-    }
-    
-    final difference = endDate.difference(now);
-    final days = difference.inDays;
-    final hours = difference.inHours % 24;
-    
-    if (days > 0) {
-      return '$days day${days > 1 ? 's' : ''} ${hours > 0 ? ', $hours hour${hours > 1 ? 's' : ''}' : ''} left';
-    } else if (hours > 0) {
-      return '$hours hour${hours > 1 ? 's' : ''} left';
-    } else {
-      final minutes = difference.inMinutes % 60;
-      return '$minutes minute${minutes > 1 ? 's' : ''} left';
-    }
-  }
-
-  bool get isActive {
-    final now = DateTime.now();
-    return now.isAfter(startDate) && now.isBefore(endDate);
-  }
-
-  bool get isCompleted {
-    return DateTime.now().isAfter(endDate);
-  }
-
-  double get progressPercentage {
-    final now = DateTime.now();
-    if (now.isBefore(startDate)) return 0.0;
-    if (now.isAfter(endDate)) return 1.0;
-    
-    final totalDuration = endDate.difference(startDate).inSeconds;
-    final elapsed = now.difference(startDate).inSeconds;
-    
-    return elapsed / totalDuration;
-  }
-
+  
   factory Challenge.fromJson(Map<String, dynamic> json) {
-    List<ChallengeSubmission> leaderboard = [];
-    if (json['leaderboard'] != null) {
-      leaderboard = (json['leaderboard'] as List)
-          .map((item) => ChallengeSubmission.fromJson(item))
-          .toList();
-    }
-    
     return Challenge(
       id: json['id'],
       title: json['title'],
       description: json['description'],
-      startDate: DateTime.parse(json['startDate']),
-      endDate: DateTime.parse(json['endDate']),
-      challengeType: json['challengeType'],
-      metric: json['metric'],
-      imageUrl: json['imageUrl'],
-      participantCount: json['participantCount'] ?? 0,
-      leaderboard: leaderboard,
-      userSubmission: json['userSubmission'] != null
-          ? ChallengeSubmission.fromJson(json['userSubmission'])
-          : null,
+      category: ChallengeCategory.values.firstWhere(
+        (e) => e.toString() == 'ChallengeCategory.${json['category']}',
+      ),
+      level: json['level'],
+      targetValue: json['targetValue'],
+      unit: json['unit'],
+      deadline: json['deadline'] != null ? DateTime.parse(json['deadline']) : null,
+      isWeekly: json['isWeekly'] ?? false,
+      tips: json['tips'] != null ? List<String>.from(json['tips']) : null,
+      videoUrl: json['videoUrl'],
     );
   }
-
+  
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'title': title,
       'description': description,
-      'startDate': startDate.toIso8601String(),
-      'endDate': endDate.toIso8601String(),
-      'challengeType': challengeType,
-      'metric': metric,
-      'imageUrl': imageUrl,
-      'participantCount': participantCount,
-      'leaderboard': leaderboard.map((submission) => submission.toJson()).toList(),
-      'userSubmission': userSubmission?.toJson(),
+      'category': category.toString().split('.').last,
+      'level': level,
+      'targetValue': targetValue,
+      'unit': unit,
+      'deadline': deadline?.toIso8601String(),
+      'isWeekly': isWeekly,
+      'tips': tips,
+      'videoUrl': videoUrl,
     };
-  }
-
-  String formatMetric(double value) {
-    switch (metric) {
-      case 'time':
-        final minutes = (value / 60).floor();
-        final seconds = (value % 60).floor();
-        return '$minutes:${seconds.toString().padLeft(2, '0')}';
-      case 'distance':
-        if (value >= 1000) {
-          return '${(value / 1000).toStringAsFixed(2)} km';
-        } else {
-          return '${value.toStringAsFixed(0)} m';
-        }
-      case 'count':
-        return value.toStringAsFixed(0);
-      case 'points':
-        return value.toStringAsFixed(0);
-      default:
-        return value.toString();
-    }
   }
 }
 
 @immutable
-class ChallengeSubmission {
-  final String userId;
-  final String userName;
-  final String? userImageUrl;
-  final double value;
-  final DateTime submittedAt;
+class UserChallenge {
+  final String challengeId;
+  final ChallengeStatus status;
+  final int currentValue;
+  final DateTime startedAt;
+  final DateTime? completedAt;
+  final List<ChallengeAttempt>? attempts;
   final int rank;
 
-  const ChallengeSubmission({
-    required this.userId,
-    required this.userName,
-    this.userImageUrl,
-    required this.value,
-    required this.submittedAt,
-    required this.rank,
+  const UserChallenge({
+    required this.challengeId,
+    required this.status,
+    this.currentValue = 0,
+    required this.startedAt,
+    this.completedAt,
+    this.attempts,
+    this.rank = 0,
   });
-
-  factory ChallengeSubmission.fromJson(Map<String, dynamic> json) {
-    return ChallengeSubmission(
-      userId: json['userId'],
-      userName: json['userName'],
-      userImageUrl: json['userImageUrl'],
-      value: json['value'].toDouble(),
-      submittedAt: DateTime.parse(json['submittedAt']),
-      rank: json['rank'],
+  
+  double get progressPercentage {
+    return 0.0;
+  }
+  
+  UserChallenge copyWith({
+    String? challengeId,
+    ChallengeStatus? status,
+    int? currentValue,
+    DateTime? startedAt,
+    DateTime? completedAt,
+    List<ChallengeAttempt>? attempts,
+    int? rank,
+  }) {
+    return UserChallenge(
+      challengeId: challengeId ?? this.challengeId,
+      status: status ?? this.status,
+      currentValue: currentValue ?? this.currentValue,
+      startedAt: startedAt ?? this.startedAt,
+      completedAt: completedAt ?? this.completedAt,
+      attempts: attempts ?? this.attempts,
+      rank: rank ?? this.rank,
     );
   }
-
+  
+  factory UserChallenge.fromJson(Map<String, dynamic> json) {
+    return UserChallenge(
+      challengeId: json['challengeId'],
+      status: ChallengeStatus.values.firstWhere(
+        (e) => e.toString() == 'ChallengeStatus.${json['status']}',
+      ),
+      currentValue: json['currentValue'] ?? 0,
+      startedAt: DateTime.parse(json['startedAt']),
+      completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt']) : null,
+      attempts: json['attempts'] != null
+          ? (json['attempts'] as List).map((e) => ChallengeAttempt.fromJson(e)).toList()
+          : null,
+      rank: json['rank'] ?? 0,
+    );
+  }
+  
   Map<String, dynamic> toJson() {
     return {
-      'userId': userId,
-      'userName': userName,
-      'userImageUrl': userImageUrl,
-      'value': value,
-      'submittedAt': submittedAt.toIso8601String(),
+      'challengeId': challengeId,
+      'status': status.toString().split('.').last,
+      'currentValue': currentValue,
+      'startedAt': startedAt.toIso8601String(),
+      'completedAt': completedAt?.toIso8601String(),
+      'attempts': attempts?.map((e) => e.toJson()).toList(),
       'rank': rank,
+    };
+  }
+}
+
+@immutable
+class ChallengeAttempt {
+  final DateTime timestamp;
+  final int value;
+  final String? notes;
+
+  const ChallengeAttempt({
+    required this.timestamp,
+    required this.value,
+    this.notes,
+  });
+  
+  factory ChallengeAttempt.fromJson(Map<String, dynamic> json) {
+    return ChallengeAttempt(
+      timestamp: DateTime.parse(json['timestamp']),
+      value: json['value'],
+      notes: json['notes'],
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'timestamp': timestamp.toIso8601String(),
+      'value': value,
+      'notes': notes,
     };
   }
 } 

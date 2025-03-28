@@ -411,6 +411,26 @@ class _DayDetailPageState extends State<DayDetailPage> with SingleTickerProvider
                     ),
                   ],
                   
+                  // Performance Rating
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Performance Rating',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      _buildRatingStars(
+                        session.performanceRating ?? 0, 
+                        (rating) => _updateSessionRating(index, rating),
+                      ),
+                    ],
+                  ),
+                  
                   // Pre and Post Training Evaluation section
                   const SizedBox(height: 16),
                   Row(
@@ -441,6 +461,36 @@ class _DayDetailPageState extends State<DayDetailPage> with SingleTickerProvider
     );
   }
   
+  void _updateSessionRating(int sessionIndex, int rating) {
+    setState(() {
+      final updatedSessions = List<TrainingSession>.from(_day.sessions);
+      updatedSessions[sessionIndex] = updatedSessions[sessionIndex].copyWith(
+        performanceRating: rating == updatedSessions[sessionIndex].performanceRating ? null : rating,
+      );
+      _day = _day.copyWith(sessions: updatedSessions);
+    });
+  }
+  
+  Widget _buildRatingStars(int currentRating, Function(int) onRatingChanged) {
+    return Row(
+      children: List.generate(5, (index) {
+        final starValue = index + 1;
+        final isSelected = starValue <= currentRating;
+        return GestureDetector(
+          onTap: () => onRatingChanged(starValue),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Icon(
+              isSelected ? Icons.star : Icons.star_border,
+              color: isSelected ? Colors.amber : Colors.white.withOpacity(0.5),
+              size: 22,
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
   Widget _buildEvaluationSection(TrainingSession session, int sessionIndex, {required bool isPre}) {
     final evaluationType = isPre ? 'Pre-Training' : 'Post-Training';
     final iconData = isPre ? Icons.assignment : Icons.assignment_turned_in;
@@ -774,6 +824,108 @@ class _DayDetailPageState extends State<DayDetailPage> with SingleTickerProvider
                       ],
                     ),
                   ],
+                  
+                  // Description section (if available)
+                  if (match.description != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(
+                                Icons.description,
+                                color: Colors.blue,
+                                size: 16,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Description:',
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            match.description!,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  
+                  // Performance Rating
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Performance Rating',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      _buildRatingStars(
+                        match.performanceRating ?? 0, 
+                        (rating) => _updateMatchRating(index, rating),
+                      ),
+                    ],
+                  ),
+                  
+                  // Pre-match and Post-match notes sections
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildMatchEvaluationSection(
+                          match, 
+                          index, 
+                          isPre: true,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildMatchEvaluationSection(
+                          match, 
+                          index, 
+                          isPre: false,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  // Add Description button if no description
+                  if (match.description == null) ...[
+                    const SizedBox(height: 16),
+                    Center(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showMatchDescriptionDialog(index),
+                        icon: const Icon(Icons.description, size: 16),
+                        label: const Text('Add Match Description'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white70,
+                          side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -781,6 +933,317 @@ class _DayDetailPageState extends State<DayDetailPage> with SingleTickerProvider
         );
       },
     );
+  }
+  
+  void _updateMatchRating(int matchIndex, int rating) {
+    setState(() {
+      final updatedMatches = List<Match>.from(_day.matches);
+      updatedMatches[matchIndex] = updatedMatches[matchIndex].copyWith(
+        performanceRating: rating == updatedMatches[matchIndex].performanceRating ? null : rating,
+      );
+      _day = _day.copyWith(matches: updatedMatches);
+    });
+  }
+  
+  Widget _buildMatchEvaluationSection(Match match, int matchIndex, {required bool isPre}) {
+    final evaluationType = isPre ? 'Pre-Match' : 'Post-Match';
+    final iconData = isPre ? Icons.assignment : Icons.assessment;
+    final colorScheme = isPre ? Colors.amber : Colors.green;
+    
+    // Get the current evaluation text or empty string if not set
+    final evaluationText = isPre 
+        ? (match.preMatchNotes ?? '') 
+        : (match.postMatchAnalysis ?? '');
+    
+    final rating = isPre 
+        ? (match.preMatchRating ?? 0) 
+        : (match.postMatchRating ?? 0);
+    
+    final hasEvaluation = evaluationText.isNotEmpty;
+    
+    return InkWell(
+      onTap: () => _showMatchEvaluationDialog(matchIndex, isPre),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: colorScheme.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: colorScheme.withOpacity(0.3),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  iconData,
+                  color: colorScheme,
+                  size: 16,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  evaluationType,
+                  style: TextStyle(
+                    color: colorScheme,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                if (rating > 0) ...[
+                  Row(
+                    children: List.generate(5, (index) {
+                      return Icon(
+                        index < rating ? Icons.star : Icons.star_border,
+                        color: Colors.amber,
+                        size: 10,
+                      );
+                    }),
+                  ),
+                ] else ... [
+                  Icon(
+                    hasEvaluation ? Icons.check_circle : Icons.add_circle_outline,
+                    color: hasEvaluation ? colorScheme : Colors.grey,
+                    size: 16,
+                  ),
+                ],
+              ],
+            ),
+            if (hasEvaluation) ...[
+              const SizedBox(height: 4),
+              Text(
+                evaluationText,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 12,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ] else ...[
+              const SizedBox(height: 4),
+              Text(
+                'Tap to add...',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.4),
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Future<void> _showMatchDescriptionDialog(int matchIndex) async {
+    final match = _day.matches[matchIndex];
+    final controller = TextEditingController();
+    
+    if (match.description != null) {
+      controller.text = match.description!;
+    }
+    
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.secondaryBackground,
+        title: const Text(
+          'Match Description',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Add details about this match:',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              style: const TextStyle(color: Colors.white),
+              maxLines: 5,
+              decoration: InputDecoration(
+                hintText: 'Enter match details, tactics, or other notes...',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                filled: true,
+                fillColor: Colors.black.withOpacity(0.2),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+            ),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    
+    if (result != null) {
+      setState(() {
+        final updatedMatches = List<Match>.from(_day.matches);
+        updatedMatches[matchIndex] = updatedMatches[matchIndex].copyWith(
+          description: result.isEmpty ? null : result,
+        );
+        _day = _day.copyWith(matches: updatedMatches);
+      });
+    }
+  }
+  
+  Future<void> _showMatchEvaluationDialog(int matchIndex, bool isPre) async {
+    final evaluationType = isPre ? 'Pre-Match' : 'Post-Match';
+    final match = _day.matches[matchIndex];
+    final controller = TextEditingController();
+    int rating = isPre 
+        ? (match.preMatchRating ?? 0) 
+        : (match.postMatchRating ?? 0);
+    
+    if (isPre && match.preMatchNotes != null) {
+      controller.text = match.preMatchNotes!;
+    } else if (!isPre && match.postMatchAnalysis != null) {
+      controller.text = match.postMatchAnalysis!;
+    }
+    
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.secondaryBackground,
+          title: Text(
+            '$evaluationType Evaluation',
+            style: const TextStyle(color: Colors.white),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isPre
+                    ? 'What are your goals for this match?'
+                    : 'How did the match go? What did you learn?',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                style: const TextStyle(color: Colors.white),
+                maxLines: 5,
+                decoration: InputDecoration(
+                  hintText: isPre
+                      ? 'Enter your preparation and strategy...'
+                      : 'Enter your performance analysis and learnings...',
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                  filled: true,
+                  fillColor: Colors.black.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Performance Rating Section - show for both pre and post match
+              Text(
+                isPre ? 'Preparation Rating' : 'Performance Rating',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (index) {
+                  final starValue = index + 1;
+                  final isSelected = starValue <= rating;
+                  return GestureDetector(
+                    onTap: () {
+                      setDialogState(() {
+                        rating = starValue == rating ? 0 : starValue;
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Icon(
+                        isSelected ? Icons.star : Icons.star_border,
+                        color: isSelected ? Colors.amber : Colors.white.withOpacity(0.5),
+                        size: 28,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, {
+                'notes': controller.text,
+                'rating': rating,
+              }),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+    
+    if (result != null) {
+      setState(() {
+        final updatedMatches = List<Match>.from(_day.matches);
+        if (isPre) {
+          updatedMatches[matchIndex] = updatedMatches[matchIndex].copyWith(
+            preMatchNotes: result['notes'].isEmpty ? null : result['notes'],
+            preMatchRating: result['rating'] == 0 ? null : result['rating'],
+          );
+        } else {
+          updatedMatches[matchIndex] = updatedMatches[matchIndex].copyWith(
+            postMatchAnalysis: result['notes'].isEmpty ? null : result['notes'],
+            postMatchRating: result['rating'] == 0 ? null : result['rating'],
+          );
+        }
+        _day = _day.copyWith(matches: updatedMatches);
+      });
+    }
   }
 
   Widget _buildGoalsTab() {

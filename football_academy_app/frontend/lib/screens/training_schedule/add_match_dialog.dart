@@ -15,6 +15,7 @@ class _AddMatchDialogState extends State<AddMatchDialog> {
   final _opponentController = TextEditingController();
   final _locationController = TextEditingController();
   final _competitionController = TextEditingController();
+  final _descriptionController = TextEditingController();
   
   bool _isHomeGame = true;
   DateTime _dateTime = DateTime.now();
@@ -24,6 +25,7 @@ class _AddMatchDialogState extends State<AddMatchDialog> {
     _opponentController.dispose();
     _locationController.dispose();
     _competitionController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
   
@@ -94,6 +96,9 @@ class _AddMatchDialogState extends State<AddMatchDialog> {
             : null,
         competition: _competitionController.text.isNotEmpty 
             ? _competitionController.text 
+            : null,
+        description: _descriptionController.text.isNotEmpty 
+            ? _descriptionController.text 
             : null,
       );
       
@@ -285,6 +290,48 @@ class _AddMatchDialogState extends State<AddMatchDialog> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+                
+                // Description field
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.description,
+                          color: Colors.blue,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Description',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _descriptionController,
+                      style: const TextStyle(color: Colors.white),
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText: "Describe match details, tactics, opponents, etc...",
+                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
+                        filled: true,
+                        fillColor: Colors.black.withOpacity(0.2),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                
                 const SizedBox(height: 24),
                 
                 // Action buttons

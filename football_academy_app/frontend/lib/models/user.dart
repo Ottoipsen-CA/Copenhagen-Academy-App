@@ -19,6 +19,11 @@ class User {
     this.isCoach = false,
   });
 
+  String get firstName => fullName.split(' ').first;
+  String get lastName => fullName.split(' ').length > 1 
+      ? fullName.split(' ').skip(1).join(' ') 
+      : '';
+
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],

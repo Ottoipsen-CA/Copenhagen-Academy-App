@@ -14,8 +14,7 @@ import 'dart:math' as math;
 
 // Import pages
 import '../badges/badges_page.dart';
-import '../challenges/weekly_challenge_page.dart';
-import '../challenges/challenge_leaderboard_page.dart';
+import '../challenges/challenges_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -27,13 +26,13 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   User? _user;
   PlayerStats? _playerStats;
-  Challenge? _activeChallenge;
+  Challenge? _weeklyChallenge;
+  UserChallenge? _userWeeklyChallenge;
   List<UserBadge> _badges = [];
   bool _isLoading = true;
   String? _errorMessage;
   int _xpProgress = 440;
   int _xpTarget = 1200;
-  late ChallengeService _challengeService;
 
   @override
   void initState() {
@@ -49,7 +48,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      _challengeService = ChallengeService();
       
       // Load user data
       final user = await authService.getCurrentUser();
@@ -67,16 +65,35 @@ class _DashboardPageState extends State<DashboardPage> {
         overallRating: 70,
       );
       
+      // Initialize challenges
+      await ChallengeService.initializeUserChallenges();
+      
       // Load active challenge
-      final activeChallenge = await _challengeService.getActiveWeeklyChallenge();
+      final weeklyChallenge = await ChallengeService.getWeeklyChallenge();
+      
+      // Load user challenge status
+      UserChallenge? userWeeklyChallenge;
+      if (weeklyChallenge != null) {
+        final userChallenges = await ChallengeService.getUserChallenges();
+        userWeeklyChallenge = userChallenges.firstWhere(
+          (uc) => uc.challengeId == weeklyChallenge.id,
+          orElse: () => UserChallenge(
+            challengeId: weeklyChallenge.id,
+            status: ChallengeStatus.available,
+            startedAt: DateTime.now(),
+          ),
+        );
+      }
       
       // Load badges (just get the top 4 for dashboard)
-      final badges = await _challengeService.getUserBadges();
+      // TODO: Implement proper badges
+      final badges = <UserBadge>[];
       
       setState(() {
         _user = user;
         _playerStats = playerStats;
-        _activeChallenge = activeChallenge;
+        _weeklyChallenge = weeklyChallenge;
+        _userWeeklyChallenge = userWeeklyChallenge;
         _badges = badges;
         _isLoading = false;
       });
@@ -202,167 +219,51 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                       ),
                       Text(
-                        '${_user!.fullName.split(' ')[0]}!',
+                        _user!.firstName,
                         style: const TextStyle(
-                          fontSize: 48,
+                          fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFFFD700), // Gold color
+                          color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 30),
-                      
-                      // XP Bar Section
-                      const Text(
-                        'XP BAR',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFFFD700), // Gold color
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      
-                      // XP Progress Bar
-                      LinearProgressIndicator(
-                        value: _xpProgress / _xpTarget,
-                        backgroundColor: Colors.white.withOpacity(0.2),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
-                        minHeight: 18,
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Progression',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            '$_xpProgress/$_xpTarget',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
+                      const SizedBox(height: 16),
+                      // XP Progress bar
+                      _buildXpProgressBar(),
                     ],
                   ),
                 ),
               ],
             ),
             
-            const SizedBox(height: 30),
+            const SizedBox(height: 24),
             
-            // Weekly Challenge Section
+            // Weekly Challenge
             _buildWeeklyChallengeCard(),
             
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             
-            // Badges Section
-            _buildBadgesSection(),
-            
-            const SizedBox(height: 30),
-            
-            // Performance Analysis with Radar Chart
-            Card(
-              color: Colors.transparent,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: const BorderSide(color: Color(0xFF3D007A), width: 2),
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: const Color(0xFF0B0057).withOpacity(0.6),
+            // Stats and badges
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Radar chart - left side
+                Expanded(
+                  flex: 3,
+                  child: _buildStatsCard(),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Player Performance & Skills',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Three-column layout: Player Info, Radar Chart, Challenges
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Left column - Player Progression
-                        Expanded(
-                          flex: 3,
-                          child: _buildPlayerProgressionColumn(),
-                        ),
-                        
-                        // Center column - Radar Chart
-                        Expanded(
-                          flex: 4,
-                          child: Column(
-                            children: [
-                              SizedBox(
-                                height: 250,
-                                child: PlayerStatsRadarChart(
-                                  stats: _playerStats!,
-                                  labelColors: const {
-                                    'PACE': Color(0xFF02D39A),
-                                    'SHOOTING': Color(0xFFFFD700),
-                                    'PASSING': Color(0xFF00ACF3),
-                                    'DRIBBLING': Color(0xFFBE008C),
-                                    'DEFENSE': Color(0xFF3875B9),
-                                    'PHYSICAL': Color(0xFFD48A29),
-                                  },
-                                ),
-                              ),
-                              // Stat Rating explanation
-                              const Center(
-                                child: Text(
-                                  'Your skill ratings by area',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        
-                        // Right column - Skill bars
-                        Expanded(
-                          flex: 3,
-                          child: _buildSkillProgressBars(),
-                        ),
-                      ],
-                    ),
-                  ],
+                const SizedBox(width: 16),
+                // Badges - right side
+                Expanded(
+                  flex: 2,
+                  child: _buildBadgesSection(),
                 ),
-              ),
+              ],
             ),
             
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             
-            // Challenge Winners Section
-            _buildChallengeWinnersSection(),
-            
-            const SizedBox(height: 20),
-            
-            // Recent activities
-            _buildRecentActivitiesCard(),
-            
-            const SizedBox(height: 40),
+            // Performance data
+            _buildPerformanceSection(),
           ],
         ),
       ),
@@ -370,128 +271,102 @@ class _DashboardPageState extends State<DashboardPage> {
   }
   
   Widget _buildWeeklyChallengeCard() {
-    if (_activeChallenge == null) {
+    if (_weeklyChallenge == null) {
       return Card(
         elevation: 3,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16.0),
         ),
-        color: Colors.black.withOpacity(0.5),
+        color: const Color(0xFF1E1E1E),
         child: const Padding(
           padding: EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Weekly Challenge',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+          child: Center(
+            child: Text(
+              'No active weekly challenge',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
               ),
-              SizedBox(height: 8),
-              Text(
-                'No active challenge at the moment.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white70,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Check back soon for new challenges!',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white70,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       );
     }
-
+    
+    // Calculate progress
+    final progress = _userWeeklyChallenge != null 
+        ? _userWeeklyChallenge!.currentValue / _weeklyChallenge!.targetValue 
+        : 0.0;
+    final isCompleted = _userWeeklyChallenge?.status == ChallengeStatus.completed;
+    
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.0),
       ),
-      color: Colors.black.withOpacity(0.5),
+      color: const Color(0xFF1E1E1E),
       child: InkWell(
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => WeeklyChallengePage(challenge: _activeChallenge!),
+              builder: (context) => ChallengesPage(),
             ),
           );
         },
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.0),
         child: Stack(
           children: [
-            // Card content
+            // Content
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Header
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFD700).withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(0xFFFFD700).withOpacity(0.5),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.star,
-                              color: Color(0xFFFFD700),
-                              size: 14,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'WEEKLY CHALLENGE',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFFFFD700),
-                              ),
-                            ),
-                          ],
+                      const Icon(
+                        Icons.star,
+                        color: Color(0xFFFFD700),
+                        size: 24,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'WEEKLY CHALLENGE',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFFFD700),
+                          letterSpacing: 1.0,
                         ),
                       ),
                       const Spacer(),
-                      Text(
-                        _activeChallenge!.timeRemaining,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white70,
+                      if (_weeklyChallenge!.deadline != null) ...[
+                        Text(
+                          _getRemainingDays(_weeklyChallenge!.deadline!),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
+                  
                   const SizedBox(height: 12),
                   Text(
-                    _activeChallenge!.title,
+                    _weeklyChallenge!.title,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
+                  
                   const SizedBox(height: 8),
                   Text(
-                    _activeChallenge!.description,
+                    _weeklyChallenge!.description,
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.white70,
@@ -499,42 +374,45 @@ class _DashboardPageState extends State<DashboardPage> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  
                   const SizedBox(height: 16),
+                  
+                  // Stats
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Participants count
+                      // Participants info
                       Row(
                         children: [
                           const Icon(
                             Icons.people,
-                            color: Colors.white60,
-                            size: 16,
+                            color: Colors.white54,
+                            size: 14,
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${_activeChallenge!.participantCount} participants',
+                            'Target: ${_weeklyChallenge!.targetValue} ${_weeklyChallenge!.unit}',
                             style: const TextStyle(
                               fontSize: 12,
-                              color: Colors.white60,
+                              color: Colors.white54,
                             ),
                           ),
                         ],
                       ),
+                      
                       const Spacer(),
+                      
                       // User status
-                      if (_activeChallenge!.userSubmission != null)
-                        // Already submitted
+                      if (isCompleted) 
+                        // Completed
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
-                            vertical: 4,
+                            vertical: 2,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.green.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.green.withOpacity(0.5),
-                            ),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             children: [
@@ -544,9 +422,9 @@ class _DashboardPageState extends State<DashboardPage> {
                                 size: 12,
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                'SUBMITTED',
-                                style: const TextStyle(
+                              const Text(
+                                'COMPLETED',
+                                style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.green,
@@ -555,31 +433,58 @@ class _DashboardPageState extends State<DashboardPage> {
                             ],
                           ),
                         )
-                      else
-                        // Not submitted yet
+                      else if (_userWeeklyChallenge?.status == ChallengeStatus.inProgress)
+                        // In progress
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
-                            vertical: 4,
+                            vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.orange.withOpacity(0.5),
-                            ),
+                            color: Colors.blue.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             children: [
                               const Icon(
-                                Icons.access_time,
-                                color: Colors.orange,
+                                Icons.show_chart,
+                                color: Colors.blue,
                                 size: 12,
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                'PARTICIPATE',
+                                '${(progress * 100).toInt()}%',
                                 style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        // Not started
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.play_arrow,
+                                color: Colors.orange,
+                                size: 12,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'START',
+                                style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.orange,
@@ -594,22 +499,52 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
             
-            // Progress indicator at the bottom
+            // Progress bar at the bottom
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              child: LinearProgressIndicator(
-                value: _activeChallenge!.progressPercentage,
-                backgroundColor: Colors.transparent,
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
-                minHeight: 3,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
+                child: LinearProgressIndicator(
+                  value: progress.clamp(0.0, 1.0),
+                  backgroundColor: Colors.transparent,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    isCompleted ? Colors.green : const Color(0xFFFFD700)
+                  ),
+                  minHeight: 4,
+                ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+  
+  String _getRemainingDays(DateTime deadline) {
+    final now = DateTime.now();
+    final difference = deadline.difference(now);
+    
+    if (difference.isNegative) {
+      return 'Expired';
+    }
+    
+    final days = difference.inDays;
+    if (days > 0) {
+      return '$days day${days > 1 ? 's' : ''} left';
+    }
+    
+    final hours = difference.inHours;
+    if (hours > 0) {
+      return '$hours hour${hours > 1 ? 's' : ''} left';
+    }
+    
+    final minutes = difference.inMinutes;
+    return '$minutes minute${minutes > 1 ? 's' : ''} left';
   }
   
   Widget _buildBadgesSection() {
@@ -721,14 +656,17 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
   
-  Widget _buildChallengeWinnersSection() {
-    // Check if we have a leaderboard in the active challenge
-    if (_activeChallenge == null || _activeChallenge!.leaderboard.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    
-    final topThree = _activeChallenge!.leaderboard.take(3).toList();
-    
+  Widget _buildXpProgressBar() {
+    return LinearProgressIndicator(
+      value: _xpProgress / _xpTarget,
+      backgroundColor: Colors.white.withOpacity(0.2),
+      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
+      minHeight: 18,
+      borderRadius: BorderRadius.circular(9),
+    );
+  }
+
+  Widget _buildStatsCard() {
     return Card(
       color: Colors.transparent,
       elevation: 0,
@@ -737,7 +675,7 @@ class _DashboardPageState extends State<DashboardPage> {
         side: const BorderSide(color: Color(0xFF3D007A), width: 2),
       ),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           color: const Color(0xFF0B0057).withOpacity(0.6),
@@ -745,179 +683,68 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text(
+              'Player Performance & Skills',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+            
+            // Three-column layout: Player Info, Radar Chart, Challenges
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.emoji_events,
-                      color: Color(0xFFFFD700),
-                      size: 24,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_activeChallenge!.title} Leaders',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
+                // Left column - Player Progression
+                Expanded(
+                  flex: 3,
+                  child: _buildPlayerProgressionColumn(),
                 ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChallengeLeaderboardPage(challenge: _activeChallenge!),
-                      ),
-                    );
-                  },
-                  child: Row(
-                    children: const [
-                      Text(
-                        'Full Leaderboard',
-                        style: TextStyle(
-                          color: Color(0xFFFFA500),
-                          fontWeight: FontWeight.bold,
+                
+                // Center column - Radar Chart
+                Expanded(
+                  flex: 4,
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 250,
+                        child: PlayerStatsRadarChart(
+                          stats: _playerStats!,
+                          labelColors: const {
+                            'PACE': Color(0xFF02D39A),
+                            'SHOOTING': Color(0xFFFFD700),
+                            'PASSING': Color(0xFF00ACF3),
+                            'DRIBBLING': Color(0xFFBE008C),
+                            'DEFENSE': Color(0xFF3875B9),
+                            'PHYSICAL': Color(0xFFD48A29),
+                          },
                         ),
                       ),
-                      SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward,
-                        color: Color(0xFFFFA500),
-                        size: 16,
+                      // Stat Rating explanation
+                      const Center(
+                        child: Text(
+                          'Your skill ratings by area',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
+                
+                // Right column - Skill bars
+                Expanded(
+                  flex: 3,
+                  child: _buildSkillProgressBars(),
+                ),
               ],
             ),
-            const SizedBox(height: 16),
-            
-            // Leaderboard entries
-            ...topThree.map((submission) => _buildLeaderboardEntry(submission)),
-            
-            // User position if not in top 3
-            if (_activeChallenge!.userSubmission != null && 
-                _activeChallenge!.userSubmission!.rank > 3)
-              Column(
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: Divider(
-                      color: Color(0xFF3D007A),
-                      thickness: 1,
-                    ),
-                  ),
-                  _buildLeaderboardEntry(_activeChallenge!.userSubmission!, isUser: true),
-                ],
-              ),
           ],
         ),
-      ),
-    );
-  }
-  
-  Widget _buildLeaderboardEntry(ChallengeSubmission submission, {bool isUser = false}) {
-    final rankColors = {
-      1: const Color(0xFFFFD700), // Gold
-      2: const Color(0xFFC0C0C0), // Silver
-      3: const Color(0xFFCD7F32), // Bronze
-    };
-    
-    final rankColor = rankColors[submission.rank] ?? Colors.white.withOpacity(0.7);
-    
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          // Rank
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: rankColor.withOpacity(0.2),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: rankColor,
-                width: 1,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                '${submission.rank}',
-                style: TextStyle(
-                  color: rankColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          
-          // User avatar
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withOpacity(0.2),
-              image: submission.userImageUrl != null
-                  ? DecorationImage(
-                      image: NetworkImage(submission.userImageUrl!),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-            ),
-            child: submission.userImageUrl == null
-                ? Center(
-                    child: Text(
-                      submission.userName.substring(0, 1),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  )
-                : null,
-          ),
-          const SizedBox(width: 12),
-          
-          // Name and score
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  submission.userName,
-                  style: TextStyle(
-                    color: isUser ? Colors.green : Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                Text(
-                  'Score: ${submission.value}',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Rank icon for top 3
-          if (submission.rank <= 3)
-            Icon(
-              Icons.emoji_events,
-              color: rankColor,
-              size: 24,
-            ),
-        ],
       ),
     );
   }
@@ -1209,7 +1036,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildRecentActivitiesCard() {
+  Widget _buildPerformanceSection() {
     return Card(
       color: Colors.transparent,
       elevation: 0,
