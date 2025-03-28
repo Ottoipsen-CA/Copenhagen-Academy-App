@@ -9,13 +9,13 @@ class LandingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.blue.shade800,
-              Colors.blue.shade600,
+              Color(0xFF0B0057), // Dark purple
+              Color(0xFF3D007A), // Medium purple
             ],
           ),
         ),
@@ -27,27 +27,43 @@ class LandingPage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Logo and app name
-                  const Icon(
-                    Icons.sports_soccer,
-                    size: 80,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Football Academy',
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withOpacity(0.1),
+                    ),
+                    child: const Icon(
+                      Icons.sports_soccer,
+                      size: 80,
                       color: Colors.white,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 24),
                   const Text(
-                    'Train. Develop. Excel.',
+                    'Copenhagen Academy',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
                       color: Colors.white,
-                      fontWeight: FontWeight.w300,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: const Text(
+                      'Træn og bliv spillets legende',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w300,
+                        letterSpacing: 1.5,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 60),
@@ -55,7 +71,7 @@ class LandingPage extends StatelessWidget {
                   // Login button
                   SizedBox(
                     width: double.infinity,
-                    height: 54,
+                    height: 56,
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.push(
@@ -67,27 +83,28 @@ class LandingPage extends StatelessWidget {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: Colors.blue.shade800,
-                        elevation: 0,
+                        foregroundColor: const Color(0xFF3D007A),
+                        elevation: 3,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                       child: const Text(
                         'LOGIN',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   
                   // Register button
                   SizedBox(
                     width: double.infinity,
-                    height: 54,
+                    height: 56,
                     child: OutlinedButton(
                       onPressed: () {
                         Navigator.push(
@@ -99,16 +116,18 @@ class LandingPage extends StatelessWidget {
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
+                        backgroundColor: Colors.white.withOpacity(0.1),
                         side: const BorderSide(color: Colors.white, width: 2),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                       child: const Text(
                         'SIGN UP',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
                         ),
                       ),
                     ),
@@ -116,12 +135,20 @@ class LandingPage extends StatelessWidget {
                   const SizedBox(height: 40),
                   
                   // Terms and privacy text
-                  const Text(
-                    'By continuing, you agree to our Terms of Service and Privacy Policy',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'By continuing, you agree to our Terms of Service and Privacy Policy',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ],

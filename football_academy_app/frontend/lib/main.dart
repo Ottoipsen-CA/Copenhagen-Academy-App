@@ -10,6 +10,7 @@ import 'screens/dashboard/dashboard_page.dart';
 import 'screens/exercises/exercises_page.dart';
 import 'screens/training_schedule/training_schedule_page.dart';
 import 'screens/challenges/challenges_page.dart';
+import 'screens/league_table/league_table_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,27 +56,26 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Football Academy',
+      title: 'Copenhagen Academy',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1A1A2E)),
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
         ),
+        fontFamily: 'Roboto',
       ),
-      initialRoute: '/',
+      initialRoute: '/landing',
       routes: {
-        '/': (context) => const SplashScreen(),
+        '/landing': (context) => const LandingPage(),
         '/dashboard': (context) => const DashboardPage(),
         '/exercises': (context) => const ExercisesPage(),
-        '/training-schedule': (context) => const TrainingSchedulePage(),
         '/challenges': (context) => const ChallengesPage(),
+        '/training-schedule': (context) => const TrainingSchedulePage(),
+        '/league-table': (context) => const LeagueTablePage(),
       },
     );
   }
@@ -120,13 +120,13 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.blue.shade800,
-              Colors.blue.shade600,
+              Color(0xFF0B0057), // Dark purple
+              Color(0xFF3D007A), // Medium purple
             ],
           ),
         ),
@@ -141,10 +141,19 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
               SizedBox(height: 16),
               Text(
-                'Football Academy',
+                'Copenhagen Academy',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Træn og bliv spillets legende',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w300,
                   color: Colors.white,
                 ),
               ),
