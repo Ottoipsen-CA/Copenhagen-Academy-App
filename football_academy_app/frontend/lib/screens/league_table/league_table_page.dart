@@ -8,8 +8,7 @@ import 'dart:math' as math;
 
 enum ViewMode {
   leagueTable,
-  players,
-  challenges
+  players
 }
 
 class LeagueTablePage extends StatefulWidget {
@@ -43,7 +42,7 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_handleTabChange);
     _loadData();
   }
@@ -64,9 +63,6 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
             break;
           case 1:
             _viewMode = ViewMode.players;
-            break;
-          case 2:
-            _viewMode = ViewMode.challenges;
             break;
         }
         _loadData();
@@ -95,9 +91,6 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
             final positionList = _positionMappings[_selectedPosition] ?? [];
             players = players.where((player) => positionList.contains(player.user.position)).toList();
           }
-          break;
-        case ViewMode.challenges:
-          players = await LeagueTableService.getTopChallengePerformers();
           break;
       }
       
@@ -138,7 +131,6 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
           tabs: const [
             Tab(text: 'LEAGUE TABLE'),
             Tab(text: 'PLAYERS'),
-            Tab(text: 'CHALLENGES'),
           ],
         ),
       ),
@@ -171,7 +163,6 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
       children: [
         _buildLeagueTableTab(),
         _buildPlayersTab(),
-        _buildChallengesTab(),
       ],
     );
   }
@@ -400,65 +391,6 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
               ),
         ),
       ],
-    );
-  }
-  
-  Widget _buildChallengesTab() {
-    return Scrollbar(
-      thumbVisibility: true,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: _players.length,
-        itemBuilder: (context, index) {
-          final player = _players[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 12.0),
-            color: Colors.white.withOpacity(0.15),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: _getLeaderColor(index),
-                child: Text(
-                  '${index + 1}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              title: Text(
-                player.user.fullName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              subtitle: Text(
-                '${player.user.position ?? 'Player'} · ${player.user.currentClub ?? ''}',
-                style: const TextStyle(
-                  color: Colors.white70,
-                ),
-              ),
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.purple.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  '${player.challengePoints} points',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
   
