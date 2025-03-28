@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
-import 'screens/auth/landing_page.dart';
+import 'screens/auth/login_page.dart';
 import 'screens/dashboard/dashboard_page.dart';
 import 'screens/exercises/exercises_page.dart';
 import 'screens/training_schedule/training_schedule_page.dart';
@@ -70,9 +70,9 @@ class MyApp extends StatelessWidget {
         ),
         fontFamily: 'Roboto',
       ),
-      initialRoute: '/landing',
+      initialRoute: '/login',
       routes: {
-        '/landing': (context) => const LandingPage(),
+        '/login': (context) => const LoginPage(),
         '/dashboard': (context) => const DashboardPage(),
         '/exercises': (context) => const ExercisesPage(),
         '/challenges': (context) => const ChallengesPage(),
@@ -115,7 +115,7 @@ class _SplashScreenState extends State<SplashScreen> {
       );
     } else {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LandingPage()),
+        MaterialPageRoute(builder: (context) => const LoginPage()),
       );
     }
   }

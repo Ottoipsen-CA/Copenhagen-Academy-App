@@ -6,6 +6,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final bool hasBackButton;
   final Color? backgroundColor;
+  final VoidCallback? onBackPressed;
   
   const CustomAppBar({
     Key? key,
@@ -13,6 +14,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.hasBackButton = true,
     this.backgroundColor,
+    this.onBackPressed,
   }) : super(key: key);
   
   @override
@@ -34,7 +36,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 Icons.arrow_back,
                 color: Colors.white,
               ),
-              onPressed: () => Navigator.pop(context),
+              onPressed: onBackPressed ?? () => Navigator.pop(context),
             )
           : Builder(
               builder: (context) => IconButton(

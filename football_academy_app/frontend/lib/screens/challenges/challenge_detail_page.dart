@@ -228,22 +228,30 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Close',
-              style: TextStyle(color: Colors.white70),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/player-stats');
-            },
-            child: const Text(
-              'View Stats',
-              style: TextStyle(color: Colors.white),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.of(context).pushReplacementNamed('/challenges'); // Go back to challenges
+                },
+                child: const Text(
+                  'Back to Challenges',
+                  style: TextStyle(color: Colors.white70),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pushNamed(context, '/player-stats'); // Navigate to stats without replacing current route
+                },
+                child: const Text(
+                  'View Stats',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -259,6 +267,18 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
     return Scaffold(
       appBar: CustomAppBar(
         title: _challenge.isWeekly ? 'Weekly Challenge' : 'Challenge',
+        hasBackButton: true,
+        onBackPressed: () {
+          Navigator.of(context).pushReplacementNamed('/challenges');
+        },
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home, color: Colors.white),
+            onPressed: () {
+              Navigator.of(context).pushReplacementNamed('/dashboard');
+            },
+          ),
+        ],
       ),
       body: GradientBackground(
         child: SingleChildScrollView(
