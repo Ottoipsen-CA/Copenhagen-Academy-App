@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../screens/dashboard/dashboard_page.dart';
 import '../screens/auth/landing_page.dart';
+import '../screens/training/training_plans_page.dart';
+import '../screens/exercises/exercises_page.dart';
 
 class CustomNavigationDrawer extends StatelessWidget {
   final String currentPage;
@@ -83,42 +85,84 @@ class CustomNavigationDrawer extends StatelessWidget {
     );
   }
 
+  Widget _buildLogo(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        shape: BoxShape.circle,
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: size * 0.4,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(size * 0.5),
+                  topRight: Radius.circular(size * 0.5),
+                ),
+              ),
+            ),
+          ),
+          
+          Positioned(
+            bottom: size * 0.1,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                5,
+                (index) => Padding(
+                  padding: EdgeInsets.symmetric(horizontal: size * 0.01),
+                  child: Icon(
+                    Icons.star,
+                    color: Colors.white,
+                    size: size * 0.1,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDrawerHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 50, 16, 20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF0B0057), // Dark blue/purple
+            Color(0xFF1C006C), // Mid purple
+          ],
+        ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white,
-                width: 2,
-              ),
-            ),
-            child: const Icon(
-              Icons.sports_soccer,
-              size: 40,
-              color: Colors.blueAccent,
-            ),
-          ),
+          _buildLogo(70),
           const SizedBox(height: 12),
           const Text(
-            'Football Academy',
+            'COPENHAGEN ACADEMY',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           const Text(
             'Develop your football skills',
             style: TextStyle(
@@ -213,34 +257,42 @@ class CustomNavigationDrawer extends StatelessWidget {
     );
   }
 
-  void _navigateTo(BuildContext context, String page) {
-    Navigator.pop(context); // Close the drawer
+  void _navigateTo(BuildContext context, String routeName) {
+    // Close the drawer
+    Navigator.pop(context);
     
-    // Check if we're already on the target page to avoid unnecessary navigation
-    if (currentPage == page) return;
-    
-    switch (page) {
-      case 'dashboard':
-        Navigator.pushReplacementNamed(context, '/dashboard');
-        break;
-      case 'training':
-        Navigator.pushReplacementNamed(context, '/training');
-        break;
-      case 'exercises':
-        Navigator.pushReplacementNamed(context, '/exercises');
-        break;
-      case 'achievements':
-        Navigator.pushReplacementNamed(context, '/achievements');
-        break;
-      case 'chat':
-        Navigator.pushReplacementNamed(context, '/chat');
-        break;
-      case 'profile':
-        Navigator.pushReplacementNamed(context, '/profile');
-        break;
-      case 'settings':
-        Navigator.pushReplacementNamed(context, '/settings');
-        break;
+    // If not already on the page, navigate to it
+    if (currentPage != routeName) {
+      switch (routeName) {
+        case 'dashboard':
+          Navigator.pushReplacement(
+            context, 
+            MaterialPageRoute(builder: (context) => const DashboardPage())
+          );
+          break;
+        case 'exercises':
+          Navigator.pushReplacement(
+            context, 
+            MaterialPageRoute(builder: (context) => const ExercisesPage())
+          );
+          break;
+        case 'training':
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const TrainingPlansPage(),
+            ),
+          );
+          break;
+        default:
+          // For pages without dedicated screens yet
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$routeName page is coming soon!'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+      }
     }
   }
 } 

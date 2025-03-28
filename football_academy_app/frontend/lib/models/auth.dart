@@ -1,3 +1,5 @@
+import '../models/user.dart';
+
 class AuthResponse {
   final String accessToken;
   final String tokenType;
@@ -58,5 +60,25 @@ class RegisterRequest {
       'current_club': currentClub,
       'date_of_birth': dateOfBirth?.toIso8601String(),
     };
+  }
+}
+
+class LoginResponse {
+  final String accessToken;
+  final String refreshToken;
+  final User user;
+
+  LoginResponse({
+    required this.accessToken,
+    required this.refreshToken,
+    required this.user,
+  });
+
+  factory LoginResponse.fromJson(Map<String, dynamic> json) {
+    return LoginResponse(
+      accessToken: json['access_token'],
+      refreshToken: json['refresh_token'],
+      user: User.fromJson(json['user']),
+    );
   }
 } 

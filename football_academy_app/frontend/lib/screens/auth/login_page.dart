@@ -29,40 +29,32 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      
-      await authService.login(
-        LoginRequest(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        ),
-      );
-      
-      if (!mounted) return;
-      
-      // Navigate to dashboard
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const DashboardPage(),
-        ),
-      );
-    } catch (e) {
+    if (_formKey.currentState!.validate()) {
       setState(() {
-        _errorMessage = 'Invalid email or password. Please try again.';
+        _isLoading = true;
+        _errorMessage = null;
       });
-    } finally {
-      if (mounted) {
+
+      try {
+        final authService = Provider.of<AuthService>(context, listen: false);
+        await authService.login(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+        
+        if (context.mounted) {
+          Navigator.pushReplacementNamed(context, '/dashboard');
+        }
+      } catch (e) {
         setState(() {
-          _isLoading = false;
+          _errorMessage = e.toString();
         });
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }

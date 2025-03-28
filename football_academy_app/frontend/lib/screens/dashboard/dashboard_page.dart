@@ -45,7 +45,7 @@ class _DashboardPageState extends State<DashboardPage> {
       // TODO: Implement loading player stats from API
       // For now, we'll use sample data
       final playerStats = PlayerStats(
-        playerId: user.id!,
+        playerId: int.parse(user.id!),
         pace: 75,
         shooting: 68,
         passing: 72,
@@ -72,7 +72,14 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildLogo(36),
+            const SizedBox(width: 10),
+            const Text('Copenhagen Academy'),
+          ],
+        ),
         centerTitle: true,
         backgroundColor: const Color(0xFF0B0057),
         leading: Builder(
@@ -123,6 +130,79 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _buildLogo(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        shape: BoxShape.circle,
+      ),
+      child: Stack(
+        children: [
+          // Soccer ball top part
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: size * 0.4,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(size * 0.5),
+                  topRight: Radius.circular(size * 0.5),
+                ),
+              ),
+            ),
+          ),
+          
+          // Text placeholders for "COPENHAGEN" and "ACADEMY"
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(height: size * 0.05),
+                Container(
+                  width: size * 0.7,
+                  height: size * 0.07,
+                  color: Colors.transparent,
+                ),
+                SizedBox(height: size * 0.05),
+                Container(
+                  width: size * 0.7,
+                  height: size * 0.07,
+                  color: Colors.transparent,
+                ),
+              ],
+            ),
+          ),
+          
+          // Stars at the bottom
+          Positioned(
+            bottom: size * 0.1,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                5,
+                (index) => Padding(
+                  padding: EdgeInsets.symmetric(horizontal: size * 0.01),
+                  child: Icon(
+                    Icons.star,
+                    color: Colors.white,
+                    size: size * 0.1,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDashboardContent() {
     return RefreshIndicator(
       onRefresh: _loadUserData,
@@ -132,7 +212,27 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome message
+            // Welcome message with Academy Logo
+            Center(
+              child: Column(
+                children: [
+                  _buildLogo(80),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'COPENHAGEN ACADEMY',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+            
+            // Player Card and Welcome Section
             Row(
               children: [
                 // FIFA Player Card - Left corner

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Exercise {
   final String? id;
   final String title;
@@ -9,9 +11,9 @@ class Exercise {
   final int durationMinutes;
   final List<String>? equipment;
   final List<String>? skills;
+  final bool isFavorite;
   final String? createdBy;
   final DateTime? createdAt;
-  final bool isFavorite;
 
   Exercise({
     this.id,
@@ -24,52 +26,12 @@ class Exercise {
     required this.durationMinutes,
     this.equipment,
     this.skills,
+    this.isFavorite = false,
     this.createdBy,
     this.createdAt,
-    this.isFavorite = false,
   });
 
-  factory Exercise.fromJson(Map<String, dynamic> json) {
-    return Exercise(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      category: json['category'],
-      difficulty: json['difficulty'],
-      videoUrl: json['videoUrl'],
-      imageUrl: json['imageUrl'],
-      durationMinutes: json['durationMinutes'],
-      equipment: json['equipment'] != null
-          ? List<String>.from(json['equipment'])
-          : null,
-      skills:
-          json['skills'] != null ? List<String>.from(json['skills']) : null,
-      createdBy: json['createdBy'],
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : null,
-      isFavorite: json['isFavorite'] ?? false,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'description': description,
-      'category': category,
-      'difficulty': difficulty,
-      'videoUrl': videoUrl,
-      'imageUrl': imageUrl,
-      'durationMinutes': durationMinutes,
-      'equipment': equipment,
-      'skills': skills,
-      'createdBy': createdBy,
-      'createdAt': createdAt?.toIso8601String(),
-      'isFavorite': isFavorite,
-    };
-  }
-
+  // Create a copy of the exercise with some fields replaced
   Exercise copyWith({
     String? id,
     String? title,
@@ -81,9 +43,9 @@ class Exercise {
     int? durationMinutes,
     List<String>? equipment,
     List<String>? skills,
+    bool? isFavorite,
     String? createdBy,
     DateTime? createdAt,
-    bool? isFavorite,
   }) {
     return Exercise(
       id: id ?? this.id,
@@ -96,9 +58,53 @@ class Exercise {
       durationMinutes: durationMinutes ?? this.durationMinutes,
       equipment: equipment ?? this.equipment,
       skills: skills ?? this.skills,
+      isFavorite: isFavorite ?? this.isFavorite,
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt ?? this.createdAt,
-      isFavorite: isFavorite ?? this.isFavorite,
     );
+  }
+
+  // Create an exercise from JSON
+  factory Exercise.fromJson(Map<String, dynamic> json) {
+    return Exercise(
+      id: json['id']?.toString(),
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      category: json['category'] ?? '',
+      difficulty: json['difficulty'] ?? '',
+      videoUrl: json['videoUrl'],
+      imageUrl: json['imageUrl'],
+      durationMinutes: json['durationMinutes'] ?? 0,
+      equipment: json['equipment'] != null 
+          ? List<String>.from(json['equipment']) 
+          : [],
+      skills: json['skills'] != null 
+          ? List<String>.from(json['skills']) 
+          : [],
+      isFavorite: json['isFavorite'] ?? false,
+      createdBy: json['createdBy'],
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt']) 
+          : null,
+    );
+  }
+
+  // Convert to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'category': category,
+      'difficulty': difficulty,
+      'videoUrl': videoUrl,
+      'imageUrl': imageUrl,
+      'durationMinutes': durationMinutes,
+      'equipment': equipment,
+      'skills': skills,
+      'isFavorite': isFavorite,
+      'createdBy': createdBy,
+      'createdAt': createdAt?.toIso8601String(),
+    };
   }
 } 

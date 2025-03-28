@@ -52,66 +52,48 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
-    
-    // Check if passwords match
-    if (_passwordController.text != _confirmPasswordController.text) {
+    if (_formKey.currentState!.validate()) {
       setState(() {
-        _errorMessage = 'Passwords do not match';
+        _isLoading = true;
+        _errorMessage = null;
       });
-      return;
-    }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      
-      print('Attempting to register with email: ${_emailController.text.trim()}');
-      
-      final registerRequest = RegisterRequest(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        fullName: _fullNameController.text.trim(),
-        position: _positionController.text.isEmpty ? null : _positionController.text.trim(),
-        currentClub: _clubController.text.isEmpty ? null : _clubController.text.trim(),
-        dateOfBirth: _selectedDate,
-      );
-      
-      final user = await authService.register(registerRequest);
-      print('Registration successful: ${user.email}');
-      
-      // Login after successful registration
-      print('Attempting to login after registration');
-      await authService.login(
-        LoginRequest(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        ),
-      );
-      print('Login successful');
-      
-      if (!mounted) return;
-      
-      // Navigate to dashboard
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const DashboardPage(),
-        ),
-      );
-    } catch (e) {
-      print('Registration error: $e');
-      setState(() {
-        _errorMessage = 'Registration failed: ${e.toString()}';
-      });
-    } finally {
-      if (mounted) {
+      try {
+        final authService = Provider.of<AuthService>(context, listen: false);
+        
+        // First register the user
+        await authService.register(
+          RegisterRequest(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            fullName: _fullNameController.text.trim(),
+            position: _positionController.text.isEmpty ? null : _positionController.text.trim(),
+            currentClub: _clubController.text.isEmpty ? null : _clubController.text.trim(),
+            dateOfBirth: _selectedDate,
+          ),
+        );
+        
+        // Then log them in
+        if (context.mounted) {
+          await authService.login(
+            _emailController.text.trim(),
+            _passwordController.text,
+          );
+          
+          if (context.mounted) {
+            Navigator.pushReplacementNamed(context, '/dashboard');
+          }
+        }
+      } catch (e) {
         setState(() {
-          _isLoading = false;
+          _errorMessage = e.toString();
         });
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
