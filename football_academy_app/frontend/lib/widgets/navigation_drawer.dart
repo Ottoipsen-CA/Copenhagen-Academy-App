@@ -60,7 +60,7 @@ class CustomNavigationDrawer extends StatelessWidget {
                 _buildNavItem(
                   context,
                   'chat',
-                  'Chat with Coach',
+                  'Chat',
                   Icons.chat_outlined,
                   () => _navigateTo(context, 'chat'),
                 ),

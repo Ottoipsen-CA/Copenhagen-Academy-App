@@ -88,4 +88,12 @@ class AuthService {
   Future<void> logout() async {
     await secureStorage.delete(key: 'access_token');
   }
+
+  // Get current user ID - static helper for services
+  static Future<String> getCurrentUserId() async {
+    const storage = FlutterSecureStorage();
+    // For simplicity, we'll use a mock ID
+    // In a real app, this would decode the JWT token or query the server
+    return '123'; // Mock user ID
+  }
 } 
