@@ -495,6 +495,129 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
   }
   
   Widget _buildRecordAttemptForm() {
+    // Special form for 7 Days Juggle Challenge
+    if (_challenge.title == '7 Days Juggle Challenge') {
+      // Calculate which days have been recorded
+      final recordedDays = <int>{};
+      if (_userChallenge.attempts != null) {
+        for (final attempt in _userChallenge.attempts!) {
+          recordedDays.add(attempt.timestamp.day);
+        }
+      }
+      
+      // Get today's day number
+      final today = DateTime.now().day;
+      
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Record Your Daily Juggling',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Record your best juggling streak each day. You need to record for 7 different days to complete the challenge.',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Days Recorded: ${recordedDays.length} of 7',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: _valueController,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Today\'s Best Streak',
+                      labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                      hintText: 'How many juggles?',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                      filled: true,
+                      fillColor: Colors.black.withOpacity(0.3),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: recordedDays.contains(today) 
+                      ? null  // Disable if already recorded today
+                      : _recordAttempt,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFA500),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    disabledBackgroundColor: Colors.grey.withOpacity(0.3),
+                  ),
+                  child: Text(
+                    recordedDays.contains(today) ? 'Already Recorded Today' : 'Record Today',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _noteController,
+              style: const TextStyle(color: Colors.white),
+              maxLines: 2,
+              decoration: InputDecoration(
+                labelText: 'Notes (optional)',
+                labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                hintText: 'Any tips or techniques you want to remember?',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                filled: true,
+                fillColor: Colors.black.withOpacity(0.3),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // Standard form for other challenges
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -535,14 +658,14 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
             ),
           ),
           const SizedBox(height: 16),
-          TextFormField(
+          TextField(
             controller: _noteController,
             style: const TextStyle(color: Colors.white),
-            maxLines: 3,
+            maxLines: 2,
             decoration: InputDecoration(
               labelText: 'Notes (optional)',
               labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-              hintText: 'Add notes about this attempt...',
+              hintText: 'Any additional notes about your attempt',
               hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
               filled: true,
               fillColor: Colors.black.withOpacity(0.3),
@@ -562,14 +685,15 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
             child: ElevatedButton(
               onPressed: _recordAttempt,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                backgroundColor: const Color(0xFFFFA500),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: const Text(
-                'Record Attempt',
+                'RECORD ATTEMPT',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -617,92 +741,98 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Attempt History',
-            style: TextStyle(
+          Text(
+            _challenge.title == '7 Days Juggle Challenge' 
+                ? 'Daily Records' 
+                : 'Attempt History',
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
-          ListView.separated(
+          ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: sortedAttempts.length,
-            separatorBuilder: (context, index) => const Divider(
-              color: Colors.white24,
-              height: 24,
-            ),
             itemBuilder: (context, index) {
               final attempt = sortedAttempts[index];
-              final isHighest = attempt.value == _userChallenge.currentValue;
+              final dateFormat = DateFormat('MMM d, yyyy');
+              final timeFormat = DateFormat('h:mm a');
               
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Date column
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        DateFormat('MMM d').format(attempt.timestamp),
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        DateFormat('HH:mm').format(attempt.timestamp),
-                        style: const TextStyle(
-                          color: Colors.white54,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(width: 16),
-                  
-                  // Value and notes column
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              '${attempt.value} ${_challenge.unit}',
-                              style: TextStyle(
-                                color: isHighest ? Colors.amber : Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            if (isHighest) ...[
-                              const SizedBox(width: 4),
-                              const Icon(
-                                Icons.emoji_events,
-                                color: Colors.amber,
-                                size: 16,
-                              ),
-                            ],
-                          ],
+                        Text(
+                          dateFormat.format(attempt.timestamp),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        if (attempt.notes != null) ...[
-                          const SizedBox(height: 4),
+                        Text(
+                          timeFormat.format(attempt.timestamp),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          '${attempt.value} ${_challenge.unit == 'days' ? 'juggles' : _challenge.unit}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Show icon if it's a personal best
+                        if (index == 0 && _challenge.title != '7 Days Juggle Challenge') ...[
+                          const Icon(
+                            Icons.emoji_events,
+                            color: Colors.amber,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
                           Text(
-                            attempt.notes!,
+                            'Best',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                              fontSize: 14,
+                              color: Colors.amber.shade300,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
                       ],
                     ),
-                  ),
-                ],
+                    if (attempt.notes != null && attempt.notes!.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        attempt.notes!,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontStyle: FontStyle.italic,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               );
             },
           ),

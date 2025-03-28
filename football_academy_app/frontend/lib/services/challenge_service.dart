@@ -171,30 +171,65 @@ class ChallengeService {
     final attempts = List<ChallengeAttempt>.from(userChallenge.attempts ?? [])
       ..add(attempt);
     
-    // Calculate new current value (use highest attempt)
-    final newCurrentValue = attempts
-        .map((a) => a.value)
-        .reduce((max, value) => value > max ? value : max);
-    
-    // Check if challenge is completed
-    ChallengeStatus newStatus = userChallenge.status;
-    DateTime? completedAt = userChallenge.completedAt;
-    
-    if (newCurrentValue >= challenge.targetValue && userChallenge.status != ChallengeStatus.completed) {
-      newStatus = ChallengeStatus.completed;
-      completedAt = DateTime.now();
+    // Special handling for 7 Days Juggle Challenge
+    if (challenge.title == '7 Days Juggle Challenge') {
+      // Count unique days based on the date part of timestamps
+      final uniqueDays = <String>{};
+      for (final attempt in attempts) {
+        final dateStr = '${attempt.timestamp.year}-${attempt.timestamp.month}-${attempt.timestamp.day}';
+        uniqueDays.add(dateStr);
+      }
       
-      // Unlock next challenge in the same category
-      await _unlockNextChallenge(challenge);
+      // Current value is the number of unique days
+      final newCurrentValue = uniqueDays.length;
+      
+      // Only complete when all 7 days are recorded
+      ChallengeStatus newStatus = userChallenge.status;
+      DateTime? completedAt = userChallenge.completedAt;
+      
+      if (newCurrentValue >= challenge.targetValue && userChallenge.status != ChallengeStatus.completed) {
+        newStatus = ChallengeStatus.completed;
+        completedAt = DateTime.now();
+        
+        // Unlock next challenge in the same category
+        await _unlockNextChallenge(challenge);
+      }
+      
+      // Update user challenge
+      userChallenge = userChallenge.copyWith(
+        currentValue: newCurrentValue,
+        status: newStatus,
+        completedAt: completedAt,
+        attempts: attempts,
+      );
+      
+    } else {
+      // Standard handling for other challenges
+      // Calculate new current value (use highest attempt)
+      final newCurrentValue = attempts
+          .map((a) => a.value)
+          .reduce((max, value) => value > max ? value : max);
+      
+      // Check if challenge is completed
+      ChallengeStatus newStatus = userChallenge.status;
+      DateTime? completedAt = userChallenge.completedAt;
+      
+      if (newCurrentValue >= challenge.targetValue && userChallenge.status != ChallengeStatus.completed) {
+        newStatus = ChallengeStatus.completed;
+        completedAt = DateTime.now();
+        
+        // Unlock next challenge in the same category
+        await _unlockNextChallenge(challenge);
+      }
+      
+      // Update user challenge
+      userChallenge = userChallenge.copyWith(
+        currentValue: newCurrentValue,
+        status: newStatus,
+        completedAt: completedAt,
+        attempts: attempts,
+      );
     }
-    
-    // Update user challenge
-    userChallenge = userChallenge.copyWith(
-      currentValue: newCurrentValue,
-      status: newStatus,
-      completedAt: completedAt,
-      attempts: attempts,
-    );
     
     userChallenges[index] = userChallenge;
     await saveUserChallenges(userChallenges);
