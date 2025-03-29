@@ -13,7 +13,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-class User(UserBase):
+class UserResponse(UserBase):
     id: int
     is_active: bool
     is_coach: bool
@@ -101,3 +101,67 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None 
+    # -------------------------------
+# Challenge Schemas
+# -------------------------------
+
+class ChallengeBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    xp_reward: int
+    category: Optional[str] = None
+    is_weekly: Optional[bool] = False
+
+class ChallengeCreate(ChallengeBase):
+    pass
+
+class ChallengeResponse(ChallengeBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+# -------------------------------
+# UserChallenge Schemas
+# -------------------------------
+
+class UserChallengeBase(BaseModel):
+    completed: bool = False
+
+class UserChallengeCreate(UserChallengeBase):
+    user_id: int
+    challenge_id: int
+
+class UserChallengeResponse(UserChallengeBase):
+    id: int
+    user_id: int
+    challenge_id: int
+    completed_at: datetime
+    challenge: Optional[ChallengeResponse]
+
+    class Config:
+        from_attributes = True
+
+# -------------------------------
+# Badge Schemas
+# -------------------------------
+
+class UserBadgeBase(BaseModel):
+    badge_name: str
+
+class UserBadgeResponse(UserBadgeBase):
+    id: int
+    earned_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# -------------------------------
+# Full User Progress Schema
+# -------------------------------
+
+class UserProgressResponse(BaseModel):
+    user: UserResponse
+    completed_challenges: List[UserChallengeResponse]
+    badges: List[UserBadgeResponse]
+    total_xp: int

@@ -80,3 +80,50 @@ class PlayerStats(Base):
     
     # Relationships
     player = relationship("User", back_populates="stats") 
+    class Challenge(Base):
+    __tablename__ = "challenges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text)
+    xp_reward = Column(Integer, default=0)
+    category = Column(String)
+    is_weekly = Column(Boolean, default=False)
+
+    # Relationships
+    user_challenges = relationship("UserChallenge", back_populates="challenge")
+
+
+class UserChallenge(Base):
+    __tablename__ = "user_challenges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    challenge_id = Column(Integer, ForeignKey("challenges.id"))
+    completed = Column(Boolean, default=False)
+    completed_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User")
+    challenge = relationship("Challenge", back_populates="user_challenges")
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
+    full_name = Column(String)
+    position = Column(String)
+    current_club = Column(String)
+    date_of_birth = Column(DateTime)
+    is_active = Column(Boolean, default=True)
+    is_coach = Column(Boolean, default=False)
+
+    # Relationships
+    training_plans = relationship("TrainingPlan", back_populates="player")
+    achievements = relationship("Achievement", back_populates="player")
+    stats = relationship("PlayerStats", back_populates="player", uselist=False)
+
+    challenges = relationship("UserChallenge", back_populates="user")
+    badges = relationship("UserBadge", back_populates="user")
