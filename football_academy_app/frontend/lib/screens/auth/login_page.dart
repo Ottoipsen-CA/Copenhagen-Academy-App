@@ -102,33 +102,45 @@ class _LoginPageState extends State<LoginPage> {
   }
   
   Widget _buildLandscapeLayout() {
-    return Row(
+    return Column(
       children: [
-        // Left side: Player card
+        _buildAppHeader(),
         Expanded(
-          flex: 4,
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: _buildPlayerCard(),
-          ),
-        ),
-        
-        // Right side: Login form and text
-        Expanded(
-          flex: 6,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 30),
-                _buildMissionText(),
-                const SizedBox(height: 50),
-                _buildLoginForm(),
-                const SizedBox(height: 30),
-                _buildSignUpSection(),
-              ],
-            ),
+          child: Row(
+            children: [
+              // Left side: Player card
+              Expanded(
+                flex: 3,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Center(
+                    child: SizedBox(
+                      width: 300,
+                      child: _buildPlayerCard(),
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Right side: Login form and text
+              Expanded(
+                flex: 7,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 10),
+                      _buildMissionText(),
+                      const SizedBox(height: 30),
+                      _buildLoginForm(),
+                      const SizedBox(height: 20),
+                      _buildSignUpSection(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -137,27 +149,90 @@ class _LoginPageState extends State<LoginPage> {
   
   Widget _buildPortraitLayout() {
     return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 30),
-            Center(
-              child: SizedBox(
-                width: 280, // More narrow card
-                child: _buildPlayerCard(),
-              ),
+      child: Column(
+        children: [
+          _buildAppHeader(),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                Center(
+                  child: SizedBox(
+                    width: 220,
+                    child: _buildPlayerCard(),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _buildMissionText(),
+                const SizedBox(height: 20),
+                _buildLoginForm(),
+                const SizedBox(height: 20),
+                _buildSignUpSection(),
+                const SizedBox(height: 20),
+              ],
             ),
-            const SizedBox(height: 40),
-            _buildMissionText(),
-            const SizedBox(height: 30),
-            _buildLoginForm(),
-            const SizedBox(height: 30),
-            _buildSignUpSection(),
-            const SizedBox(height: 20),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+  
+  Widget _buildAppHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.7),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.5),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.emoji_events, color: Colors.amber[300], size: 24),
+              const SizedBox(width: 10),
+              Text(
+                "COPENHAGEN ACADEMY",
+                style: TextStyle(
+                  color: Colors.amber[300],
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Icon(Icons.emoji_events, color: Colors.amber[300], size: 24),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildBadgeIcon(Icons.military_tech, Colors.amber),
+              _buildBadgeIcon(Icons.sports_soccer, Colors.white),
+              _buildBadgeIcon(Icons.star, Colors.amber),
+              _buildBadgeIcon(Icons.sports_soccer, Colors.white),
+              _buildBadgeIcon(Icons.military_tech, Colors.amber),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildBadgeIcon(IconData icon, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Icon(icon, color: color, size: 16),
     );
   }
   
@@ -174,6 +249,10 @@ class _LoginPageState extends State<LoginPage> {
             offset: const Offset(0, 5),
           ),
         ],
+        border: Border.all(
+          color: Colors.amber[300]!,
+          width: 2,
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -181,9 +260,17 @@ class _LoginPageState extends State<LoginPage> {
           // Top part of card with player rating and picture
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFD700), // Gold color
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFD700), // Gold color
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.amber.withOpacity(0.3),
+                  spreadRadius: 1,
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
             child: Row(
               children: [
@@ -197,10 +284,14 @@ class _LoginPageState extends State<LoginPage> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF1E22AA), // Dark blue
                         borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: Colors.amber[300]!,
+                          width: 1,
+                        ),
                       ),
                       alignment: Alignment.center,
                       child: const Text(
-                        "83",
+                        "94",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 32,
@@ -218,12 +309,23 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const Text(
-                      "RW",
-                      style: TextStyle(
-                        color: Color(0xFF1E22AA),
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E22AA),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: Colors.amber[300]!,
+                          width: 1,
+                        ),
+                      ),
+                      child: const Text(
+                        "ST",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -234,18 +336,65 @@ class _LoginPageState extends State<LoginPage> {
                   child: Container(
                     height: 140,
                     alignment: Alignment.center,
-                    child: Container(
-                      width: 100,
-                      height: 100,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFF9500),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.person,
-                        color: Colors.white,
-                        size: 70,
-                      ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0A3BAA),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.amber[300]!,
+                              width: 2,
+                            ),
+                          ),
+                          child: const ClipOval(
+                            child: Icon(
+                              Icons.sports_soccer,
+                              color: Colors.white,
+                              size: 50,
+                            ),
+                          ),
+                        ),
+                        // Badge positioned at the bottom right
+                        Positioned(
+                          bottom: 5,
+                          right: 25,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: const Icon(
+                              Icons.local_fire_department,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                        // Trophy badge at top left
+                        Positioned(
+                          top: 5,
+                          left: 25,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.amber[700],
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: const Icon(
+                              Icons.emoji_events,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -258,6 +407,17 @@ class _LoginPageState extends State<LoginPage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 8),
             alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.amber[700]!,
+                  Colors.amber[300]!,
+                  Colors.amber[700]!,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
             child: const Text(
               "PLAYER",
               style: TextStyle(
@@ -276,24 +436,24 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildStat("80", "PC"),
-                    _buildStat("81", "DRI"),
+                    _buildStat("97", "PAC"),
+                    _buildStat("92", "DRI"),
                   ],
                 ),
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildStat("79", "SHO"),
-                    _buildStat("49", "DEF"),
+                    _buildStat("90", "SHO"),
+                    _buildStat("39", "DEF"),
                   ],
                 ),
                 const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildStat("76", "PAS"),
-                    _buildStat("70", "PHY"),
+                    _buildStat("80", "PAS"),
+                    _buildStat("78", "PHY"),
                   ],
                 ),
               ],
@@ -332,30 +492,34 @@ class _LoginPageState extends State<LoginPage> {
   Widget _buildMissionText() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: const [
-        Text(
-          "Play",
-          style: TextStyle(
-            color: Colors.yellow,
-            fontSize: 46,
-            fontWeight: FontWeight.bold,
-          ),
+      children: [
+        Row(
+          children: [
+            const Text(
+              "Træn",
+              style: TextStyle(
+                color: Colors.yellow,
+                fontSize: 46,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Icon(Icons.sports_soccer, color: Colors.amber[300], size: 30),
+          ],
         ),
-        Text(
-          "Missions.",
-          style: TextStyle(
-            color: Colors.yellow,
-            fontSize: 46,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          "Level Up.",
-          style: TextStyle(
-            color: Colors.yellow,
-            fontSize: 46,
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          children: [
+            const Text(
+              "og bliv spillets legende!",
+              style: TextStyle(
+                color: Colors.yellow,
+                fontSize: 46,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Icon(Icons.emoji_events, color: Colors.amber[300], size: 30),
+          ],
         ),
       ],
     );
