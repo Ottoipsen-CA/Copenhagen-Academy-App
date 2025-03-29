@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session
-from typing import List
 import sys
 import os
 
@@ -14,20 +13,18 @@ router = APIRouter(
     tags=["player_stats"]
 )
 
-@router.post("/", response_model=schemas.PlayerStats)
+@router.post("/", response_model=schemas.PlayerStat)
 def create_player_stats(
-    player_stats: schemas.PlayerStatsCreate,
+    player_stats: schemas.PlayerStatCreate = Body(...),  # <-- 🔧 fix her
     current_user: models.User = Depends(auth.get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    # Verify player ownership
     if player_stats.player_id != current_user.id and not current_user.is_coach:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough permissions"
         )
     
-    # Check if stats already exist
     existing_stats = db.query(models.PlayerStats).filter(
         models.PlayerStats.player_id == player_stats.player_id
     ).first()
@@ -44,13 +41,12 @@ def create_player_stats(
     db.refresh(db_player_stats)
     return db_player_stats
 
-@router.get("/{player_id}", response_model=schemas.PlayerStats)
+@router.get("/{player_id}", response_model=schemas.PlayerStat)
 def read_player_stats(
     player_id: int,
     current_user: models.User = Depends(auth.get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    # Verify access rights
     if player_id != current_user.id and not current_user.is_coach:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -64,14 +60,13 @@ def read_player_stats(
         raise HTTPException(status_code=404, detail="Player stats not found")
     return player_stats
 
-@router.put("/{player_id}", response_model=schemas.PlayerStats)
+@router.put("/{player_id}", response_model=schemas.PlayerStat)
 def update_player_stats(
     player_id: int,
-    stats_update: schemas.PlayerStatsBase,
+    stats_update: schemas.PlayerStatBase,
     current_user: models.User = Depends(auth.get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    # Verify access rights
     if player_id != current_user.id and not current_user.is_coach:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -97,7 +92,6 @@ def delete_player_stats(
     current_user: models.User = Depends(auth.get_current_active_user),
     db: Session = Depends(get_db)
 ):
-    # Verify access rights
     if player_id != current_user.id and not current_user.is_coach:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -112,4 +106,4 @@ def delete_player_stats(
     
     db.delete(player_stats)
     db.commit()
-    return None 
+    return None

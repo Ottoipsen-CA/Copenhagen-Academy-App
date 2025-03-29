@@ -1,86 +1,34 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Float, Text
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
 Base = declarative_base()
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    full_name = Column(String)
-    position = Column(String)
-    current_club = Column(String)
-    date_of_birth = Column(DateTime)
-    is_active = Column(Boolean, default=True)
-    is_coach = Column(Boolean, default=False)
-    
-    # Relationships
-    training_plans = relationship("TrainingPlan", back_populates="player")
-    achievements = relationship("Achievement", back_populates="player")
-    stats = relationship("PlayerStats", back_populates="player", uselist=False)
-
-class TrainingPlan(Base):
-    __tablename__ = "training_plans"
-
-    id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("users.id"))
-    title = Column(String)
-    description = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
-    player = relationship("User", back_populates="training_plans")
-    exercises = relationship("Exercise", back_populates="training_plan")
-
-class Exercise(Base):
-    __tablename__ = "exercises"
-
-    id = Column(Integer, primary_key=True, index=True)
-    training_plan_id = Column(Integer, ForeignKey("training_plans.id"))
-    title = Column(String)
-    description = Column(Text)
-    video_url = Column(String)
-    duration = Column(Integer)  # in minutes
-    difficulty = Column(String)
-    category = Column(String)
-    
-    # Relationships
-    training_plan = relationship("TrainingPlan", back_populates="exercises")
-
-class Achievement(Base):
-    __tablename__ = "achievements"
-
-    id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("users.id"))
-    title = Column(String)
-    description = Column(Text)
-    earned_at = Column(DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    player = relationship("User", back_populates="achievements")
-
+# -----------------------------
+# Player Stats
+# -----------------------------
 class PlayerStats(Base):
     __tablename__ = "player_stats"
 
     id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("users.id"), unique=True)
-    pace = Column(Float, default=50)
-    shooting = Column(Float, default=50)
-    passing = Column(Float, default=50)
-    dribbling = Column(Float, default=50)
-    defense = Column(Float, default=50)
-    physical = Column(Float, default=50)
-    overall_rating = Column(Float, default=50)
-    last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
-    player = relationship("User", back_populates="stats") 
-    class Challenge(Base):
+    player_id = Column(Integer, ForeignKey("users.id"))
+    pace = Column(Integer)
+    shooting = Column(Integer)
+    passing = Column(Integer)
+    dribbling = Column(Integer)
+    defense = Column(Integer)
+    physical = Column(Integer)
+    overall_rating = Column(Integer)
+    last_updated = Column(DateTime, default=datetime.utcnow)
+
+    player = relationship("User", back_populates="stats")
+
+
+# -----------------------------
+# Challenge
+# -----------------------------
+class Challenge(Base):
     __tablename__ = "challenges"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -90,10 +38,12 @@ class PlayerStats(Base):
     category = Column(String)
     is_weekly = Column(Boolean, default=False)
 
-    # Relationships
     user_challenges = relationship("UserChallenge", back_populates="challenge")
 
 
+# -----------------------------
+# UserChallenge
+# -----------------------------
 class UserChallenge(Base):
     __tablename__ = "user_challenges"
 
@@ -103,10 +53,27 @@ class UserChallenge(Base):
     completed = Column(Boolean, default=False)
     completed_at = Column(DateTime, default=datetime.utcnow)
 
-    # Relationships
-    user = relationship("User")
+    user = relationship("User", back_populates="user_challenges")
     challenge = relationship("Challenge", back_populates="user_challenges")
 
+
+# -----------------------------
+# UserBadge
+# -----------------------------
+class UserBadge(Base):
+    __tablename__ = "user_badges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    badge_name = Column(String)
+    earned_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="badges")
+
+
+# -----------------------------
+# User
+# -----------------------------
 class User(Base):
     __tablename__ = "users"
 
@@ -120,10 +87,6 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_coach = Column(Boolean, default=False)
 
-    # Relationships
-    training_plans = relationship("TrainingPlan", back_populates="player")
-    achievements = relationship("Achievement", back_populates="player")
-    stats = relationship("PlayerStats", back_populates="player", uselist=False)
-
-    challenges = relationship("UserChallenge", back_populates="user")
+    stats = relationship("PlayerStats", back_populates="player")
     badges = relationship("UserBadge", back_populates="user")
+    user_challenges = relationship("UserChallenge", back_populates="user")

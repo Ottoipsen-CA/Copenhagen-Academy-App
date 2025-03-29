@@ -2,16 +2,19 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime
 
-# User schemas
+
+# -------- USER --------
 class UserBase(BaseModel):
     email: EmailStr
-    full_name: str
+    full_name: Optional[str] = None
     position: Optional[str] = None
     current_club: Optional[str] = None
     date_of_birth: Optional[datetime] = None
 
+
 class UserCreate(UserBase):
     password: str
+
 
 class UserResponse(UserBase):
     id: int
@@ -21,34 +24,35 @@ class UserResponse(UserBase):
     class Config:
         from_attributes = True
 
-# Training plan schemas
+
+# -------- TRAINING PLANS --------
 class TrainingPlanBase(BaseModel):
     title: str
-    description: str
+    description: Optional[str] = None
+
 
 class TrainingPlanCreate(TrainingPlanBase):
     pass
 
+
 class TrainingPlan(TrainingPlanBase):
     id: int
-    player_id: int
-    created_at: datetime
-    updated_at: datetime
+    user_id: int
 
     class Config:
         from_attributes = True
 
-# Exercise schemas
+
+# -------- EXERCISES --------
 class ExerciseBase(BaseModel):
-    title: str
-    description: str
-    video_url: str
-    duration: int
-    difficulty: str
-    category: str
+    name: str
+    description: Optional[str] = None
+    video_url: Optional[str] = None
+
 
 class ExerciseCreate(ExerciseBase):
-    training_plan_id: int
+    pass
+
 
 class Exercise(ExerciseBase):
     id: int
@@ -57,36 +61,23 @@ class Exercise(ExerciseBase):
     class Config:
         from_attributes = True
 
-# Achievement schemas
-class AchievementBase(BaseModel):
-    title: str
-    description: str
 
-class AchievementCreate(AchievementBase):
+# -------- PLAYER STATS --------
+class PlayerStatBase(BaseModel):
+    pace: int
+    shooting: int
+    passing: int
+    dribbling: int
+    defense: int
+    physical: int
+    overall_rating: int
+
+
+class PlayerStatCreate(PlayerStatBase):
     player_id: int
 
-class Achievement(AchievementBase):
-    id: int
-    player_id: int
-    earned_at: datetime
 
-    class Config:
-        from_attributes = True
-
-# Player stats schemas
-class PlayerStatsBase(BaseModel):
-    pace: float
-    shooting: float
-    passing: float
-    dribbling: float
-    defense: float
-    physical: float
-    overall_rating: float
-
-class PlayerStatsCreate(PlayerStatsBase):
-    player_id: int
-
-class PlayerStats(PlayerStatsBase):
+class PlayerStat(PlayerStatBase):
     id: int
     player_id: int
     last_updated: datetime
@@ -94,26 +85,45 @@ class PlayerStats(PlayerStatsBase):
     class Config:
         from_attributes = True
 
-# Token schemas
+
+# -------- ACHIEVEMENTS --------
+class AchievementBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+
+
+class AchievementCreate(AchievementBase):
+    pass
+
+
+class Achievement(AchievementBase):
+    id: int
+    user_id: int
+
+    class Config:
+        from_attributes = True
+
+
+# -------- AUTH --------
 class Token(BaseModel):
     access_token: str
     token_type: str
 
-class TokenData(BaseModel):
-    email: Optional[str] = None 
-    # -------------------------------
-# Challenge Schemas
-# -------------------------------
 
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
+
+# -------- CHALLENGES --------
 class ChallengeBase(BaseModel):
     title: str
     description: Optional[str] = None
     xp_reward: int
-    category: Optional[str] = None
-    is_weekly: Optional[bool] = False
+
 
 class ChallengeCreate(ChallengeBase):
     pass
+
 
 class ChallengeResponse(ChallengeBase):
     id: int
@@ -121,47 +131,96 @@ class ChallengeResponse(ChallengeBase):
     class Config:
         from_attributes = True
 
-# -------------------------------
-# UserChallenge Schemas
-# -------------------------------
 
-class UserChallengeBase(BaseModel):
-    completed: bool = False
-
-class UserChallengeCreate(UserChallengeBase):
-    user_id: int
-    challenge_id: int
-
-class UserChallengeResponse(UserChallengeBase):
+# -------- USER CHALLENGES --------
+class UserChallengeResponse(BaseModel):
     id: int
     user_id: int
     challenge_id: int
     completed_at: datetime
-    challenge: Optional[ChallengeResponse]
 
     class Config:
         from_attributes = True
 
-# -------------------------------
-# Badge Schemas
-# -------------------------------
 
-class UserBadgeBase(BaseModel):
-    badge_name: str
-
-class UserBadgeResponse(UserBadgeBase):
+# -------- BADGES --------
+class UserBadgeResponse(BaseModel):
     id: int
-    earned_at: datetime
+    user_id: int
+    badge_name: str
+    awarded_at: datetime
 
     class Config:
         from_attributes = True
 
-# -------------------------------
-# Full User Progress Schema
-# -------------------------------
 
+# -------- CHALLENGE COMPLETION --------
+class ChallengeCompletionCreate(BaseModel):
+    challenge_id: int
+
+
+class ChallengeCompletionWithDetails(BaseModel):
+    id: int
+    user_id: int
+    challenge_id: int
+    completed_at: datetime
+    challenge_title: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+# -------- USER PROGRESS --------
 class UserProgressResponse(BaseModel):
     user: UserResponse
     completed_challenges: List[UserChallengeResponse]
     badges: List[UserBadgeResponse]
     total_xp: int
+
+    class Config:
+        from_attributes = True
+
+
+# -------- BADGE WITH CHALLENGE --------
+class BadgeWithChallenge(BaseModel):
+    id: int
+    badge_name: str
+    challenge_id: int
+    challenge_title: str
+
+    class Config:
+        from_attributes = True
+
+
+# -------------------------------
+# ChallengeCompletion Schemas
+# -------------------------------
+class ChallengeCompletionBase(BaseModel):
+    user_id: int
+    challenge_id: int
+
+
+class ChallengeCompletionCreate(ChallengeCompletionBase):
+    pass
+
+class ChallengeCompletion(ChallengeCompletionBase):
+    id: int
+    completed_at: datetime
+
+    class Config:
+        from_attributes = True
+# -------- SIMPLE PLAYER STATS TEST (til test route) --------
+class SimplePlayerStatBase(BaseModel):
+    pace: int
+    shooting: int
+    passing: int
+    player_id: int
+
+class SimplePlayerStatCreate(SimplePlayerStatBase):
+    pass
+
+class SimplePlayerStat(SimplePlayerStatBase):
+    id: int
+
+    class Config:
+        from_attributes = True
