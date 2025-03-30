@@ -11,6 +11,7 @@ import '../../widgets/navigation_drawer.dart';
 import '../../widgets/player_stats_radar_chart.dart';
 import '../../widgets/fifa_player_card.dart';
 import '../../widgets/skill_progress_bar.dart';
+import '../../widgets/player_test_widget.dart';
 import 'dart:math' as math;
 
 // Import pages
@@ -258,6 +259,11 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
               ],
             ),
+            
+            const SizedBox(height: 24),
+            
+            // Player Tests Widget
+            const PlayerTestWidget(),
             
             const SizedBox(height: 24),
             
