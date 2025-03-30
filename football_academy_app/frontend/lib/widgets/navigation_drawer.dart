@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../screens/dashboard/dashboard_page.dart';
+import '../screens/info/info_page.dart';
 import '../screens/auth/landing_page.dart';
 
 class CustomNavigationDrawer extends StatelessWidget {
@@ -85,6 +86,13 @@ class CustomNavigationDrawer extends StatelessWidget {
                   'Settings',
                   Icons.settings_outlined,
                   () => _navigateTo(context, 'settings'),
+                ),
+                _buildNavItem(
+                  context,
+                  'info',
+                  'About Academy',
+                  Icons.info_outline,
+                  () => _navigateTo(context, 'info'),
                 ),
               ],
             ),
@@ -260,6 +268,12 @@ class CustomNavigationDrawer extends StatelessWidget {
         break;
       case 'settings':
         Navigator.pushReplacementNamed(context, '/settings');
+        break;
+      case 'info':
+        Navigator.push(
+          context, 
+          MaterialPageRoute(builder: (context) => const InfoPage()),
+        );
         break;
     }
   }
