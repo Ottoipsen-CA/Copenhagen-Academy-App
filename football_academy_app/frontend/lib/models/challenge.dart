@@ -80,6 +80,7 @@ class Challenge {
   final bool isWeekly;
   final List<String>? tips;
   final String? videoUrl;
+  final int xpReward;
 
   const Challenge({
     required this.id,
@@ -89,6 +90,7 @@ class Challenge {
     required this.level,
     required this.targetValue,
     required this.unit,
+    required this.xpReward,
     this.deadline,
     this.isWeekly = false,
     this.tips,
@@ -106,6 +108,7 @@ class Challenge {
       level: json['level'],
       targetValue: json['targetValue'],
       unit: json['unit'],
+      xpReward: json['xpReward'] ?? 100,
       deadline: json['deadline'] != null ? DateTime.parse(json['deadline']) : null,
       isWeekly: json['isWeekly'] ?? false,
       tips: json['tips'] != null ? List<String>.from(json['tips']) : null,
@@ -122,6 +125,7 @@ class Challenge {
       'level': level,
       'targetValue': targetValue,
       'unit': unit,
+      'xpReward': xpReward,
       'deadline': deadline?.toIso8601String(),
       'isWeekly': isWeekly,
       'tips': tips,

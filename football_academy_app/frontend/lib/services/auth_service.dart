@@ -9,7 +9,7 @@ class AuthService {
   final FlutterSecureStorage secureStorage;
   
   // Flag to use mock auth for development 
-  bool _useMockAuth = true;
+  bool _useMockAuth = false;
 
   AuthService({
     required this.apiService,

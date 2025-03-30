@@ -4,6 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/player_stats.dart';
 import '../models/challenge.dart';
 import 'auth_service.dart';
+import 'api_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class PlayerStatsService {
   static const String _playerStatsKey = 'player_stats';
@@ -19,8 +22,43 @@ class PlayerStatsService {
   static const double _maxStartingRating = 65.0;  // Initial cap for new players
   static const double _maxIntermediateRating = 85.0;  // Cap after completing 10 category challenges
   
-  // Load player stats from local storage
+  // Load player stats from API or local storage
   static Future<PlayerStats?> getPlayerStats() async {
+    // Try to get stats from the backend API
+    try {
+      // Create API client
+      final client = http.Client();
+      final secureStorage = FlutterSecureStorage();
+      final apiService = ApiService(client: client, secureStorage: secureStorage);
+      
+      // Get user info to get current user ID
+      final userJson = await apiService.get('/users/me');
+      final userId = userJson['id'];
+      
+      // Get player stats from API
+      final statsJson = await apiService.get('/player-stats/$userId');
+      
+      if (statsJson != null) {
+        // Convert backend stats format to our model
+        return PlayerStats(
+          id: statsJson['id'],
+          playerId: statsJson['player_id'].toString(),
+          pace: statsJson['pace'].toDouble(),
+          shooting: statsJson['shooting'].toDouble(),
+          passing: statsJson['passing'].toDouble(),
+          dribbling: statsJson['dribbling'].toDouble(),
+          defense: statsJson['defense'].toDouble(),
+          physical: statsJson['physical'].toDouble(),
+          overallRating: statsJson['overall_rating'].toDouble(),
+          lastUpdated: DateTime.parse(statsJson['last_updated']),
+        );
+      }
+    } catch (e) {
+      print('Error fetching player stats from API: $e');
+      print('Falling back to local storage');
+    }
+    
+    // If API fetch failed, try local storage
     final prefs = await SharedPreferences.getInstance();
     final statsJson = prefs.getString(_playerStatsKey);
     
@@ -28,7 +66,7 @@ class PlayerStatsService {
       try {
         return PlayerStats.fromJson(jsonDecode(statsJson));
       } catch (e) {
-        print('Error loading player stats: $e');
+        print('Error loading player stats from local storage: $e');
       }
     }
     
@@ -133,6 +171,8 @@ class PlayerStatsService {
         return 0;
       case ChallengeCategory.tactical:
         return 2;
+      case ChallengeCategory.wallTouches:
+        return 1;
       default:
         return 0;
     }

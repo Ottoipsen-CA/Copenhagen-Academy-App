@@ -9,7 +9,7 @@ class ApiService {
   final FlutterSecureStorage secureStorage;
   
   // Flag to use mock data when server is unavailable
-  bool _useMockData = true;
+  bool _useMockData = false;
 
   ApiService({
     required this.client,

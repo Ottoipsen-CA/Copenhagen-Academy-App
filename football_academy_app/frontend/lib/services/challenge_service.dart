@@ -367,6 +367,27 @@ class ChallengeService {
     final now = DateTime.now();
     final weeklyDeadline = DateTime(now.year, now.month, now.day + 7);
     
+    // Helper method to calculate XP reward based on level and category
+    int calculateXpReward(int level, ChallengeCategory category) {
+      int baseXP = 100;
+      int levelBonus = level * 25;
+      
+      // Additional XP for difficult categories
+      int categoryBonus = 0;
+      if (category == ChallengeCategory.tactical || 
+          category == ChallengeCategory.defense ||
+          category == ChallengeCategory.goalkeeping) {
+        categoryBonus = 50;
+      }
+      
+      // Weekly challenges give more XP
+      if (category == ChallengeCategory.weekly) {
+        categoryBonus += 100;
+      }
+      
+      return baseXP + levelBonus + categoryBonus;
+    }
+    
     return [
       // Weekly challenge
       Challenge(
@@ -384,6 +405,7 @@ class ChallengeService {
           'Practice different juggling techniques',
           'Record a video of your best attempt'
         ],
+        xpReward: calculateXpReward(1, ChallengeCategory.weekly),
       ),
       
       // Passing challenges
@@ -395,6 +417,7 @@ class ChallengeService {
         level: 1,
         targetValue: 20,
         unit: 'passes',
+        xpReward: calculateXpReward(1, ChallengeCategory.passing),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -404,6 +427,7 @@ class ChallengeService {
         level: 2,
         targetValue: 15,
         unit: 'passes',
+        xpReward: calculateXpReward(2, ChallengeCategory.passing),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -413,6 +437,7 @@ class ChallengeService {
         level: 3,
         targetValue: 10,
         unit: 'accurate passes',
+        xpReward: calculateXpReward(3, ChallengeCategory.passing),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -422,6 +447,7 @@ class ChallengeService {
         level: 4,
         targetValue: 25,
         unit: 'passes',
+        xpReward: calculateXpReward(4, ChallengeCategory.passing),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -431,6 +457,7 @@ class ChallengeService {
         level: 5,
         targetValue: 12,
         unit: 'passes',
+        xpReward: calculateXpReward(5, ChallengeCategory.passing),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -440,6 +467,7 @@ class ChallengeService {
         level: 6,
         targetValue: 15,
         unit: 'crosses',
+        xpReward: calculateXpReward(6, ChallengeCategory.passing),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -449,6 +477,7 @@ class ChallengeService {
         level: 7,
         targetValue: 10,
         unit: 'crosses',
+        xpReward: calculateXpReward(7, ChallengeCategory.passing),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -458,6 +487,7 @@ class ChallengeService {
         level: 8,
         targetValue: 15,
         unit: 'switches',
+        xpReward: calculateXpReward(8, ChallengeCategory.passing),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -467,6 +497,7 @@ class ChallengeService {
         level: 9,
         targetValue: 12,
         unit: 'passes',
+        xpReward: calculateXpReward(9, ChallengeCategory.passing),
       ),
       
       // Shooting challenges
@@ -478,6 +509,7 @@ class ChallengeService {
         level: 1,
         targetValue: 8,
         unit: 'goals',
+        xpReward: calculateXpReward(1, ChallengeCategory.shooting),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -487,6 +519,7 @@ class ChallengeService {
         level: 2,
         targetValue: 6,
         unit: 'goals',
+        xpReward: calculateXpReward(2, ChallengeCategory.shooting),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -496,6 +529,7 @@ class ChallengeService {
         level: 3,
         targetValue: 5,
         unit: 'goals',
+        xpReward: calculateXpReward(3, ChallengeCategory.shooting),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -505,6 +539,7 @@ class ChallengeService {
         level: 4,
         targetValue: 7,
         unit: 'goals',
+        xpReward: calculateXpReward(4, ChallengeCategory.shooting),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -514,6 +549,7 @@ class ChallengeService {
         level: 5,
         targetValue: 6,
         unit: 'goals',
+        xpReward: calculateXpReward(5, ChallengeCategory.shooting),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -523,6 +559,7 @@ class ChallengeService {
         level: 6,
         targetValue: 4,
         unit: 'goals',
+        xpReward: calculateXpReward(6, ChallengeCategory.shooting),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -532,6 +569,7 @@ class ChallengeService {
         level: 7,
         targetValue: 5,
         unit: 'goals',
+        xpReward: calculateXpReward(7, ChallengeCategory.shooting),
       ),
       
       // Dribbling challenges
@@ -543,6 +581,7 @@ class ChallengeService {
         level: 1,
         targetValue: 1,
         unit: 'completion',
+        xpReward: calculateXpReward(1, ChallengeCategory.dribbling),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -552,6 +591,7 @@ class ChallengeService {
         level: 2,
         targetValue: 10,
         unit: 'patterns',
+        xpReward: calculateXpReward(2, ChallengeCategory.dribbling),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -561,6 +601,7 @@ class ChallengeService {
         level: 3,
         targetValue: 1,
         unit: 'completion',
+        xpReward: calculateXpReward(3, ChallengeCategory.dribbling),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -570,6 +611,7 @@ class ChallengeService {
         level: 4,
         targetValue: 5,
         unit: 'skill moves',
+        xpReward: calculateXpReward(4, ChallengeCategory.dribbling),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -579,6 +621,7 @@ class ChallengeService {
         level: 5,
         targetValue: 1,
         unit: 'completion',
+        xpReward: calculateXpReward(5, ChallengeCategory.dribbling),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -588,6 +631,7 @@ class ChallengeService {
         level: 6,
         targetValue: 8,
         unit: 'successful dribbles',
+        xpReward: calculateXpReward(6, ChallengeCategory.dribbling),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -597,6 +641,7 @@ class ChallengeService {
         level: 7,
         targetValue: 60,
         unit: 'seconds',
+        xpReward: calculateXpReward(7, ChallengeCategory.dribbling),
       ),
       
       // Fitness challenges
@@ -608,6 +653,7 @@ class ChallengeService {
         level: 1,
         targetValue: 25,
         unit: 'minutes',
+        xpReward: calculateXpReward(1, ChallengeCategory.fitness),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -617,6 +663,7 @@ class ChallengeService {
         level: 2,
         targetValue: 20,
         unit: 'shuttles',
+        xpReward: calculateXpReward(2, ChallengeCategory.fitness),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -626,6 +673,7 @@ class ChallengeService {
         level: 3,
         targetValue: 180,
         unit: 'seconds',
+        xpReward: calculateXpReward(3, ChallengeCategory.fitness),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -635,6 +683,7 @@ class ChallengeService {
         level: 4,
         targetValue: 30,
         unit: 'jumps',
+        xpReward: calculateXpReward(4, ChallengeCategory.fitness),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -644,6 +693,7 @@ class ChallengeService {
         level: 5,
         targetValue: 5,
         unit: 'drills',
+        xpReward: calculateXpReward(5, ChallengeCategory.fitness),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -653,6 +703,7 @@ class ChallengeService {
         level: 6,
         targetValue: 12,
         unit: 'levels',
+        xpReward: calculateXpReward(6, ChallengeCategory.fitness),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -662,6 +713,7 @@ class ChallengeService {
         level: 7,
         targetValue: 10,
         unit: 'sprints',
+        xpReward: calculateXpReward(7, ChallengeCategory.fitness),
       ),
       
       // Defense challenges
@@ -673,6 +725,7 @@ class ChallengeService {
         level: 1,
         targetValue: 10,
         unit: 'tackles',
+        xpReward: calculateXpReward(1, ChallengeCategory.defense),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -682,6 +735,7 @@ class ChallengeService {
         level: 2,
         targetValue: 15,
         unit: 'interceptions',
+        xpReward: calculateXpReward(2, ChallengeCategory.defense),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -691,6 +745,7 @@ class ChallengeService {
         level: 3,
         targetValue: 10,
         unit: 'minutes',
+        xpReward: calculateXpReward(3, ChallengeCategory.defense),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -700,6 +755,7 @@ class ChallengeService {
         level: 4,
         targetValue: 8,
         unit: 'blocks',
+        xpReward: calculateXpReward(4, ChallengeCategory.defense),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -709,6 +765,7 @@ class ChallengeService {
         level: 5,
         targetValue: 12,
         unit: 'headers',
+        xpReward: calculateXpReward(5, ChallengeCategory.defense),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -718,6 +775,7 @@ class ChallengeService {
         level: 6,
         targetValue: 15,
         unit: 'recovery runs',
+        xpReward: calculateXpReward(6, ChallengeCategory.defense),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -727,6 +785,7 @@ class ChallengeService {
         level: 7,
         targetValue: 15,
         unit: 'minutes',
+        xpReward: calculateXpReward(7, ChallengeCategory.defense),
       ),
       
       // Goalkeeping challenges
@@ -738,6 +797,7 @@ class ChallengeService {
         level: 1,
         targetValue: 15,
         unit: 'saves',
+        xpReward: calculateXpReward(1, ChallengeCategory.goalkeeping),
       ),
       Challenge(
         id: _uuid.v4(),
@@ -747,116 +807,201 @@ class ChallengeService {
         level: 2,
         targetValue: 10,
         unit: 'catches',
+        xpReward: calculateXpReward(2, ChallengeCategory.goalkeeping),
       ),
       Challenge(
         id: _uuid.v4(),
-        title: 'Diving Saves',
-        description: 'Make 8 successful diving saves from shots aimed at the corners.',
+        title: 'Reflex Saves',
+        description: 'Make 8 reflex saves from close-range shots.',
         category: ChallengeCategory.goalkeeping,
         level: 3,
         targetValue: 8,
         unit: 'saves',
+        xpReward: calculateXpReward(3, ChallengeCategory.goalkeeping),
       ),
       Challenge(
         id: _uuid.v4(),
         title: 'Distribution Accuracy',
-        description: 'Complete 12 accurate distributions (throws or kicks) to teammates in specific zones.',
+        description: 'Complete 12 accurate distributions to teammates beyond the halfway line.',
         category: ChallengeCategory.goalkeeping,
         level: 4,
         targetValue: 12,
         unit: 'distributions',
+        xpReward: calculateXpReward(4, ChallengeCategory.goalkeeping),
       ),
       Challenge(
         id: _uuid.v4(),
         title: 'One-on-One Situations',
-        description: 'Successfully stop 6 attackers in one-on-one situations.',
+        description: 'Successfully save 6 one-on-one situations against attackers.',
         category: ChallengeCategory.goalkeeping,
         level: 5,
         targetValue: 6,
         unit: 'saves',
+        xpReward: calculateXpReward(5, ChallengeCategory.goalkeeping),
       ),
       Challenge(
         id: _uuid.v4(),
-        title: 'Penalty Saving',
+        title: 'Penalty Save Master',
         description: 'Save 4 out of 10 penalty kicks.',
         category: ChallengeCategory.goalkeeping,
         level: 6,
         targetValue: 4,
         unit: 'saves',
+        xpReward: calculateXpReward(6, ChallengeCategory.goalkeeping),
       ),
       Challenge(
         id: _uuid.v4(),
         title: 'Sweeper Keeper',
-        description: 'Successfully act as a sweeper keeper in 5 situations outside the penalty area.',
+        description: 'Successfully intercept 5 through balls outside the penalty area.',
         category: ChallengeCategory.goalkeeping,
         level: 7,
         targetValue: 5,
         unit: 'interceptions',
+        xpReward: calculateXpReward(7, ChallengeCategory.goalkeeping),
       ),
       
       // Tactical challenges
       Challenge(
         id: _uuid.v4(),
-        title: 'Tactical Analysis',
-        description: 'Analyze a match and identify 10 key tactical situations.',
+        title: 'Match Analysis',
+        description: 'Analyze 10 different game situations and identify the correct tactical response.',
         category: ChallengeCategory.tactical,
         level: 1,
         targetValue: 10,
         unit: 'analyses',
+        xpReward: calculateXpReward(1, ChallengeCategory.tactical),
       ),
       Challenge(
         id: _uuid.v4(),
         title: 'Positional Awareness',
-        description: 'Maintain optimal positioning for 15 minutes in a small-sided game, as evaluated by a coach.',
+        description: 'Maintain optimal positioning in relation to teammates and opponents for 15 minutes.',
         category: ChallengeCategory.tactical,
         level: 2,
         targetValue: 15,
         unit: 'minutes',
+        xpReward: calculateXpReward(2, ChallengeCategory.tactical),
       ),
       Challenge(
         id: _uuid.v4(),
-        title: 'Team Shape Maintenance',
-        description: 'Lead your team in maintaining proper shape for a full 20-minute practice match.',
+        title: 'Defensive Shape',
+        description: 'Maintain proper defensive shape with teammates for 20 minutes in a small-sided game.',
         category: ChallengeCategory.tactical,
         level: 3,
         targetValue: 20,
         unit: 'minutes',
+        xpReward: calculateXpReward(3, ChallengeCategory.tactical),
       ),
       Challenge(
         id: _uuid.v4(),
-        title: 'Transition Play',
-        description: 'Successfully execute 8 attacking transitions after regaining possession.',
+        title: 'Counterattack Transitions',
+        description: 'Successfully execute 8 counterattack transitions from defense to attack.',
         category: ChallengeCategory.tactical,
         level: 4,
         targetValue: 8,
         unit: 'transitions',
+        xpReward: calculateXpReward(4, ChallengeCategory.tactical),
       ),
       Challenge(
         id: _uuid.v4(),
         title: 'Set Piece Organization',
-        description: 'Organize and execute 5 successful set piece routines (corners or free kicks).',
+        description: 'Successfully organize and execute 5 set pieces (corners, free kicks) resulting in goal-scoring opportunities.',
         category: ChallengeCategory.tactical,
         level: 5,
         targetValue: 5,
         unit: 'set pieces',
+        xpReward: calculateXpReward(5, ChallengeCategory.tactical),
       ),
       Challenge(
         id: _uuid.v4(),
         title: 'Game Management',
-        description: 'Successfully manage a practice game scenario (e.g., protecting a lead) for 15 minutes.',
+        description: 'Demonstrate effective game management skills for 15 minutes while ahead in a match.',
         category: ChallengeCategory.tactical,
         level: 6,
         targetValue: 15,
         unit: 'minutes',
+        xpReward: calculateXpReward(6, ChallengeCategory.tactical),
       ),
       Challenge(
         id: _uuid.v4(),
-        title: 'Tactical Flexibility',
-        description: 'Adapt to 3 different formations during a practice match as instructed by the coach.',
+        title: 'Formation Adaptability',
+        description: 'Successfully adapt to 3 different formations during a training session.',
         category: ChallengeCategory.tactical,
         level: 7,
         targetValue: 3,
         unit: 'formations',
+        xpReward: calculateXpReward(7, ChallengeCategory.tactical),
+      ),
+      
+      // Wall Touches challenges
+      Challenge(
+        id: _uuid.v4(),
+        title: '30-Day Wall Touches Challenge',
+        description: 'Touch the ball against a wall 100 times daily for 30 days to improve ball control!',
+        category: ChallengeCategory.wallTouches,
+        level: 1,
+        targetValue: 30,
+        unit: 'days',
+        xpReward: calculateXpReward(1, ChallengeCategory.wallTouches),
+      ),
+      Challenge(
+        id: _uuid.v4(),
+        title: 'Wall Touches Speed Challenge',
+        description: 'Complete 50 wall touches in under 60 seconds.',
+        category: ChallengeCategory.wallTouches,
+        level: 2,
+        targetValue: 50,
+        unit: 'touches',
+        xpReward: calculateXpReward(2, ChallengeCategory.wallTouches),
+      ),
+      Challenge(
+        id: _uuid.v4(),
+        title: 'Two-Touch Wall Challenge',
+        description: 'Complete 40 two-touch wall passes without dropping the ball.',
+        category: ChallengeCategory.wallTouches,
+        level: 3,
+        targetValue: 40,
+        unit: 'passes',
+        xpReward: calculateXpReward(3, ChallengeCategory.wallTouches),
+      ),
+      Challenge(
+        id: _uuid.v4(),
+        title: 'Weak Foot Wall Challenge',
+        description: 'Complete 30 wall passes using only your weak foot.',
+        category: ChallengeCategory.wallTouches,
+        level: 4,
+        targetValue: 30,
+        unit: 'passes',
+        xpReward: calculateXpReward(4, ChallengeCategory.wallTouches),
+      ),
+      Challenge(
+        id: _uuid.v4(),
+        title: 'Alternating Feet Wall Touches',
+        description: 'Complete 60 alternating foot wall passes without making a mistake.',
+        category: ChallengeCategory.wallTouches,
+        level: 5,
+        targetValue: 60,
+        unit: 'passes',
+        xpReward: calculateXpReward(5, ChallengeCategory.wallTouches),
+      ),
+      Challenge(
+        id: _uuid.v4(),
+        title: 'Wall Touches Endurance Test',
+        description: 'Complete 200 wall touches without stopping or dropping the ball.',
+        category: ChallengeCategory.wallTouches,
+        level: 6,
+        targetValue: 200,
+        unit: 'touches',
+        xpReward: calculateXpReward(6, ChallengeCategory.wallTouches),
+      ),
+      Challenge(
+        id: _uuid.v4(),
+        title: 'Wall Touches Skill Variation',
+        description: 'Perform 5 different types of wall touches drills (e.g., inside foot, outside foot, thigh control, chest control) for 20 touches each.',
+        category: ChallengeCategory.wallTouches,
+        level: 7,
+        targetValue: 5,
+        unit: 'variations',
+        xpReward: calculateXpReward(7, ChallengeCategory.wallTouches),
       ),
     ];
   }
