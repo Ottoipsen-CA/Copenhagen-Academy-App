@@ -212,8 +212,8 @@ class FifaPlayerCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _buildStatColumn("DRI", stats.dribbling.toInt()),
-                    _buildStatColumn("DEF", stats.defense.toInt()),
-                    _buildStatColumn("PHY", stats.physical.toInt()),
+                    _buildStatColumn("JUG", stats.juggles.toInt()),
+                    _buildStatColumn("FT", stats.first_touch.toInt()),
                   ],
                 ),
               ],

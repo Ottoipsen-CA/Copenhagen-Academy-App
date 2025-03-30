@@ -32,16 +32,26 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
     });
     
     try {
+      // Use timestamp to prevent caching
       final stats = await PlayerStatsService.getPlayerStats();
-      setState(() {
-        _playerStats = stats;
-        _isLoading = false;
-      });
+      
+      // Add a delay to ensure backend has time to process
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (mounted) {
+        setState(() {
+          _playerStats = stats;
+          _isLoading = false;
+        });
+      }
+      print('Player stats loaded: ${stats?.overallRating}');
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'Failed to load player stats: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Failed to load player stats: $e';
+        });
+      }
     }
   }
   
@@ -115,9 +125,9 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
             const SizedBox(height: 8),
             _buildStatProgressBar('Dribbling', _playerStats!.dribbling),
             const SizedBox(height: 8),
-            _buildStatProgressBar('Defense', _playerStats!.defense),
+            _buildStatProgressBar('Juggles', _playerStats!.juggles),
             const SizedBox(height: 8),
-            _buildStatProgressBar('Physical', _playerStats!.physical),
+            _buildStatProgressBar('First Touch', _playerStats!.first_touch),
             
             const SizedBox(height: 24),
             
@@ -199,46 +209,39 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
                 children: [
                   // Background
                   Container(
-                    height: 20,
+                    height: 12,
                     decoration: BoxDecoration(
                       color: Colors.grey[800],
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                   ),
                   // Progress
-                  FractionallySizedBox(
-                    widthFactor: percentage,
-                    child: Container(
-                      height: 20,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            _getStatColor(value.toInt()),
-                            _getStatColor(value.toInt()).withOpacity(0.7),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                  // Value text
-                  Center(
-                    child: Text(
-                      value.round().toString(),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black45,
-                            blurRadius: 2,
-                            offset: Offset(1, 1),
-                          ),
+                  Container(
+                    height: 12,
+                    width: MediaQuery.of(context).size.width * 0.6 * percentage,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          _getColorForRating(value),
+                          _getColorForRating(value).withOpacity(0.7),
                         ],
                       ),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                   ),
                 ],
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  value.round().toString(),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
+                ),
               ),
             ],
           ),
@@ -247,23 +250,22 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
     );
   }
   
-  Color _getStatColor(int value) {
-    if (value >= 90) {
-      return Colors.green[700]!;
-    } else if (value >= 80) {
-      return Colors.green;
-    } else if (value >= 70) {
-      return Colors.lime;
-    } else if (value >= 60) {
-      return Colors.amber;
-    } else if (value >= 50) {
-      return Colors.orange;
-    } else {
-      return Colors.red;
-    }
+  Color _getColorForRating(double rating) {
+    if (rating >= 90) return Colors.red;
+    if (rating >= 80) return Colors.orange;
+    if (rating >= 70) return Colors.yellow;
+    if (rating >= 60) return Colors.lightGreen;
+    if (rating >= 50) return Colors.green;
+    return Colors.blueGrey;
   }
   
   String _formatDate(DateTime date) {
-    return "${date.day}/${date.month}/${date.year}";
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    final year = date.year;
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    
+    return '$month/$day/$year $hour:$minute';
   }
 } 

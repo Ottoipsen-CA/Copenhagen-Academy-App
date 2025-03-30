@@ -68,8 +68,8 @@ class PlayerStatBase(BaseModel):
     shooting: int
     passing: int
     dribbling: int
-    defense: int
-    physical: int
+    juggles: int
+    first_touch: int
     overall_rating: int
 
 

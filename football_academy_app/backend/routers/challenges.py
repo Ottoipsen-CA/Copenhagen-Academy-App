@@ -176,67 +176,78 @@ async def complete_challenge(
     if not stats:
         stats = models.PlayerStats(
             player_id=current_user.id,
-            pace=50, shooting=50, passing=50, dribbling=50, defense=50, physical=50,
+            pace=50, shooting=50, passing=50, dribbling=50, juggles=50, first_touch=50,
             overall_rating=60,
             last_updated=now
         )
         db.add(stats)
     
+    # Print before values for debugging
+    print(f"BEFORE - User {current_user.id} stats: pace={stats.pace}, shooting={stats.shooting}, passing={stats.passing}, dribbling={stats.dribbling}, juggles={stats.juggles}, first_touch={stats.first_touch}, overall={stats.overall_rating}")
+    
     # Determine which stat to improve based on challenge category
     xp_boost = challenge.xp_reward  # Base XP boost from the challenge
-    base_boost = xp_boost / 2  # Smaller boost for overall rating
-    specific_boost = xp_boost * 1.5  # Larger boost for the specific skill
-    
-    # Update overall rating
-    stats.overall_rating += base_boost
+    base_boost = xp_boost * 2  # Increased overall rating boost (was xp_boost/2)
+    specific_boost = xp_boost * 5  # Much larger boost for the specific skill (was xp_boost*1.5)
     
     # Update specific attribute based on challenge category
     if challenge.category.lower() == "passing":
         stats.passing += specific_boost
-        print(f"Improved passing by {specific_boost} for user {current_user.id}")
+        stats.first_touch += specific_boost * 0.5
+        print(f"Improved passing by {specific_boost} and first touch by {specific_boost * 0.5} for user {current_user.id}")
     elif challenge.category.lower() == "shooting":
         stats.shooting += specific_boost
         print(f"Improved shooting by {specific_boost} for user {current_user.id}")
     elif challenge.category.lower() == "dribbling":
         stats.dribbling += specific_boost
-        print(f"Improved dribbling by {specific_boost} for user {current_user.id}")
+        stats.first_touch += specific_boost * 0.3
+        print(f"Improved dribbling by {specific_boost} and first touch by {specific_boost * 0.3} for user {current_user.id}")
     elif challenge.category.lower() == "fitness":
-        stats.pace += specific_boost / 2
-        stats.physical += specific_boost / 2
-        print(f"Improved pace and physical by {specific_boost/2} each for user {current_user.id}")
-    elif challenge.category.lower() == "defense":
-        stats.defense += specific_boost
-        print(f"Improved defense by {specific_boost} for user {current_user.id}")
-    elif challenge.category.lower() == "goalkeeping":
-        stats.defense += specific_boost / 2
-        stats.physical += specific_boost / 2
-        print(f"Improved defense and physical by {specific_boost/2} each for user {current_user.id}")
+        stats.pace += specific_boost 
+        print(f"Improved pace by {specific_boost} for user {current_user.id}")
+    elif challenge.category.lower() == "juggles":
+        stats.juggles += specific_boost
+        stats.first_touch += specific_boost * 0.3
+        print(f"Improved juggles by {specific_boost} and first touch by {specific_boost * 0.3} for user {current_user.id}")
+    elif challenge.category.lower() == "first_touch" or challenge.category.lower() == "first touch":
+        stats.first_touch += specific_boost
+        stats.dribbling += specific_boost * 0.3
+        print(f"Improved first touch by {specific_boost} and dribbling by {specific_boost * 0.3} for user {current_user.id}")
     elif challenge.category.lower() == "tactical":
-        # Tactical challenges improve all stats slightly
-        all_stats_boost = specific_boost / 5
+        # Tactical challenges improve all stats significantly
+        all_stats_boost = specific_boost / 2
         stats.passing += all_stats_boost
         stats.shooting += all_stats_boost
         stats.dribbling += all_stats_boost
         stats.pace += all_stats_boost
-        stats.defense += all_stats_boost
-        stats.physical += all_stats_boost
+        stats.juggles += all_stats_boost
+        stats.first_touch += all_stats_boost
         print(f"Improved all stats by {all_stats_boost} for user {current_user.id}")
     else:
         # For weekly challenges or other categories, just boost overall rating more
-        stats.overall_rating += xp_boost  # Full boost to overall
-        print(f"Improved overall rating by {xp_boost} for user {current_user.id}")
+        print(f"Improved overall rating for weekly challenge for user {current_user.id}")
     
     # Make sure no stat goes over 99
     stats.pace = min(stats.pace, 99)
     stats.shooting = min(stats.shooting, 99)
     stats.passing = min(stats.passing, 99)
     stats.dribbling = min(stats.dribbling, 99)
-    stats.defense = min(stats.defense, 99)
-    stats.physical = min(stats.physical, 99)
-    stats.overall_rating = min(stats.overall_rating, 99)
+    stats.juggles = min(stats.juggles, 99)
+    stats.first_touch = min(stats.first_touch, 99)
+    
+    # Calculate overall rating as average of all stats
+    new_overall = (stats.pace + stats.shooting + stats.passing + stats.dribbling + stats.juggles + stats.first_touch) / 6
+    
+    # Apply additional base boost to the calculated overall rating
+    stats.overall_rating = min(new_overall + base_boost, 99)
+    
+    print(f"Updated overall rating to {stats.overall_rating} for user {current_user.id}")
     
     # Update the last_updated timestamp
     stats.last_updated = now
+    
+    # Print after values for debugging
+    print(f"AFTER - User {current_user.id} stats: pace={stats.pace}, shooting={stats.shooting}, passing={stats.passing}, dribbling={stats.dribbling}, juggles={stats.juggles}, first_touch={stats.first_touch}, overall={stats.overall_rating}")
     
     # 5. Unlock next challenges (only for non-weekly challenges)
     if not challenge.is_weekly:

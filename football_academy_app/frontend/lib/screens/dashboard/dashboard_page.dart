@@ -1099,13 +1099,13 @@ class _DashboardPageState extends State<DashboardPage> {
           progressColor: skillColors['Dribbling']!,
         ),
         SkillProgressBar(
-          skillName: 'Defense',
-          currentValue: _playerStats!.defense.toInt(),
+          skillName: 'Juggles',
+          currentValue: _playerStats!.juggles.toInt(),
           progressColor: skillColors['Defense']!,
         ),
         SkillProgressBar(
-          skillName: 'Physical',
-          currentValue: _playerStats!.physical.toInt(),
+          skillName: 'First Touch',
+          currentValue: _playerStats!.first_touch.toInt(),
           progressColor: skillColors['Physical']!,
         ),
       ],

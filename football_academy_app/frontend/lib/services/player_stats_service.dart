@@ -52,8 +52,8 @@ class PlayerStatsService {
           shooting: statsJson['shooting'].toDouble(),
           passing: statsJson['passing'].toDouble(),
           dribbling: statsJson['dribbling'].toDouble(),
-          defense: statsJson['defense'].toDouble(),
-          physical: statsJson['physical'].toDouble(),
+          juggles: statsJson['juggles'].toDouble(),
+          first_touch: statsJson['first_touch'].toDouble(),
           overallRating: statsJson['overall_rating'].toDouble(),
           lastUpdated: DateTime.parse(statsJson['last_updated']),
         );
@@ -100,8 +100,8 @@ class PlayerStatsService {
       shooting: 79.0,
       passing: 76.0,
       dribbling: 81.0,
-      defense: 49.0,
-      physical: 70.0,
+      juggles: 65.0,
+      first_touch: 72.0,
       overallRating: 83.0,
       lastUpdated: DateTime.now(),
     );
@@ -221,8 +221,8 @@ class PlayerStatsService {
           shooting: stats.shooting,
           passing: newPassingRating,
           dribbling: stats.dribbling,
-          defense: stats.defense,
-          physical: stats.physical,
+          juggles: stats.juggles,
+          first_touch: stats.first_touch,
           lastUpdated: DateTime.now(),
           // Recalculate overall rating
           overallRating: _calculateOverallRating(
@@ -230,8 +230,8 @@ class PlayerStatsService {
             stats.shooting, 
             newPassingRating,
             stats.dribbling,
-            stats.defense,
-            stats.physical
+            stats.juggles,
+            stats.first_touch
           ),
         );
         break;
@@ -245,16 +245,16 @@ class PlayerStatsService {
           shooting: newShootingRating,
           passing: stats.passing,
           dribbling: stats.dribbling,
-          defense: stats.defense,
-          physical: stats.physical,
+          juggles: stats.juggles,
+          first_touch: stats.first_touch,
           lastUpdated: DateTime.now(),
           overallRating: _calculateOverallRating(
             stats.pace, 
             newShootingRating, 
             stats.passing,
             stats.dribbling,
-            stats.defense,
-            stats.physical
+            stats.juggles,
+            stats.first_touch
           ),
         );
         break;
@@ -268,23 +268,23 @@ class PlayerStatsService {
           shooting: stats.shooting,
           passing: stats.passing,
           dribbling: newDribblingRating,
-          defense: stats.defense,
-          physical: stats.physical,
+          juggles: stats.juggles,
+          first_touch: stats.first_touch,
           lastUpdated: DateTime.now(),
           overallRating: _calculateOverallRating(
             stats.pace, 
             stats.shooting, 
             stats.passing,
             newDribblingRating,
-            stats.defense,
-            stats.physical
+            stats.juggles,
+            stats.first_touch
           ),
         );
         break;
         
       case ChallengeCategory.fitness:
         final newPaceRating = math.min(stats.pace + baseRatingIncrement * 0.7, maxRatingCap);
-        final newPhysicalRating = math.min(stats.physical + baseRatingIncrement * 0.3, maxRatingCap);
+        final newFirst_touchRating = math.min(stats.first_touch + baseRatingIncrement * 0.3, maxRatingCap);
         updatedStats = PlayerStats(
           id: stats.id,
           playerId: stats.playerId,
@@ -292,22 +292,22 @@ class PlayerStatsService {
           shooting: stats.shooting,
           passing: stats.passing,
           dribbling: stats.dribbling,
-          defense: stats.defense,
-          physical: newPhysicalRating,
+          juggles: stats.juggles,
+          first_touch: newFirst_touchRating,
           lastUpdated: DateTime.now(),
           overallRating: _calculateOverallRating(
             newPaceRating, 
             stats.shooting, 
             stats.passing,
             stats.dribbling,
-            stats.defense,
-            newPhysicalRating
+            stats.juggles,
+            newFirst_touchRating
           ),
         );
         break;
         
       case ChallengeCategory.defense:
-        final newDefenseRating = math.min(stats.defense + baseRatingIncrement, maxRatingCap);
+        final newDefenseRating = math.min(stats.juggles + baseRatingIncrement, maxRatingCap);
         updatedStats = PlayerStats(
           id: stats.id,
           playerId: stats.playerId,
@@ -315,8 +315,8 @@ class PlayerStatsService {
           shooting: stats.shooting,
           passing: stats.passing,
           dribbling: stats.dribbling,
-          defense: newDefenseRating,
-          physical: stats.physical,
+          juggles: newDefenseRating,
+          first_touch: stats.first_touch,
           lastUpdated: DateTime.now(),
           overallRating: _calculateOverallRating(
             stats.pace, 
@@ -324,15 +324,15 @@ class PlayerStatsService {
             stats.passing,
             stats.dribbling,
             newDefenseRating,
-            stats.physical
+            stats.first_touch
           ),
         );
         break;
         
       case ChallengeCategory.goalkeeping:
         // Goalkeeping challenges primarily improve defense and reactions
-        final newDefenseRating = math.min(stats.defense + baseRatingIncrement * 0.6, maxRatingCap);
-        final newPhysicalRating = math.min(stats.physical + baseRatingIncrement * 0.4, maxRatingCap);
+        final newDefenseRating = math.min(stats.juggles + baseRatingIncrement * 0.6, maxRatingCap);
+        final newFirst_touchRating = math.min(stats.first_touch + baseRatingIncrement * 0.4, maxRatingCap);
         updatedStats = PlayerStats(
           id: stats.id,
           playerId: stats.playerId,
@@ -340,8 +340,8 @@ class PlayerStatsService {
           shooting: stats.shooting,
           passing: stats.passing,
           dribbling: stats.dribbling,
-          defense: newDefenseRating,
-          physical: newPhysicalRating,
+          juggles: newDefenseRating,
+          first_touch: newFirst_touchRating,
           lastUpdated: DateTime.now(),
           overallRating: _calculateOverallRating(
             stats.pace, 
@@ -349,7 +349,7 @@ class PlayerStatsService {
             stats.passing,
             stats.dribbling,
             newDefenseRating,
-            newPhysicalRating
+            newFirst_touchRating
           ),
         );
         break;
@@ -357,7 +357,7 @@ class PlayerStatsService {
       case ChallengeCategory.tactical:
         // Tactical challenges improve multiple attributes slightly
         final newPassingRating = math.min(stats.passing + baseRatingIncrement * 0.3, maxRatingCap);
-        final newDefenseRating = math.min(stats.defense + baseRatingIncrement * 0.3, maxRatingCap);
+        final newDefenseRating = math.min(stats.juggles + baseRatingIncrement * 0.3, maxRatingCap);
         final newDribblingRating = math.min(stats.dribbling + baseRatingIncrement * 0.2, maxRatingCap);
         final newShootingRating = math.min(stats.shooting + baseRatingIncrement * 0.2, maxRatingCap);
         updatedStats = PlayerStats(
@@ -367,8 +367,8 @@ class PlayerStatsService {
           shooting: newShootingRating,
           passing: newPassingRating,
           dribbling: newDribblingRating,
-          defense: newDefenseRating,
-          physical: stats.physical,
+          juggles: newDefenseRating,
+          first_touch: stats.first_touch,
           lastUpdated: DateTime.now(),
           overallRating: _calculateOverallRating(
             stats.pace, 
@@ -376,7 +376,7 @@ class PlayerStatsService {
             newPassingRating,
             newDribblingRating,
             newDefenseRating,
-            stats.physical
+            stats.first_touch
           ),
         );
         break;
@@ -388,8 +388,8 @@ class PlayerStatsService {
         final newShootingRating = math.min(stats.shooting + smallIncrement, maxRatingCap);
         final newPassingRating = math.min(stats.passing + smallIncrement, maxRatingCap);
         final newDribblingRating = math.min(stats.dribbling + smallIncrement, maxRatingCap);
-        final newDefenseRating = math.min(stats.defense + smallIncrement, maxRatingCap);
-        final newPhysicalRating = math.min(stats.physical + smallIncrement, maxRatingCap);
+        final newDefenseRating = math.min(stats.juggles + smallIncrement, maxRatingCap);
+        final newFirst_touchRating = math.min(stats.first_touch + smallIncrement, maxRatingCap);
         
         updatedStats = PlayerStats(
           id: stats.id,
@@ -398,8 +398,8 @@ class PlayerStatsService {
           shooting: newShootingRating,
           passing: newPassingRating,
           dribbling: newDribblingRating,
-          defense: newDefenseRating,
-          physical: newPhysicalRating,
+          juggles: newDefenseRating,
+          first_touch: newFirst_touchRating,
           lastUpdated: DateTime.now(),
           overallRating: _calculateOverallRating(
             newPaceRating, 
@@ -407,7 +407,7 @@ class PlayerStatsService {
             newPassingRating,
             newDribblingRating,
             newDefenseRating,
-            newPhysicalRating
+            newFirst_touchRating
           ),
         );
         break;
@@ -424,16 +424,16 @@ class PlayerStatsService {
           shooting: stats.shooting,
           passing: newPassingRating,
           dribbling: newDribblingRating,
-          defense: stats.defense,
-          physical: stats.physical,
+          juggles: stats.juggles,
+          first_touch: stats.first_touch,
           lastUpdated: DateTime.now(),
           overallRating: _calculateOverallRating(
             stats.pace, 
             stats.shooting, 
             newPassingRating,
             newDribblingRating,
-            stats.defense,
-            stats.physical
+            stats.juggles,
+            stats.first_touch
           ),
         );
         break;
@@ -452,10 +452,10 @@ class PlayerStatsService {
     double shooting, 
     double passing, 
     double dribbling, 
-    double defense, 
-    double physical
+    double juggles, 
+    double first_touch
   ) {
     // Simple average for now
-    return (pace + shooting + passing + dribbling + defense + physical) / 6.0;
+    return (pace + shooting + passing + dribbling + juggles + first_touch) / 6.0;
   }
 } 

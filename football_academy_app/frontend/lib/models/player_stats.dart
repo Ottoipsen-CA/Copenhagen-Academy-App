@@ -5,8 +5,8 @@ class PlayerStats {
   final double shooting;
   final double passing;
   final double dribbling;
-  final double defense;
-  final double physical;
+  final double juggles;
+  final double first_touch;
   final double overallRating;
   final DateTime? lastUpdated;
 
@@ -17,8 +17,8 @@ class PlayerStats {
     this.shooting = 79,
     this.passing = 76,
     this.dribbling = 81,
-    this.defense = 49,
-    this.physical = 70,
+    this.juggles = 65,
+    this.first_touch = 72,
     this.overallRating = 83,
     this.lastUpdated,
   });
@@ -31,8 +31,8 @@ class PlayerStats {
       shooting: json['shooting']?.toDouble() ?? 79,
       passing: json['passing']?.toDouble() ?? 76,
       dribbling: json['dribbling']?.toDouble() ?? 81,
-      defense: json['defense']?.toDouble() ?? 49,
-      physical: json['physical']?.toDouble() ?? 70,
+      juggles: json['juggles']?.toDouble() ?? 65,
+      first_touch: json['first_touch']?.toDouble() ?? 72,
       overallRating: json['overall_rating']?.toDouble() ?? 83,
       lastUpdated: json['last_updated'] != null
           ? DateTime.parse(json['last_updated'])
@@ -48,8 +48,8 @@ class PlayerStats {
       'shooting': shooting,
       'passing': passing,
       'dribbling': dribbling,
-      'defense': defense,
-      'physical': physical,
+      'juggles': juggles,
+      'first_touch': first_touch,
       'overall_rating': overallRating,
       'last_updated': lastUpdated?.toIso8601String(),
     };

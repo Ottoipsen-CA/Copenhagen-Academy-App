@@ -191,7 +191,8 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
     // Calculate performance score for feedback message
     final double performanceScore = _userChallenge.currentValue / _challenge.targetValue.toDouble();
     final int xpReward = _challenge.xpReward;
-    final double specificBoost = xpReward * 1.5;
+    final double specificBoost = xpReward * 5;
+    final double baseBoost = xpReward * 2;
     
     if (performanceScore >= 1.0) {
       performanceText = 'Perfect score! +${specificBoost.toStringAsFixed(1)} $improvedStat rating!';
@@ -282,6 +283,15 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
                   ),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 5),
+                Text(
+                  '(+${baseBoost.toStringAsFixed(1)} Overall Rating)',
+                  style: TextStyle(
+                    color: Colors.amber[300],
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 10),
                 // Current stats display
                 if (playerStats != null) ...[
@@ -294,14 +304,33 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 5),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.refresh, color: Colors.white, size: 14),
+                      label: const Text(
+                        'Refresh Stats',
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      onPressed: () async {
+                        // Refresh player stats from the server
+                        final freshStats = await PlayerStatsService.getPlayerStats();
+                        if (mounted && freshStats != null) {
+                          Navigator.pop(context);
+                          _showCompletionDialog(); // Show dialog again with fresh stats
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 5),
                   _buildStatRow('Overall', playerStats.overallRating),
                   _buildStatRow('Pace', playerStats.pace),
                   _buildStatRow('Shooting', playerStats.shooting),
                   _buildStatRow('Passing', playerStats.passing),
                   _buildStatRow('Dribbling', playerStats.dribbling),
-                  _buildStatRow('Defense', playerStats.defense),
-                  _buildStatRow('Physical', playerStats.physical),
+                  _buildStatRow('Juggles', playerStats.juggles),
+                  _buildStatRow('First Touch', playerStats.first_touch),
                 ],
                 const SizedBox(height: 20),
                 // Continue button

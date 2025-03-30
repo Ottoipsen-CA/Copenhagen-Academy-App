@@ -42,13 +42,13 @@ class RadarChartPainter extends CustomPainter {
     final radius = math.min(center.dx, center.dy) * 0.8;
     
     // Calculate values
-    final values = [
+    final values = <double>[
       stats.pace / 100,
       stats.shooting / 100,
       stats.passing / 100,
       stats.dribbling / 100,
-      stats.defense / 100,
-      stats.physical / 100,
+      stats.juggles / 100,
+      stats.first_touch / 100,
     ];
     
     // Calculate angles
@@ -151,7 +151,7 @@ class RadarChartPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
     
-    final labels = ['PACE', 'SHOOTING', 'PASSING', 'DRIBBLING', 'DEFENSE', 'PHYSICAL'];
+    final labels = ['PACE', 'SHOOTING', 'PASSING', 'DRIBBLING', 'JUGGLES', 'FIRST TOUCH'];
     
     for (int i = 0; i < sides; i++) {
       final currentAngle = angle * i - math.pi / 2;
@@ -220,7 +220,7 @@ class RadarChartPainter extends CustomPainter {
   }
   
   Color _getPointColor(int index) {
-    final labels = ['PACE', 'SHOOTING', 'PASSING', 'DRIBBLING', 'DEFENSE', 'PHYSICAL'];
+    final labels = ['PACE', 'SHOOTING', 'PASSING', 'DRIBBLING', 'JUGGLES', 'FIRST TOUCH'];
     return labelColors[labels[index]] ?? Color(0xFF00F5A0);
   }
 

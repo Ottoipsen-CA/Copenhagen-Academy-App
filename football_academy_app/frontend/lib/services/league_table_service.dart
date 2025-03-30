@@ -135,8 +135,8 @@ class LeagueTableService {
         shooting: shooting,
         passing: passing,
         dribbling: dribbling,
-        defense: defense,
-        physical: physical,
+        juggles: defense,
+        first_touch: physical,
         overallRating: overall,
       );
       

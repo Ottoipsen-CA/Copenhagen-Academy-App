@@ -148,24 +148,24 @@ class PlayerCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildStat(context, "80", "PC"),
-                  _buildStat(context, "81", "DRI"),
+                  _buildStat(context, stats.pace.round().toString(), "PAC"),
+                  _buildStat(context, stats.dribbling.round().toString(), "DRI"),
                 ],
               ),
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildStat(context, "79", "SHO"),
-                  _buildStat(context, "49", "DEF"),
+                  _buildStat(context, stats.shooting.round().toString(), "SHO"),
+                  _buildStat(context, stats.juggles.round().toString(), "JUG"),
                 ],
               ),
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildStat(context, "76", "PAS"),
-                  _buildStat(context, "70", "PHY"),
+                  _buildStat(context, stats.passing.round().toString(), "PAS"),
+                  _buildStat(context, stats.first_touch.round().toString(), "TCH"),
                 ],
               ),
             ],
@@ -248,16 +248,19 @@ class PlayerCard extends StatelessWidget {
   }
 
   Color _getRatingColor(double rating) {
-    if (rating >= 83) {
-      return const Color(0xFFFFD700); // Gold color for 83+
-    } else if (rating >= 75) {
-      return Colors.grey[300]!; // Silver color for 75-82
-    } else {
-      return const Color(0xFFCD7F32); // Bronze color for below 75
-    }
+    if (rating >= 90) return const Color(0xFFFF5252); // Red/Bronze
+    if (rating >= 80) return const Color(0xFFFFD700); // Gold
+    if (rating >= 70) return const Color(0xFFC0C0C0); // Silver
+    return const Color(0xFFCD7F32); // Bronze
   }
   
   String _formatDate(DateTime date) {
-    return "${date.day}/${date.month}/${date.year}";
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    final year = date.year;
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    
+    return '$month/$day/$year $hour:$minute';
   }
 } 

@@ -17,8 +17,8 @@ class PlayerStats(Base):
     shooting = Column(Integer)
     passing = Column(Integer)
     dribbling = Column(Integer)
-    defense = Column(Integer)
-    physical = Column(Integer)
+    juggles = Column(Integer)
+    first_touch = Column(Integer)
     overall_rating = Column(Integer)
     last_updated = Column(DateTime, default=datetime.utcnow)
 

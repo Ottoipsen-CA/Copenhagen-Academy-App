@@ -70,14 +70,24 @@ async def get_player_stats(
             shooting=50,
             passing=50,
             dribbling=50,
-            defense=50,
-            physical=50,
+            juggles=50,
+            first_touch=50,
             overall_rating=50,
             last_updated=datetime.utcnow()
         )
         db.add(stats)
         db.commit()
         db.refresh(stats)
+    
+    # Always recalculate the overall rating as the average of the stats
+    # This ensures consistency and fixes any potential database issues
+    recalculated_overall = (stats.pace + stats.shooting + stats.passing + 
+                           stats.dribbling + stats.juggles + stats.first_touch) / 6
+    
+    # If the stored overall is significantly different, update it in the database
+    if abs(stats.overall_rating - recalculated_overall) > 1.0:
+        stats.overall_rating = recalculated_overall
+        db.commit()
     
     print(f"Returning player stats for player {player_id}: pace={stats.pace}, shooting={stats.shooting}, passing={stats.passing}, overall={stats.overall_rating}")
     return stats
