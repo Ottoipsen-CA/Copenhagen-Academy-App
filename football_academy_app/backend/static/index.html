@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Academy API</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        h1 {
+            color: #2C3E50;
+        }
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #3498DB;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #2980B9;
+        }
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>⚽ Football Academy API</h1>
+        <p>API documentation and management portal</p>
+    </header>
+
+    <div class="card">
+        <h2>Welcome to the Football Academy API</h2>
+        <p>
+            This API provides endpoints for managing player profiles, training plans, 
+            challenges, achievements, and player statistics. It allows players to track 
+            their progress, complete challenges, and improve their football skills.
+        </p>
+        <p>
+            <a href="/docs" class="button">View API Docs (Swagger UI)</a>
+            <a href="/redoc" class="button">View API Docs (ReDoc)</a>
+        </p>
+    </div>
+
+    <div class="card">
+        <h2>API Overview</h2>
+        <p>The API is organized into the following categories:</p>
+        <ul>
+            <li><strong>Users</strong>: User registration, profile management</li>
+            <li><strong>Training Plans</strong>: Manage training plans and activities</li>
+            <li><strong>Exercises</strong>: Browse and access exercise instructions</li>
+            <li><strong>Achievements</strong>: View and manage player achievements and badges</li>
+            <li><strong>Player Stats</strong>: Track player performance statistics</li>
+            <li><strong>Challenge Progress</strong>: Record and view challenge completions</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>Getting Started</h2>
+        <p>To start using the API:</p>
+        <ol>
+            <li>Register a new user account or use the test credentials</li>
+            <li>Obtain an authentication token using the <code>/token</code> endpoint</li>
+            <li>Use the token in the Authorization header for subsequent requests</li>
+            <li>Explore the API endpoints using the documentation</li>
+        </ol>
+    </div>
+
+    <footer>
+        <p>&copy; 2023 Football Academy. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Auto-redirect to Swagger UI after 3 seconds
+        setTimeout(function() {
+            // Comment out this line if you don't want auto-redirect
+            // window.location.href = '/docs';
+        }, 3000);
+    </script>
+</body>
+</html> 

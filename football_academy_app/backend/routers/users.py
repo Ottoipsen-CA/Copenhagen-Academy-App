@@ -10,13 +10,40 @@ from schemas import UserCreate, UserBase, UserResponse  # Sørg for at UserRespo
 
 router = APIRouter(
     prefix="/users",
-    tags=["users"]
+    tags=["users"],
+    responses={
+        404: {"description": "User not found"},
+        401: {"description": "Not authenticated"},
+        403: {"description": "Not authorized to perform requested action"}
+    }
 )
 
 logger = logging.getLogger(__name__)
 
 
-@router.post("/", response_model=UserResponse)
+@router.post("/", 
+             response_model=UserResponse,
+             status_code=status.HTTP_201_CREATED,
+             summary="Create a new user",
+             description="Create a new user with the provided information and return the created user details",
+             responses={
+                 201: {
+                     "description": "User created successfully",
+                     "content": {
+                         "application/json": {
+                             "example": {
+                                 "id": 1,
+                                 "email": "player@example.com",
+                                 "full_name": "John Doe",
+                                 "position": "Striker",
+                                 "current_club": "FC Example",
+                                 "date_of_birth": "2000-01-01"
+                             }
+                         }
+                     }
+                 },
+                 400: {"description": "Email already registered"}
+             })
 async def create_user(user: UserCreate, db: Session = Depends(get_db), request: Request = None):
     try:
         logger.info(f"Registration attempt for email: {user.email}")
@@ -56,12 +83,19 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db), request: 
         raise
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me", 
+            response_model=UserResponse, 
+            summary="Get current user details",
+            description="Get details of the currently authenticated user")
 def read_users_me(current_user: UserModel = Depends(get_current_active_user)):
     return current_user
 
 
-@router.get("/{user_id}", response_model=UserResponse)
+@router.get("/{user_id}", 
+            response_model=UserResponse,
+            summary="Get user by ID",
+            description="Get details of a specific user by their ID",
+            responses={404: {"description": "User not found"}})
 def read_user(user_id: int, db: Session = Depends(get_db)):
     db_user = db.query(UserModel).filter(UserModel.id == user_id).first()
     if db_user is None:
@@ -69,7 +103,10 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 
-@router.put("/me", response_model=UserResponse)
+@router.put("/me", 
+            response_model=UserResponse,
+            summary="Update current user",
+            description="Update details of the currently authenticated user")
 def update_user(
     user_update: UserBase,
     current_user: UserModel = Depends(get_current_active_user),
@@ -83,7 +120,11 @@ def update_user(
     return current_user
 
 
-@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/me", 
+               status_code=status.HTTP_204_NO_CONTENT,
+               summary="Delete current user",
+               description="Delete the currently authenticated user's account",
+               responses={204: {"description": "User deleted successfully"}})
 def delete_user(
     current_user: UserModel = Depends(get_current_active_user),
     db: Session = Depends(get_db)

@@ -1,0 +1,2575 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Football Academy API",
+    "description": "\n    Football Academy API provides endpoints for managing player profiles, training plans, \n    challenges, achievements, and player statistics. \n    \n    This API allows players to track their progress, complete challenges, and improve their football skills.\n    ",
+    "contact": {
+      "name": "Football Academy Support",
+      "email": "support@football-academy.app"
+    },
+    "license": {
+      "name": "MIT License"
+    },
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/users/": {
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Create a new user",
+        "description": "Create a new user with the provided information and return the created user details",
+        "operationId": "create_user_users__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                },
+                "example": {
+                  "id": 1,
+                  "email": "player@example.com",
+                  "full_name": "John Doe",
+                  "position": "Striker",
+                  "current_club": "FC Example",
+                  "date_of_birth": "2000-01-01"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Not authorized to perform requested action"
+          },
+          "400": {
+            "description": "Email already registered"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get current user details",
+        "description": "Get details of the currently authenticated user",
+        "operationId": "read_users_me_users_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Not authorized to perform requested action"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update current user",
+        "description": "Update details of the currently authenticated user",
+        "operationId": "update_user_users_me_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserBase"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Not authorized to perform requested action"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Delete current user",
+        "description": "Delete the currently authenticated user's account",
+        "operationId": "delete_user_users_me_delete",
+        "responses": {
+          "204": {
+            "description": "User deleted successfully"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Not authorized to perform requested action"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/users/{user_id}": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get user by ID",
+        "description": "Get details of a specific user by their ID",
+        "operationId": "read_user_users__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Not authorized to perform requested action"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/training-plans/": {
+      "post": {
+        "tags": [
+          "training_plans"
+        ],
+        "summary": "Create Training Plan",
+        "operationId": "create_training_plan_training_plans__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingPlanCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingPlan"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "training_plans"
+        ],
+        "summary": "Read Training Plans",
+        "operationId": "read_training_plans_training_plans__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TrainingPlan"
+                  },
+                  "title": "Response Read Training Plans Training Plans  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/training-plans/{training_plan_id}": {
+      "get": {
+        "tags": [
+          "training_plans"
+        ],
+        "summary": "Read Training Plan",
+        "operationId": "read_training_plan_training_plans__training_plan_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "training_plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Training Plan Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingPlan"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "training_plans"
+        ],
+        "summary": "Update Training Plan",
+        "operationId": "update_training_plan_training_plans__training_plan_id__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "training_plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Training Plan Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainingPlanBase"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingPlan"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "training_plans"
+        ],
+        "summary": "Delete Training Plan",
+        "operationId": "delete_training_plan_training_plans__training_plan_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "training_plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Training Plan Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/exercises/": {
+      "post": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Create Exercise",
+        "operationId": "create_exercise_exercises__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_exercise_exercises__post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Exercise"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Read Exercises",
+        "operationId": "read_exercises_exercises__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "training_plan_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Training Plan Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Exercise"
+                  },
+                  "title": "Response Read Exercises Exercises  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/exercises/{exercise_id}": {
+      "get": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Read Exercise",
+        "operationId": "read_exercise_exercises__exercise_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "exercise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Exercise Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Exercise"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Update Exercise",
+        "operationId": "update_exercise_exercises__exercise_id__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "exercise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Exercise Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExerciseBase"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Exercise"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "exercises"
+        ],
+        "summary": "Delete Exercise",
+        "operationId": "delete_exercise_exercises__exercise_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "exercise_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Exercise Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/achievements/": {
+      "post": {
+        "tags": [
+          "achievements"
+        ],
+        "summary": "Create Achievement",
+        "operationId": "create_achievement_achievements__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AchievementCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Achievement"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "achievements"
+        ],
+        "summary": "Read Achievements",
+        "operationId": "read_achievements_achievements__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "player_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Player Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Achievement"
+                  },
+                  "title": "Response Read Achievements Achievements  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/achievements/{achievement_id}": {
+      "get": {
+        "tags": [
+          "achievements"
+        ],
+        "summary": "Read Achievement",
+        "operationId": "read_achievement_achievements__achievement_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "achievement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Achievement Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Achievement"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "achievements"
+        ],
+        "summary": "Delete Achievement",
+        "operationId": "delete_achievement_achievements__achievement_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "achievement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Achievement Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/player-stats/": {
+      "post": {
+        "tags": [
+          "player_stats"
+        ],
+        "summary": "Create Player Stats",
+        "operationId": "create_player_stats_player_stats__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayerStatCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerStat"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/player-stats/{player_id}": {
+      "get": {
+        "tags": [
+          "player_stats"
+        ],
+        "summary": "Read Player Stats",
+        "operationId": "read_player_stats_player_stats__player_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "player_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Player Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerStat"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "player_stats"
+        ],
+        "summary": "Update Player Stats",
+        "operationId": "update_player_stats_player_stats__player_id__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "player_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Player Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayerStatBase"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerStat"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "player_stats"
+        ],
+        "summary": "Delete Player Stats",
+        "operationId": "delete_player_stats_player_stats__player_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "player_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Player Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenge-progress/complete": {
+      "post": {
+        "tags": [
+          "challenge-progress"
+        ],
+        "summary": "Complete a challenge",
+        "description": "Record a completed challenge for the current user and award a badge if applicable",
+        "operationId": "complete_challenge_challenge_progress_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChallengeCompletionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Challenge completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengeCompletion"
+                },
+                "example": {
+                  "id": 1,
+                  "player_id": 5,
+                  "challenge_id": 3,
+                  "completion_time": 120,
+                  "score": 95,
+                  "stats": {
+                    "passes": 25,
+                    "shots": 10,
+                    "goals": 3
+                  },
+                  "completion_date": "2023-03-15T14:30:00"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Challenge not found"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Not authorized"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/challenge-progress/completions": {
+      "get": {
+        "tags": [
+          "challenge-progress"
+        ],
+        "summary": "Get user's challenge completions",
+        "description": "Retrieve all challenge completions for the currently authenticated user",
+        "operationId": "get_user_completions_challenge_progress_completions_get",
+        "responses": {
+          "200": {
+            "description": "List of all challenge completions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChallengeCompletionWithDetails"
+                  },
+                  "type": "array",
+                  "title": "Response Get User Completions Challenge Progress Completions Get"
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "player_id": 5,
+                    "challenge_id": 3,
+                    "challenge": {
+                      "id": 3,
+                      "name": "Accuracy Challenge",
+                      "description": "Complete 10 accurate passes",
+                      "category": "passing"
+                    },
+                    "completion_time": 120,
+                    "score": 95,
+                    "stats": {
+                      "passes": 25,
+                      "shots": 10,
+                      "goals": 3
+                    },
+                    "completion_date": "2023-03-15T14:30:00"
+                  }
+                ]
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Not authorized"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/challenge-progress/completions/{challenge_id}": {
+      "get": {
+        "tags": [
+          "challenge-progress"
+        ],
+        "summary": "Get completions for a specific challenge",
+        "description": "Retrieve all completions for a specific challenge by the currently authenticated user",
+        "operationId": "get_challenge_completions_challenge_progress_completions__challenge_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "challenge_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Challenge Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of challenge completions for the specified challenge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChallengeCompletion"
+                  },
+                  "title": "Response Get Challenge Completions Challenge Progress Completions  Challenge Id  Get"
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "player_id": 5,
+                    "challenge_id": 3,
+                    "completion_time": 120,
+                    "score": 95,
+                    "stats": {
+                      "passes": 25,
+                      "shots": 10,
+                      "goals": 3
+                    },
+                    "completion_date": "2023-03-15T14:30:00"
+                  }
+                ]
+              }
+            }
+          },
+          "404": {
+            "description": "No completions found for this challenge"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Not authorized"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/challenge-progress/badges": {
+      "get": {
+        "tags": [
+          "challenge-progress"
+        ],
+        "summary": "Get user's badges",
+        "description": "Retrieve all badges earned by the currently authenticated user",
+        "operationId": "get_user_badges_challenge_progress_badges_get",
+        "responses": {
+          "200": {
+            "description": "List of all badges earned by the user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BadgeWithChallenge"
+                  },
+                  "type": "array",
+                  "title": "Response Get User Badges Challenge Progress Badges Get"
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "player_id": 5,
+                    "challenge_id": 3,
+                    "name": "Accuracy Master",
+                    "description": "Awarded for completing the Accuracy Challenge",
+                    "image_url": "/badges/accuracy_badge.png",
+                    "earned_at": "2023-03-15T14:30:00",
+                    "challenge": {
+                      "id": 3,
+                      "name": "Accuracy Challenge",
+                      "description": "Complete 10 accurate passes",
+                      "category": "passing"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Not authorized"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/challenge-progress/badge-stats": {
+      "get": {
+        "tags": [
+          "challenge-progress"
+        ],
+        "summary": "Get badge statistics",
+        "description": "Retrieve statistics about badges earned by the currently authenticated user, grouped by category",
+        "operationId": "get_badge_stats_challenge_progress_badge_stats_get",
+        "responses": {
+          "200": {
+            "description": "Badge counts by category",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "type": "object",
+                  "title": "Response Get Badge Stats Challenge Progress Badge Stats Get"
+                },
+                "example": {
+                  "passing": 3,
+                  "shooting": 2,
+                  "dribbling": 1,
+                  "fitness": 4
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Not authorized"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/challenge-progress/statistics": {
+      "get": {
+        "tags": [
+          "challenge-progress"
+        ],
+        "summary": "Get user's challenge statistics",
+        "description": "Retrieve comprehensive statistics about challenges completed by the currently authenticated user",
+        "operationId": "get_challenge_statistics_challenge_progress_statistics_get",
+        "responses": {
+          "200": {
+            "description": "Comprehensive challenge statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Challenge Statistics Challenge Progress Statistics Get"
+                },
+                "example": {
+                  "total_completed": 15,
+                  "best_scores": {
+                    "passing": {
+                      "challenge_name": "Passing Master",
+                      "score": 98,
+                      "completion_time": 115,
+                      "completion_date": "2023-03-20T16:45:00"
+                    },
+                    "shooting": {
+                      "challenge_name": "Accuracy Shooter",
+                      "score": 92,
+                      "completion_time": 180,
+                      "completion_date": "2023-03-18T12:30:00"
+                    }
+                  },
+                  "recent_completions": [
+                    {
+                      "challenge_name": "Speed Dribbler",
+                      "category": "dribbling",
+                      "score": 88,
+                      "completion_time": 45,
+                      "completion_date": "2023-03-25T09:15:00"
+                    }
+                  ],
+                  "category_counts": {
+                    "passing": 5,
+                    "shooting": 4,
+                    "dribbling": 3,
+                    "fitness": 3
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Not authorized"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/test-stats/": {
+      "post": {
+        "tags": [
+          "TEST \u2014 Player Stats"
+        ],
+        "summary": "Create Simple Stats",
+        "operationId": "create_simple_stats_test_stats__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimplePlayerStatCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimplePlayerStat"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/token": {
+      "post": {
+        "tags": [
+          "authentication"
+        ],
+        "summary": "Create access token for user",
+        "description": "Authenticate user and create JWT access token",
+        "operationId": "login_for_access_token_token_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_for_access_token_token_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "API Root",
+        "description": "Welcome endpoint to verify API is running",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health Check",
+        "description": "Endpoint to verify API health status",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Achievement": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "id",
+          "user_id"
+        ],
+        "title": "Achievement"
+      },
+      "AchievementCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "AchievementCreate"
+      },
+      "BadgeWithChallenge": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "badge_name": {
+            "type": "string",
+            "title": "Badge Name"
+          },
+          "challenge_id": {
+            "type": "integer",
+            "title": "Challenge Id"
+          },
+          "challenge_title": {
+            "type": "string",
+            "title": "Challenge Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "badge_name",
+          "challenge_id",
+          "challenge_title"
+        ],
+        "title": "BadgeWithChallenge"
+      },
+      "Body_create_exercise_exercises__post": {
+        "properties": {
+          "exercise": {
+            "$ref": "#/components/schemas/ExerciseCreate"
+          },
+          "video": {
+            "type": "string",
+            "format": "binary",
+            "title": "Video"
+          }
+        },
+        "type": "object",
+        "required": [
+          "exercise",
+          "video"
+        ],
+        "title": "Body_create_exercise_exercises__post"
+      },
+      "Body_login_for_access_token_token_post": {
+        "properties": {
+          "grant_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "password"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_login_for_access_token_token_post"
+      },
+      "ChallengeCompletion": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "challenge_id": {
+            "type": "integer",
+            "title": "Challenge Id"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Completed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "challenge_id",
+          "id",
+          "completed_at"
+        ],
+        "title": "ChallengeCompletion"
+      },
+      "ChallengeCompletionCreate": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "challenge_id": {
+            "type": "integer",
+            "title": "Challenge Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "challenge_id"
+        ],
+        "title": "ChallengeCompletionCreate"
+      },
+      "ChallengeCompletionWithDetails": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "challenge_id": {
+            "type": "integer",
+            "title": "Challenge Id"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Completed At"
+          },
+          "challenge_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Challenge Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "challenge_id",
+          "completed_at",
+          "challenge_title"
+        ],
+        "title": "ChallengeCompletionWithDetails"
+      },
+      "Exercise": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Url"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "training_plan_id": {
+            "type": "integer",
+            "title": "Training Plan Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "id",
+          "training_plan_id"
+        ],
+        "title": "Exercise"
+      },
+      "ExerciseBase": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ExerciseBase"
+      },
+      "ExerciseCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "ExerciseCreate"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PlayerStat": {
+        "properties": {
+          "pace": {
+            "type": "integer",
+            "title": "Pace"
+          },
+          "shooting": {
+            "type": "integer",
+            "title": "Shooting"
+          },
+          "passing": {
+            "type": "integer",
+            "title": "Passing"
+          },
+          "dribbling": {
+            "type": "integer",
+            "title": "Dribbling"
+          },
+          "defense": {
+            "type": "integer",
+            "title": "Defense"
+          },
+          "physical": {
+            "type": "integer",
+            "title": "Physical"
+          },
+          "overall_rating": {
+            "type": "integer",
+            "title": "Overall Rating"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "player_id": {
+            "type": "integer",
+            "title": "Player Id"
+          },
+          "last_updated": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Updated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pace",
+          "shooting",
+          "passing",
+          "dribbling",
+          "defense",
+          "physical",
+          "overall_rating",
+          "id",
+          "player_id",
+          "last_updated"
+        ],
+        "title": "PlayerStat"
+      },
+      "PlayerStatBase": {
+        "properties": {
+          "pace": {
+            "type": "integer",
+            "title": "Pace"
+          },
+          "shooting": {
+            "type": "integer",
+            "title": "Shooting"
+          },
+          "passing": {
+            "type": "integer",
+            "title": "Passing"
+          },
+          "dribbling": {
+            "type": "integer",
+            "title": "Dribbling"
+          },
+          "defense": {
+            "type": "integer",
+            "title": "Defense"
+          },
+          "physical": {
+            "type": "integer",
+            "title": "Physical"
+          },
+          "overall_rating": {
+            "type": "integer",
+            "title": "Overall Rating"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pace",
+          "shooting",
+          "passing",
+          "dribbling",
+          "defense",
+          "physical",
+          "overall_rating"
+        ],
+        "title": "PlayerStatBase"
+      },
+      "PlayerStatCreate": {
+        "properties": {
+          "pace": {
+            "type": "integer",
+            "title": "Pace"
+          },
+          "shooting": {
+            "type": "integer",
+            "title": "Shooting"
+          },
+          "passing": {
+            "type": "integer",
+            "title": "Passing"
+          },
+          "dribbling": {
+            "type": "integer",
+            "title": "Dribbling"
+          },
+          "defense": {
+            "type": "integer",
+            "title": "Defense"
+          },
+          "physical": {
+            "type": "integer",
+            "title": "Physical"
+          },
+          "overall_rating": {
+            "type": "integer",
+            "title": "Overall Rating"
+          },
+          "player_id": {
+            "type": "integer",
+            "title": "Player Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pace",
+          "shooting",
+          "passing",
+          "dribbling",
+          "defense",
+          "physical",
+          "overall_rating",
+          "player_id"
+        ],
+        "title": "PlayerStatCreate"
+      },
+      "SimplePlayerStat": {
+        "properties": {
+          "pace": {
+            "type": "integer",
+            "title": "Pace"
+          },
+          "shooting": {
+            "type": "integer",
+            "title": "Shooting"
+          },
+          "passing": {
+            "type": "integer",
+            "title": "Passing"
+          },
+          "player_id": {
+            "type": "integer",
+            "title": "Player Id"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pace",
+          "shooting",
+          "passing",
+          "player_id",
+          "id"
+        ],
+        "title": "SimplePlayerStat"
+      },
+      "SimplePlayerStatCreate": {
+        "properties": {
+          "pace": {
+            "type": "integer",
+            "title": "Pace"
+          },
+          "shooting": {
+            "type": "integer",
+            "title": "Shooting"
+          },
+          "passing": {
+            "type": "integer",
+            "title": "Passing"
+          },
+          "player_id": {
+            "type": "integer",
+            "title": "Player Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pace",
+          "shooting",
+          "passing",
+          "player_id"
+        ],
+        "title": "SimplePlayerStatCreate"
+      },
+      "TrainingPlan": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "id",
+          "user_id"
+        ],
+        "title": "TrainingPlan"
+      },
+      "TrainingPlanBase": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "TrainingPlanBase"
+      },
+      "TrainingPlanCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "TrainingPlanCreate"
+      },
+      "UserBase": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "current_club": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Club"
+          },
+          "date_of_birth": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Of Birth"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "UserBase"
+      },
+      "UserCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "current_club": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Club"
+          },
+          "date_of_birth": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Of Birth"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserCreate"
+      },
+      "UserResponse": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "current_club": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Club"
+          },
+          "date_of_birth": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Of Birth"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "is_coach": {
+            "type": "boolean",
+            "title": "Is Coach"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "id",
+          "is_active",
+          "is_coach"
+        ],
+        "title": "UserResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "token"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "users",
+      "description": "Operations for managing user accounts and profiles"
+    },
+    {
+      "name": "training_plans",
+      "description": "Training plan management and progress tracking"
+    },
+    {
+      "name": "exercises",
+      "description": "Exercise library and details"
+    },
+    {
+      "name": "achievements",
+      "description": "Player achievements and badges"
+    },
+    {
+      "name": "player_stats",
+      "description": "Player statistics and performance metrics"
+    },
+    {
+      "name": "challenge_progress",
+      "description": "Challenge completion and progress tracking"
+    }
+  ]
+}

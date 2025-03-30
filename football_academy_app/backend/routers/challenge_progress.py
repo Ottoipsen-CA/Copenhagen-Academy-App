@@ -12,11 +12,39 @@ from database import get_db
 router = APIRouter(
     prefix="/challenge-progress",
     tags=["challenge-progress"],
-    responses={404: {"description": "Not found"}},
+    responses={
+        404: {"description": "Not found"},
+        401: {"description": "Not authenticated"},
+        403: {"description": "Not authorized"}
+    },
 )
 
 # Complete a challenge
-@router.post("/complete", response_model=schemas.ChallengeCompletion)
+@router.post(
+    "/complete", 
+    response_model=schemas.ChallengeCompletion,
+    summary="Complete a challenge",
+    description="Record a completed challenge for the current user and award a badge if applicable",
+    responses={
+        200: {
+            "description": "Challenge completed successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": 1,
+                        "player_id": 5,
+                        "challenge_id": 3,
+                        "completion_time": 120,
+                        "score": 95,
+                        "stats": {"passes": 25, "shots": 10, "goals": 3},
+                        "completion_date": "2023-03-15T14:30:00"
+                    }
+                }
+            }
+        },
+        404: {"description": "Challenge not found"}
+    }
+)
 async def complete_challenge(
     completion: schemas.ChallengeCompletionCreate,
     db: Session = Depends(get_db),
@@ -65,7 +93,38 @@ async def complete_challenge(
     return challenge_completion
 
 # Get completions for current user
-@router.get("/completions", response_model=List[schemas.ChallengeCompletionWithDetails])
+@router.get(
+    "/completions", 
+    response_model=List[schemas.ChallengeCompletionWithDetails],
+    summary="Get user's challenge completions",
+    description="Retrieve all challenge completions for the currently authenticated user",
+    responses={
+        200: {
+            "description": "List of all challenge completions",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "id": 1,
+                            "player_id": 5,
+                            "challenge_id": 3,
+                            "challenge": {
+                                "id": 3,
+                                "name": "Accuracy Challenge",
+                                "description": "Complete 10 accurate passes",
+                                "category": "passing"
+                            },
+                            "completion_time": 120,
+                            "score": 95,
+                            "stats": {"passes": 25, "shots": 10, "goals": 3},
+                            "completion_date": "2023-03-15T14:30:00"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+)
 async def get_user_completions(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_active_user)
@@ -77,7 +136,33 @@ async def get_user_completions(
     return completions
 
 # Get completion details for a specific challenge
-@router.get("/completions/{challenge_id}", response_model=List[schemas.ChallengeCompletion])
+@router.get(
+    "/completions/{challenge_id}", 
+    response_model=List[schemas.ChallengeCompletion],
+    summary="Get completions for a specific challenge",
+    description="Retrieve all completions for a specific challenge by the currently authenticated user",
+    responses={
+        200: {
+            "description": "List of challenge completions for the specified challenge",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "id": 1,
+                            "player_id": 5,
+                            "challenge_id": 3,
+                            "completion_time": 120,
+                            "score": 95,
+                            "stats": {"passes": 25, "shots": 10, "goals": 3},
+                            "completion_date": "2023-03-15T14:30:00"
+                        }
+                    ]
+                }
+            }
+        },
+        404: {"description": "No completions found for this challenge"}
+    }
+)
 async def get_challenge_completions(
     challenge_id: int,
     db: Session = Depends(get_db),
@@ -94,7 +179,38 @@ async def get_challenge_completions(
     return completions
 
 # Get all badges for current user
-@router.get("/badges", response_model=List[schemas.BadgeWithChallenge])
+@router.get(
+    "/badges", 
+    response_model=List[schemas.BadgeWithChallenge],
+    summary="Get user's badges",
+    description="Retrieve all badges earned by the currently authenticated user",
+    responses={
+        200: {
+            "description": "List of all badges earned by the user",
+            "content": {
+                "application/json": {
+                    "example": [
+                        {
+                            "id": 1,
+                            "player_id": 5,
+                            "challenge_id": 3,
+                            "name": "Accuracy Master",
+                            "description": "Awarded for completing the Accuracy Challenge",
+                            "image_url": "/badges/accuracy_badge.png",
+                            "earned_at": "2023-03-15T14:30:00",
+                            "challenge": {
+                                "id": 3,
+                                "name": "Accuracy Challenge",
+                                "description": "Complete 10 accurate passes",
+                                "category": "passing"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    }
+)
 async def get_user_badges(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_active_user)
@@ -106,7 +222,27 @@ async def get_user_badges(
     return badges
 
 # Get all badge stats (count by category)
-@router.get("/badge-stats", response_model=Dict[str, int])
+@router.get(
+    "/badge-stats", 
+    response_model=Dict[str, int],
+    summary="Get badge statistics",
+    description="Retrieve statistics about badges earned by the currently authenticated user, grouped by category",
+    responses={
+        200: {
+            "description": "Badge counts by category",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "passing": 3,
+                        "shooting": 2,
+                        "dribbling": 1,
+                        "fitness": 4
+                    }
+                }
+            }
+        }
+    }
+)
 async def get_badge_stats(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_active_user)
@@ -130,7 +266,53 @@ async def get_badge_stats(
     return badge_counts
 
 # Get challenge statistics for a user
-@router.get("/statistics", response_model=Dict[str, Any])
+@router.get(
+    "/statistics", 
+    response_model=Dict[str, Any],
+    summary="Get user's challenge statistics",
+    description="Retrieve comprehensive statistics about challenges completed by the currently authenticated user",
+    responses={
+        200: {
+            "description": "Comprehensive challenge statistics",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "total_completed": 15,
+                        "best_scores": {
+                            "passing": {
+                                "challenge_name": "Passing Master",
+                                "score": 98,
+                                "completion_time": 115,
+                                "completion_date": "2023-03-20T16:45:00"
+                            },
+                            "shooting": {
+                                "challenge_name": "Accuracy Shooter",
+                                "score": 92,
+                                "completion_time": 180,
+                                "completion_date": "2023-03-18T12:30:00"
+                            }
+                        },
+                        "recent_completions": [
+                            {
+                                "challenge_name": "Speed Dribbler",
+                                "category": "dribbling",
+                                "score": 88,
+                                "completion_time": 45,
+                                "completion_date": "2023-03-25T09:15:00"
+                            }
+                        ],
+                        "category_counts": {
+                            "passing": 5,
+                            "shooting": 4,
+                            "dribbling": 3,
+                            "fitness": 3
+                        }
+                    }
+                }
+            }
+        }
+    }
+)
 async def get_challenge_statistics(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_active_user)
