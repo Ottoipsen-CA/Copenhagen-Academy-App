@@ -145,7 +145,7 @@ class AuthService {
       return User(
         id: 123,
         email: 'demo@example.com',
-        fullName: 'Demo User',
+        fullName: 'Otto',
         isActive: true,
         isCoach: false,
       );
@@ -160,7 +160,7 @@ class AuthService {
       return User(
         id: 123,
         email: 'demo@example.com',
-        fullName: 'Demo User',
+        fullName: 'Otto',
         isActive: true,
         isCoach: false,
       );

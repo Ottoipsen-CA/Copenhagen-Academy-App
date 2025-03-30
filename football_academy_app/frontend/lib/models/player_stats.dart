@@ -8,6 +8,8 @@ class PlayerStats {
   final double juggles;
   final double first_touch;
   final double overallRating;
+  final double? leadership;
+  final double? improvementRate;
   final DateTime? lastUpdated;
 
   PlayerStats({
@@ -20,6 +22,8 @@ class PlayerStats {
     this.juggles = 65,
     this.first_touch = 72,
     this.overallRating = 83,
+    this.leadership,
+    this.improvementRate,
     this.lastUpdated,
   });
 
@@ -34,6 +38,8 @@ class PlayerStats {
       juggles: json['juggles']?.toDouble() ?? 65,
       first_touch: json['first_touch']?.toDouble() ?? 72,
       overallRating: json['overall_rating']?.toDouble() ?? 83,
+      leadership: json['leadership']?.toDouble(),
+      improvementRate: json['improvement_rate']?.toDouble(),
       lastUpdated: json['last_updated'] != null
           ? DateTime.parse(json['last_updated'])
           : null,
@@ -51,6 +57,8 @@ class PlayerStats {
       'juggles': juggles,
       'first_touch': first_touch,
       'overall_rating': overallRating,
+      'leadership': leadership,
+      'improvement_rate': improvementRate,
       'last_updated': lastUpdated?.toIso8601String(),
     };
   }

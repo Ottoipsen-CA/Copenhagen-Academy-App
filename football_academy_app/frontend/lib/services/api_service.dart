@@ -189,7 +189,7 @@ class ApiService {
       return {
         'id': 123,
         'email': 'demo@example.com',
-        'full_name': 'Demo User',
+        'full_name': 'Otto',
         'position': 'Forward',
         'current_club': 'Copenhagen Academy',
         'date_of_birth': '2000-01-01T00:00:00Z',

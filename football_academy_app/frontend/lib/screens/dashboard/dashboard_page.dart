@@ -4,9 +4,11 @@ import '../../models/user.dart';
 import '../../models/player_stats.dart';
 import '../../models/challenge.dart';
 import '../../models/badge.dart';
+import '../../models/player_test.dart';
 import '../../services/auth_service.dart';
 import '../../services/player_stats_service.dart';
 import '../../services/challenge_service.dart';
+import '../../services/player_tests_service.dart';
 import '../../widgets/navigation_drawer.dart';
 import '../../widgets/player_stats_radar_chart.dart';
 import '../../widgets/fifa_player_card.dart';
@@ -35,6 +37,7 @@ class _DashboardPageState extends State<DashboardPage> {
   String? _errorMessage;
   int _xpProgress = 440;
   int _xpTarget = 1200;
+  bool _hasRecordBreakingScores = false;
 
   @override
   void initState() {
@@ -194,9 +197,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   stats: _playerStats!,
                   rating: _playerStats!.overallRating.toInt(),
                   nationality: '🇦🇺', // Australian flag as example
-                  cardType: _playerStats!.overallRating >= 85 ? CardType.totw : 
-                           _playerStats!.overallRating >= 80 ? CardType.future : 
-                           CardType.normal,
+                  playerImageUrl: 'https://raw.githubusercontent.com/ottoipsen/football_academy_assets/main/player_photos/player_photo.jpg',
+                  cardType: _getPlayerCardType(),
                 ),
                 const SizedBox(width: 30),
                 
@@ -1300,6 +1302,89 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
+  }
+
+  // Determine player card type based on various criteria
+  CardType _getPlayerCardType() {
+    final rating = _playerStats!.overallRating.toInt();
+    
+    // Icon card for exceptional players (95+ rating)
+    if (rating >= 95) {
+      return CardType.icon;
+    }
+    
+    // Check if player has broken any test records
+    // This is an async operation, but for UI purposes we'll use any cached values or previous results
+    _checkForRecordBreakerStatus();
+    
+    // If we previously determined they've broken records, show record breaker card
+    if (_hasRecordBreakingScores) {
+      return CardType.record_breaker;
+    }
+    
+    // Record breaker for players who broke test records
+    // For demo purposes, let's check if any stats are exceptionally high
+    if (_playerStats!.pace >= 95 || 
+        _playerStats!.shooting >= 95 || 
+        _playerStats!.passing >= 95 || 
+        _playerStats!.dribbling >= 95 || 
+        _playerStats!.juggles >= 95 || 
+        _playerStats!.first_touch >= 95) {
+      return CardType.record_breaker;
+    }
+    
+    // Hero card for team captains or consistent performers
+    // For demo, let's use team captain flag or high leadership score
+    if (_user!.isCaptain == true || (_playerStats!.leadership != null && _playerStats!.leadership! >= 90)) {
+      return CardType.hero;
+    }
+    
+    // Ones to Watch for players showing consistent growth
+    // For demo, we'll check if improvement rate field is high (if it exists)
+    if (_playerStats!.improvementRate != null && _playerStats!.improvementRate! >= 8) {
+      return CardType.ones_to_watch;
+    }
+    
+    // Team of the Week for high-rated players (85+)
+    if (rating >= 85) {
+      return CardType.totw;
+    }
+    
+    // Future Stars for promising players (80-84)
+    if (rating >= 80) {
+      return CardType.future;
+    }
+    
+    // Default normal card
+    return CardType.normal;
+  }
+  
+  // Check if player has broken any test records
+  Future<void> _checkForRecordBreakerStatus() async {
+    try {
+      // Get player tests from service
+      final tests = await PlayerTestsService.getPlayerTests();
+      
+      // Check each test for record breaking scores
+      for (final test in tests) {
+        if (test.isPassingRecord == true ||
+            test.isSprintRecord == true ||
+            test.isFirstTouchRecord == true ||
+            test.isShootingRecord == true ||
+            test.isJugglingRecord == true ||
+            test.isDribblingRecord == true) {
+          // Set flag and update state if needed
+          if (!_hasRecordBreakingScores) {
+            setState(() {
+              _hasRecordBreakingScores = true;
+            });
+          }
+          break;
+        }
+      }
+    } catch (e) {
+      print('Error checking for record breaker status: $e');
+    }
   }
 }
 

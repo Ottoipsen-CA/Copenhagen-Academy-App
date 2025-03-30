@@ -7,6 +7,7 @@ class User {
   final DateTime? dateOfBirth;
   final bool isActive;
   final bool isCoach;
+  final bool isCaptain;
 
   User({
     this.id,
@@ -17,6 +18,7 @@ class User {
     this.dateOfBirth,
     this.isActive = true,
     this.isCoach = false,
+    this.isCaptain = false,
   });
 
   String get firstName => fullName.split(' ').first;
@@ -36,6 +38,7 @@ class User {
           : null,
       isActive: json['is_active'] ?? true,
       isCoach: json['is_coach'] ?? false,
+      isCaptain: json['is_captain'] ?? false,
     );
   }
 
@@ -49,6 +52,7 @@ class User {
       'date_of_birth': dateOfBirth?.toIso8601String(),
       'is_active': isActive,
       'is_coach': isCoach,
+      'is_captain': isCaptain,
     };
   }
 } 

@@ -383,6 +383,7 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
                         stats: player.stats,
                         rating: player.stats.overallRating.toInt(),
                         nationality: '🇦🇺', // Default flag
+                        playerImageUrl: 'https://raw.githubusercontent.com/ottoipsen/football_academy_assets/main/player_photos/player_photo.jpg',
                         cardType: _getCardType(player.stats.overallRating.toInt()),
                       ),
                     );
@@ -504,15 +505,36 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
   }
   
   CardType _getCardType(int rating) {
-    if (rating >= 90) {
+    // Icon card for legendary players
+    if (rating >= 95) {
+      return CardType.icon;
+    } 
+    // Team of the Year for very high-rated
+    else if (rating >= 90) {
       return CardType.toty;
-    } else if (rating >= 85) {
+    } 
+    // Record breaker (let's use a threshold close to but below TOTY)
+    else if (rating >= 88) {
+      return CardType.record_breaker;
+    }
+    // Team of the Week 
+    else if (rating >= 85) {
       return CardType.totw;
-    } else if (rating >= 80) {
+    } 
+    // Ones to Watch (slightly below TOTW)
+    else if (rating >= 83) {
+      return CardType.ones_to_watch;
+    }
+    // Future Stars
+    else if (rating >= 80) {
       return CardType.future;
-    } else if (rating >= 75) {
+    } 
+    // Hero cards
+    else if (rating >= 75) {
       return CardType.hero;
-    } else {
+    } 
+    // Normal card
+    else {
       return CardType.normal;
     }
   }

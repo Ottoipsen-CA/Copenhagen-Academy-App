@@ -358,12 +358,25 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
             final date = test.testDate != null 
                 ? dateFormat.format(test.testDate!) 
                 : 'Unknown date';
+            
+            // Check if this test broke any records
+            final bool brokeRecord = test.isPassingRecord == true || 
+                                    test.isSprintRecord == true || 
+                                    test.isFirstTouchRecord == true || 
+                                    test.isShootingRecord == true || 
+                                    test.isJugglingRecord == true || 
+                                    test.isDribblingRecord == true;
                 
             return Card(
               margin: const EdgeInsets.only(bottom: 8),
-              color: Colors.black.withOpacity(0.3),
+              color: brokeRecord 
+                ? const Color(0xFF025D7F).withOpacity(0.5)  // Special color for record breakers
+                : Colors.black.withOpacity(0.3),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
+                side: brokeRecord 
+                  ? const BorderSide(color: Color(0xFF03B0F1), width: 1.5)
+                  : BorderSide.none,
               ),
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
@@ -380,6 +393,37 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
                             color: Colors.white,
                           ),
                         ),
+                        
+                        // Show record breaker badge if applicable
+                        if (brokeRecord)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF03B0F1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.emoji_events,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                                const SizedBox(width: 4),
+                                const Text(
+                                  'RECORD BREAKER',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -389,12 +433,36 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _buildTestResult('Passing', test.passingTest?.toString() ?? '-'),
-                        _buildTestResult('Sprint', '${test.sprintTest?.toString() ?? '-'}s'),
-                        _buildTestResult('First Touch', test.firstTouchTest?.toString() ?? '-'),
-                        _buildTestResult('Shooting', test.shootingTest?.toString() ?? '-'),
-                        _buildTestResult('Juggling', test.jugglingTest?.toString() ?? '-'),
-                        _buildTestResult('Dribbling', '${test.dribblingTest?.toString() ?? '-'}s'),
+                        _buildTestResult(
+                          'Passing', 
+                          test.passingTest?.toString() ?? '-',
+                          isRecord: test.isPassingRecord == true
+                        ),
+                        _buildTestResult(
+                          'Sprint', 
+                          '${test.sprintTest?.toString() ?? '-'}s',
+                          isRecord: test.isSprintRecord == true
+                        ),
+                        _buildTestResult(
+                          'First Touch', 
+                          test.firstTouchTest?.toString() ?? '-',
+                          isRecord: test.isFirstTouchRecord == true
+                        ),
+                        _buildTestResult(
+                          'Shooting', 
+                          test.shootingTest?.toString() ?? '-',
+                          isRecord: test.isShootingRecord == true
+                        ),
+                        _buildTestResult(
+                          'Juggling', 
+                          test.jugglingTest?.toString() ?? '-',
+                          isRecord: test.isJugglingRecord == true
+                        ),
+                        _buildTestResult(
+                          'Dribbling', 
+                          '${test.dribblingTest?.toString() ?? '-'}s',
+                          isRecord: test.isDribblingRecord == true
+                        ),
                       ],
                     ),
                   ],
@@ -407,32 +475,51 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
     );
   }
   
-  Widget _buildTestResult(String label, String value) {
+  Widget _buildTestResult(String label, String value, {bool isRecord = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 8,
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: isRecord 
+          ? const Color(0xFF03B0F1).withOpacity(0.2)
+          : Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(4),
+        border: isRecord 
+          ? Border.all(color: const Color(0xFF03B0F1), width: 1)
+          : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.white70,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isRecord ? const Color(0xFF03B0F1) : Colors.white70,
+                ),
+              ),
+              if (isRecord) 
+                const SizedBox(
+                  width: 12,
+                  child: Icon(
+                    Icons.star,
+                    size: 8,
+                    color: Color(0xFF03B0F1),
+                  ),
+                ),
+            ],
           ),
           Text(
             value,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: isRecord ? const Color(0xFF03B0F1) : Colors.white,
             ),
           ),
         ],

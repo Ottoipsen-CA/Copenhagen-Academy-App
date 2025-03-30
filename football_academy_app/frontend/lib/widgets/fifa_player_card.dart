@@ -25,6 +25,12 @@ class FifaPlayerCard extends StatelessWidget {
   List<Color> _getCardColors() {
     // Special card types first
     switch (cardType) {
+      case CardType.icon:
+        return const [Color(0xFFE5C585), Color(0xFFBA8B31)]; // Icon cards (gold/bronze metallic)
+      case CardType.record_breaker:
+        return const [Color(0xFF03B0F1), Color(0xFF025D7F)]; // Record breaker (bright blue)
+      case CardType.ones_to_watch:
+        return const [Color(0xFF8A27BA), Color(0xFF5A1A7A)]; // Ones to Watch (purple)
       case CardType.totw:
         return const [Color(0xFF3875B9), Color(0xFF173968)]; // Team of the Week
       case CardType.toty:
@@ -155,9 +161,49 @@ class FifaPlayerCard extends StatelessWidget {
                 Expanded(
                   child: Center(
                     child: playerImageUrl != null
-                      ? CircleAvatar(
-                          radius: 50,
-                          backgroundImage: NetworkImage(playerImageUrl!),
+                      ? Container(
+                          width: 110,
+                          height: 110,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.5),
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 5,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: Image.network(
+                              playerImageUrl!,
+                              fit: BoxFit.cover,
+                              loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
+                                if (loadingProgress == null) {
+                                  return child;
+                                }
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                                      : null,
+                                    color: Colors.white,
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: Colors.white,
+                                );
+                              },
+                            ),
+                          ),
                         )
                       : Container(
                           width: 100,
@@ -294,6 +340,12 @@ class FifaPlayerCard extends StatelessWidget {
   
   String _getCardTypeLabel() {
     switch (cardType) {
+      case CardType.icon:
+        return 'ICON';
+      case CardType.record_breaker:
+        return 'RECORD BREAKER';
+      case CardType.ones_to_watch:
+        return 'ONES TO WATCH';
       case CardType.totw:
         return 'TEAM OF THE WEEK';
       case CardType.toty:
@@ -334,8 +386,11 @@ class FifaPlayerCard extends StatelessWidget {
 
 enum CardType {
   normal,
-  totw,    // Team of the Week
-  toty,    // Team of the Year
-  future,  // Future Stars 
-  hero,    // Hero Card
+  totw,          // Team of the Week
+  toty,          // Team of the Year
+  future,        // Future Stars 
+  hero,          // Hero Card
+  icon,          // Icon Card (95+ rating)
+  record_breaker, // Record Breaker
+  ones_to_watch,  // Ones to Watch
 } 

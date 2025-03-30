@@ -19,6 +19,14 @@ class PlayerTest {
   final int? jugglingRating;
   final int? dribblingRating;
   
+  // Record flags
+  final bool? isPassingRecord;
+  final bool? isSprintRecord;
+  final bool? isFirstTouchRecord;
+  final bool? isShootingRecord;
+  final bool? isJugglingRecord;
+  final bool? isDribblingRecord;
+  
   PlayerTest({
     this.id,
     this.playerId,
@@ -35,6 +43,12 @@ class PlayerTest {
     this.shootingRating,
     this.jugglingRating,
     this.dribblingRating,
+    this.isPassingRecord,
+    this.isSprintRecord,
+    this.isFirstTouchRecord, 
+    this.isShootingRecord,
+    this.isJugglingRecord,
+    this.isDribblingRecord,
   });
   
   factory PlayerTest.fromJson(Map<String, dynamic> json) {
@@ -54,6 +68,12 @@ class PlayerTest {
       shootingRating: json['shooting_rating'],
       jugglingRating: json['juggling_rating'],
       dribblingRating: json['dribbling_rating'],
+      isPassingRecord: json['is_passing_record'],
+      isSprintRecord: json['is_sprint_record'],
+      isFirstTouchRecord: json['is_first_touch_record'],
+      isShootingRecord: json['is_shooting_record'],
+      isJugglingRecord: json['is_juggling_record'],
+      isDribblingRecord: json['is_dribbling_record'],
     );
   }
   
@@ -69,5 +89,74 @@ class PlayerTest {
       if (jugglingTest != null) 'juggling_test': jugglingTest,
       if (dribblingTest != null) 'dribbling_test': dribblingTest,
     };
+  }
+  
+  // Check if this test broke any records based on player position
+  bool brokeAnyRecord(String position) {
+    // Get max values based on position from Playertest document
+    Map<String, dynamic> maxResults = {};
+    
+    if (position == 'ST' || position == 'CF' || position == 'LW' || position == 'RW') {
+      // Striker values
+      maxResults = {
+        'passing': 40,
+        'sprint': 1.9, // Lower is better
+        'firstTouch': 35,
+        'shooting': 14,
+        'juggling': 150,
+        'dribbling': 12, // Lower is better
+      };
+    } else if (position == 'CM' || position == 'CDM' || position == 'CAM' || position == 'LM' || position == 'RM') {
+      // Midfielder values
+      maxResults = {
+        'passing': 45,
+        'sprint': 1.9, // Lower is better
+        'firstTouch': 40,
+        'shooting': 12,
+        'juggling': 150,
+        'dribbling': 11, // Lower is better
+      };
+    } else {
+      // Defender values
+      maxResults = {
+        'passing': 40,
+        'sprint': 1.9, // Lower is better
+        'firstTouch': 35,
+        'shooting': 11,
+        'juggling': 150,
+        'dribbling': 12, // Lower is better
+      };
+    }
+    
+    // Check if any test broke a record
+    bool brokeRecord = false;
+    
+    // For tests where higher is better
+    if (passingTest != null && passingTest! > maxResults['passing']) {
+      brokeRecord = true;
+    }
+    
+    if (firstTouchTest != null && firstTouchTest! > maxResults['firstTouch']) {
+      brokeRecord = true;
+    }
+    
+    if (shootingTest != null && shootingTest! > maxResults['shooting']) {
+      brokeRecord = true;
+    }
+    
+    if (jugglingTest != null && jugglingTest! > maxResults['juggling']) {
+      brokeRecord = true;
+    }
+    
+    // For tests where lower is better
+    if (sprintTest != null && sprintTest! < maxResults['sprint']) {
+      brokeRecord = true;
+    }
+    
+    if (dribblingTest != null && dribblingTest! < maxResults['dribbling']) {
+      brokeRecord = true;
+    }
+    
+    return brokeRecord;
   }
 } 
