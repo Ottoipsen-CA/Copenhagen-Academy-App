@@ -361,6 +361,32 @@ class PlayerStatsService {
           ),
         );
         break;
+        
+      case ChallengeCategory.wallTouches:
+        // Wall touches challenges improve both dribbling and passing
+        final newDribblingRating = math.min(stats.dribbling + baseRatingIncrement, maxRatingCap);
+        final newPassingRating = math.min(stats.passing + (baseRatingIncrement * 0.5), maxRatingCap);
+        
+        updatedStats = PlayerStats(
+          id: stats.id,
+          playerId: stats.playerId,
+          pace: stats.pace,
+          shooting: stats.shooting,
+          passing: newPassingRating,
+          dribbling: newDribblingRating,
+          defense: stats.defense,
+          physical: stats.physical,
+          lastUpdated: DateTime.now(),
+          overallRating: _calculateOverallRating(
+            stats.pace, 
+            stats.shooting, 
+            newPassingRating,
+            newDribblingRating,
+            stats.defense,
+            stats.physical
+          ),
+        );
+        break;
     }
     
     // Save updated stats

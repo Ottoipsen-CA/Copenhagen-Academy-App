@@ -131,6 +131,9 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
       case ChallengeCategory.tactical:
         improvedStat = 'Multiple stats';
         break;
+      case ChallengeCategory.wallTouches:
+        improvedStat = 'Wall Touches';
+        break;
       default:
         improvedStat = 'Overall Rating';
         break;
@@ -966,6 +969,8 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
         return Colors.indigo;
       case ChallengeCategory.weekly:
         return Colors.amber;
+      case ChallengeCategory.wallTouches:
+        return Colors.green;
     }
   }
   

@@ -236,6 +236,11 @@ class _DashboardPageState extends State<DashboardPage> {
             
             const SizedBox(height: 24),
             
+            // 30-Day Wall Touches Challenge
+            _buildWallTouchesChallengeCard(),
+            
+            const SizedBox(height: 24),
+            
             // Stats and badges
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -510,6 +515,122 @@ class _DashboardPageState extends State<DashboardPage> {
                     isCompleted ? Colors.green : const Color(0xFFFFD700)
                   ),
                   minHeight: 4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildWallTouchesChallengeCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF1E3B70), Color(0xFF29539B)],
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "30-DAY WALL TOUCHES CHALLENGE",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Touch the ball against a wall 100 times daily for 30 days to improve ball control!",
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 16),
+            LinearProgressIndicator(
+              value: 6 / 30, // 6 days out of 30
+              backgroundColor: Colors.white.withOpacity(0.2),
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Day 6 of 30",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  // Increment the day counter (would normally save to API)
+                  int currentDay = 6;
+                  int newDay = currentDay + 1;
+                  
+                  // Show success dialog
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text("Day $currentDay Completed!"),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                              size: 64,
+                            ),
+                            SizedBox(height: 16),
+                            Text("Great job! You've completed day $currentDay of your wall touches challenge."),
+                            SizedBox(height: 8),
+                            Text("Keep up the good work!", style: TextStyle(fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              
+                              // Show snackbar with update
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("Progress updated to Day $newDay of 30"),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            },
+                            child: Text("OK"),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: const Text(
+                  "RECORD TODAY'S STREAK",
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ),

@@ -8,7 +8,8 @@ enum ChallengeCategory {
   defense,
   goalkeeping,
   tactical,
-  weekly
+  weekly,
+  wallTouches
 }
 
 extension ChallengeCategoryExtension on ChallengeCategory {
@@ -30,6 +31,8 @@ extension ChallengeCategoryExtension on ChallengeCategory {
         return 'Tactical';
       case ChallengeCategory.weekly:
         return 'Weekly Challenge';
+      case ChallengeCategory.wallTouches:
+        return 'Wall Touches';
     }
   }
   
@@ -51,6 +54,8 @@ extension ChallengeCategoryExtension on ChallengeCategory {
         return 'assets/icons/tactical.png';
       case ChallengeCategory.weekly:
         return 'assets/icons/weekly.png';
+      case ChallengeCategory.wallTouches:
+        return 'assets/icons/wall_touches.png';
     }
   }
 }

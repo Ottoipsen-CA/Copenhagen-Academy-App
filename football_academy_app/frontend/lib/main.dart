@@ -5,7 +5,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
-// import 'services/database_service.dart';
 import 'screens/auth/login_page.dart';
 import 'screens/dashboard/dashboard_page.dart';
 import 'screens/exercises/exercises_page.dart';
@@ -14,13 +13,9 @@ import 'screens/challenges/challenges_page.dart';
 import 'screens/league_table/league_table_page.dart';
 import 'screens/communication/chat_page.dart';
 import 'screens/player_stats/player_stats_page.dart';
-// import 'screens/data_entry/data_entry_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize database
-  // await DatabaseService.initialize();
   
   // Initialize shared preferences
   final prefs = await SharedPreferences.getInstance();
@@ -85,7 +80,6 @@ class MyApp extends StatelessWidget {
         '/league-table': (context) => const LeagueTablePage(),
         '/chat': (context) => const ChatPage(),
         '/player-stats': (context) => const PlayerStatsPage(),
-        // '/data-entry': (context) => const DataEntryPage(),
       },
     );
   }
