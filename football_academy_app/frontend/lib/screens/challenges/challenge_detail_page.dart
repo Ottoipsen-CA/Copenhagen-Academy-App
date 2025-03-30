@@ -26,6 +26,7 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
   late UserChallenge _userChallenge;
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _valueController = TextEditingController();
+  bool _isLoading = false;
   
   @override
   void initState() {
@@ -49,13 +50,60 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
   Future<void> _startChallenge() async {
     try {
       final updatedUserChallenge = await ChallengeService.startChallenge(_challenge.id);
-      setState(() {
-        _userChallenge = updatedUserChallenge;
-      });
+      if (updatedUserChallenge != null) {
+        setState(() {
+          _userChallenge = updatedUserChallenge;
+        });
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error starting challenge: $e')),
       );
+    }
+  }
+  
+  Future<void> _completeChallenge() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      // Use the new API-based method
+      final success = await ChallengeService.completeChallenge(_challenge.id);
+      
+      if (success) {
+        // Update UI with the completed challenge
+        setState(() {
+          _userChallenge = _userChallenge.copyWith(
+            status: ChallengeStatus.completed,
+            completedAt: DateTime.now(),
+          );
+          _isLoading = false;
+        });
+        
+        if (mounted) {
+          // Show completion dialog
+          _showCompletionDialog();
+        }
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to complete challenge')),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     }
   }
   
@@ -80,21 +128,22 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
       final updatedUserChallenge = await ChallengeService.recordAttempt(
         _challenge.id,
         value,
-        notes: _noteController.text.isNotEmpty ? _noteController.text : null,
       );
       
-      setState(() {
-        _userChallenge = updatedUserChallenge;
-        _valueController.clear();
-        _noteController.clear();
-      });
-      
-      if (_userChallenge.status == ChallengeStatus.completed) {
-        _showCompletionDialog();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Attempt recorded successfully')),
-        );
+      if (updatedUserChallenge != null) {
+        setState(() {
+          _userChallenge = updatedUserChallenge;
+          _valueController.clear();
+          _noteController.clear();
+        });
+        
+        if (_userChallenge.status == ChallengeStatus.completed) {
+          _showCompletionDialog();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Attempt recorded successfully')),
+          );
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -141,124 +190,203 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
     
     // Calculate performance score for feedback message
     final double performanceScore = _userChallenge.currentValue / _challenge.targetValue.toDouble();
+    final int xpReward = _challenge.xpReward;
+    final double specificBoost = xpReward * 1.5;
     
     if (performanceScore >= 1.0) {
-      performanceText = 'Perfect score! Maximum rating boost!';
+      performanceText = 'Perfect score! +${specificBoost.toStringAsFixed(1)} $improvedStat rating!';
     } else if (performanceScore >= 0.8) {
-      performanceText = 'Great performance! Significant rating boost!';
+      performanceText = 'Great performance! +${(specificBoost * 0.8).toStringAsFixed(1)} $improvedStat rating!';
     } else if (performanceScore >= 0.6) {
-      performanceText = 'Good effort! Moderate rating boost.';
+      performanceText = 'Good effort! +${(specificBoost * 0.6).toStringAsFixed(1)} $improvedStat rating.';
     } else {
-      performanceText = 'Completed! Small rating improvement.';
+      performanceText = 'Completed! +${(specificBoost * 0.4).toStringAsFixed(1)} $improvedStat rating.';
     }
     
-    showDialog(
+    // Get fresh player stats
+    final playerStats = await PlayerStatsService.getPlayerStats();
+    
+    if (!mounted) return;
+    
+    // Show completion dialog
+    await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.cardBackground,
-        title: const Text(
-          'Challenge Completed!',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.emoji_events,
-              color: Colors.amber,
-              size: 64,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.indigo.shade900,
+                  Colors.indigo.shade700,
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  spreadRadius: 2,
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Congratulations! You have completed the "${_challenge.title}" challenge.',
-              style: const TextStyle(color: Colors.white),
-              textAlign: TextAlign.center,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Trophy icon
+                Icon(
+                  Icons.emoji_events,
+                  color: Colors.amber[300],
+                  size: 80,
+                ),
+                const SizedBox(height: 20),
+                // Challenge completed text
+                const Text(
+                  'CHALLENGE COMPLETED!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Challenge name
+                Text(
+                  _challenge.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                // Divider
+                Divider(color: Colors.white.withOpacity(0.2)),
+                const SizedBox(height: 10),
+                // Performance feedback
+                Text(
+                  performanceText,
+                  style: TextStyle(
+                    color: Colors.green[300],
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                // Current stats display
+                if (playerStats != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    'Your Current Stats',
+                    style: TextStyle(
+                      color: Colors.amber[300],
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _buildStatRow('Overall', playerStats.overallRating),
+                  _buildStatRow('Pace', playerStats.pace),
+                  _buildStatRow('Shooting', playerStats.shooting),
+                  _buildStatRow('Passing', playerStats.passing),
+                  _buildStatRow('Dribbling', playerStats.dribbling),
+                  _buildStatRow('Defense', playerStats.defense),
+                  _buildStatRow('Physical', playerStats.physical),
+                ],
+                const SizedBox(height: 20),
+                // Continue button
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 30,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Text(
+                    'CONTINUE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Your final score: ${_userChallenge.currentValue}/${_challenge.targetValue} ${_challenge.unit}',
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
+          ),
+        );
+      },
+    );
+  }
+  
+  Widget _buildStatRow(String statName, double value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            statName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+            ),
+          ),
+          Container(
+            width: 100,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: value / 100,
+                minHeight: 12,
+                backgroundColor: Colors.white24,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  _getColorForStat(value),
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            const Divider(color: Colors.white24),
-            const SizedBox(height: 8),
-            const Text(
-              'Player Stats Improved!',
-              style: TextStyle(
+          ),
+          Container(
+            width: 30,
+            alignment: Alignment.center,
+            child: Text(
+              value.toStringAsFixed(0),
+              style: const TextStyle(
                 color: Colors.white,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            Text(
-              '$improvedStat has increased',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              performanceText,
-              style: const TextStyle(
-                fontStyle: FontStyle.italic,
-                color: Colors.green,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            if (!_challenge.isWeekly) ...[
-              const Text(
-                'The next level challenge has been unlocked!',
-                style: TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close dialog
-                  Navigator.of(context).pushReplacementNamed('/challenges'); // Go back to challenges
-                },
-                child: const Text(
-                  'Back to Challenges',
-                  style: TextStyle(color: Colors.white70),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close dialog
-                  Navigator.pushNamed(context, '/player-stats'); // Navigate to stats without replacing current route
-                },
-                child: const Text(
-                  'View Stats',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
           ),
         ],
       ),
     );
+  }
+  
+  Color _getColorForStat(double value) {
+    if (value >= 90) return Colors.red;
+    if (value >= 80) return Colors.orange;
+    if (value >= 70) return Colors.yellow;
+    if (value >= 60) return Colors.lightGreen;
+    if (value >= 50) return Colors.green;
+    return Colors.blueGrey;
   }
   
   @override

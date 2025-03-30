@@ -22,6 +22,11 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
   late Future<List<UserChallenge>> _userChallengesFuture;
   late Future<Challenge?> _weeklyChallengeFuture;
   
+  bool _isLoading = false;
+  List<Challenge> _challenges = [];
+  List<Challenge> _filteredChallenges = [];
+  List<UserChallenge> _userChallenges = [];
+  
   final List<ChallengeCategory> _categories = [
     ChallengeCategory.passing,
     ChallengeCategory.shooting,
@@ -37,6 +42,11 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
     super.initState();
     _tabController = TabController(length: _categories.length, vsync: this);
     _loadChallenges();
+    
+    // Initialize futures
+    _challengesFuture = ChallengeService.getAllChallengesWithStatus();
+    _userChallengesFuture = ChallengeService.getUserChallenges();
+    _weeklyChallengeFuture = ChallengeService.getWeeklyChallenge();
   }
   
   @override
@@ -45,16 +55,61 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
     super.dispose();
   }
   
-  void _loadChallenges() {
-    // Initialize user challenges if needed
-    ChallengeService.initializeUserChallenges();
-    
-    // Load challenges data
-    setState(() {
-      _challengesFuture = ChallengeService.getAllChallenges();
-      _userChallengesFuture = ChallengeService.getUserChallenges();
-      _weeklyChallengeFuture = ChallengeService.getWeeklyChallenge();
-    });
+  Future<void> _loadChallenges() async {
+    try {
+      _isLoading = true;
+      setState(() {});
+      
+      print('Loading challenges from API...');
+      
+      // Get challenges from service
+      final challenges = await ChallengeService.getAllChallengesWithStatus();
+      final userChallenges = await ChallengeService.getUserChallenges();
+      
+      print('Got ${challenges.length} challenges and ${userChallenges.length} user challenges');
+      
+      // TEMPORARY FIX: Force all challenges to be available
+      final updatedUserChallenges = userChallenges.map((uc) {
+        if (uc.status == ChallengeStatus.locked) {
+          print('Forcing challenge ${uc.challengeId} from LOCKED to AVAILABLE');
+          return uc.copyWith(status: ChallengeStatus.available);
+        }
+        return uc;
+      }).toList();
+      
+      // Make sure every challenge has an associated user challenge that is available
+      final List<UserChallenge> finalUserChallenges = [...updatedUserChallenges];
+      for (final challenge in challenges) {
+        final existingIndex = finalUserChallenges.indexWhere((uc) => uc.challengeId == challenge.id);
+        if (existingIndex == -1) {
+          print('Creating new AVAILABLE status for challenge ${challenge.id}');
+          finalUserChallenges.add(UserChallenge(
+            challengeId: challenge.id,
+            status: ChallengeStatus.available, // Force available
+            startedAt: DateTime.now(),
+          ));
+        }
+      }
+      
+      // Save updated user challenges
+      await ChallengeService.saveUserChallenges(finalUserChallenges);
+      
+      setState(() {
+        _challenges = challenges;
+        _userChallenges = finalUserChallenges;
+        _filteredChallenges = List.from(_challenges);
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading challenges: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load challenges: $e')),
+        );
+        _isLoading = false;
+        setState(() {});
+      }
+    }
   }
   
   @override
@@ -379,16 +434,17 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
   }
   
   Widget _buildChallengeCard(Challenge challenge, UserChallenge userChallenge) {
-    final isLocked = userChallenge.status == ChallengeStatus.locked;
+    // OVERRIDE: Force all challenges to be available regardless of status
+    final isLocked = false; // All challenges should be available, never locked
     final isCompleted = userChallenge.status == ChallengeStatus.completed;
-    final isAvailable = userChallenge.status == ChallengeStatus.available;
-    final isInProgress = userChallenge.status == ChallengeStatus.inProgress;
+    final isAvailable = !isCompleted; // If not completed, it's available
+    final isInProgress = false; // We're not using in-progress status for this version
     
     Color cardColor;
     IconData statusIcon;
     String statusText;
     
-    if (isLocked) {
+    if (isLocked) { // This block will never execute due to override above
       cardColor = Colors.grey;
       statusIcon = Icons.lock;
       statusText = 'LOCKED';
@@ -406,7 +462,7 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
       statusText = 'AVAILABLE';
     }
     
-    // Calculate progress if in progress
+    // Calculate progress if in progress or completed
     double progress = 0.0;
     if (isInProgress || isCompleted) {
       progress = userChallenge.currentValue / challenge.targetValue;
@@ -416,7 +472,8 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: GestureDetector(
-        onTap: isLocked ? null : () {
+        // Remove the isLocked check to make all challenges tappable
+        onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -427,195 +484,193 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
             ),
           ).then((_) => _loadChallenges());
         },
-        child: Opacity(
-          opacity: isLocked ? 0.6 : 1.0,
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.cardBackground.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: cardColor.withOpacity(0.7),
-                width: 2,
-              ),
+        // Remove the opacity change for locked challenges
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.cardBackground.withOpacity(0.8),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: cardColor.withOpacity(0.7),
+              width: 2,
             ),
-            child: Column(
-              children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: cardColor.withOpacity(0.2),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10),
-                    ),
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: cardColor.withOpacity(0.2),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(10),
+                    topRight: Radius.circular(10),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        statusIcon,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      statusIcon,
+                      color: cardColor,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      statusText,
+                      style: TextStyle(
                         color: cardColor,
-                        size: 20,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        statusText,
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: cardColor.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'Level ${challenge.level}',
                         style: TextStyle(
                           color: cardColor,
                           fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: cardColor.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'Level ${challenge.level}',
-                          style: TextStyle(
-                            color: cardColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                
-                // Content
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        challenge.title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+              ),
+              
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      challenge.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      challenge.description,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Progress bar for in-progress challenges
+                    if (isInProgress || isCompleted) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Progress: ${userChallenge.currentValue}/${challenge.targetValue} ${challenge.unit}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 12,
+                            ),
+                          ),
+                          Text(
+                            '${(progress * 100).toInt()}%',
+                            style: TextStyle(
+                              color: cardColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        challenge.description,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 14,
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 8,
+                          backgroundColor: Colors.white24,
+                          valueColor: AlwaysStoppedAnimation<Color>(cardColor),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      
-                      // Progress bar for in-progress challenges
-                      if (isInProgress || isCompleted) ...[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Progress: ${userChallenge.currentValue}/${challenge.targetValue} ${challenge.unit}',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 12,
-                              ),
-                            ),
-                            Text(
-                              '${(progress * 100).toInt()}%',
-                              style: TextStyle(
-                                color: cardColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            minHeight: 8,
-                            backgroundColor: Colors.white24,
-                            valueColor: AlwaysStoppedAnimation<Color>(cardColor),
-                          ),
-                        ),
-                      ],
-                      
-                      // Locked message
-                      if (isLocked) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              color: Colors.white.withOpacity(0.7),
-                              size: 16,
-                            ),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                'Complete the previous level challenges to unlock',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                  fontSize: 12,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      
-                      // Action button
-                      if (!isLocked) ...[
-                        const SizedBox(height: 16),
-                        Center(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ChallengeDetailPage(
-                                    challenge: challenge,
-                                    userChallenge: userChallenge,
-                                  ),
-                                ),
-                              ).then((_) => _loadChallenges());
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: cardColor,
-                              foregroundColor: isCompleted ? Colors.white : Colors.black87,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                            ),
-                            child: Text(
-                              isAvailable 
-                                  ? 'Start Challenge' 
-                                  : isCompleted 
-                                      ? 'View Details' 
-                                      : 'Continue',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
-                  ),
+                    
+                    // Locked message
+                    if (isLocked) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.white.withOpacity(0.7),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              'Complete the previous level challenges to unlock',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 12,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    
+                    // Action button
+                    if (!isLocked) ...[
+                      const SizedBox(height: 16),
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ChallengeDetailPage(
+                                  challenge: challenge,
+                                  userChallenge: userChallenge,
+                                ),
+                              ),
+                            ).then((_) => _loadChallenges());
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: cardColor,
+                            foregroundColor: isCompleted ? Colors.white : Colors.black87,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                          child: Text(
+                            isAvailable 
+                                ? 'Start Challenge' 
+                                : isCompleted 
+                                    ? 'View Details' 
+                                    : 'Continue',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

@@ -1,8 +1,11 @@
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import models
-from database import engine, SessionLocal
+from database import engine, SessionLocal, get_db
 import auth
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Create database tables if they don't exist
 models.Base.metadata.create_all(bind=engine)
@@ -69,6 +72,43 @@ def insert_test_data():
             print(f"Created player stats for {player.full_name}")
         else:
             print(f"Player stats already exist for {player.full_name}")
+        
+        # Add challenges with level and prerequisite relationships
+        challenges = [
+            # Passing challenges - Level 1
+            {"title": "Short Passing Accuracy", "description": "Complete 20 accurate short passes against a wall from 5 meters distance.", "xp_reward": 100, "category": "passing", "level": 1, "prerequisite_id": None},
+            {"title": "Pass and Control", "description": "Pass the ball against a wall and control the ball with different parts of your body 15 times.", "xp_reward": 100, "category": "passing", "level": 1, "prerequisite_id": None},
+            
+            # Passing challenges - Level 2 (require level 1 completion)
+            {"title": "Medium Range Passing", "description": "Complete 15 accurate passes to a target 15 meters away.", "xp_reward": 125, "category": "passing", "level": 2, "prerequisite_id": 1},
+            {"title": "First-Touch Passing", "description": "Pass against a wall and receive with one touch, then pass again without stopping, 10 times.", "xp_reward": 125, "category": "passing", "level": 2, "prerequisite_id": 2},
+            
+            # Passing challenges - Level 3 (require level 2 completion)
+            {"title": "Long Ball Precision", "description": "Hit a 2x2 meter target from 30 meters away 10 times.", "xp_reward": 150, "category": "passing", "level": 3, "prerequisite_id": 3},
+            {"title": "No-Look Passing", "description": "Complete 10 no-look passes to a training partner with accuracy.", "xp_reward": 150, "category": "passing", "level": 3, "prerequisite_id": 4},
+            
+            # Shooting challenges - Level 1
+            {"title": "Target Practice", "description": "Hit each corner of the goal 5 times from the penalty spot.", "xp_reward": 100, "category": "shooting", "level": 1, "prerequisite_id": None},
+            {"title": "First-Time Shots", "description": "Score 10 first-time shots from a rolling ball.", "xp_reward": 100, "category": "shooting", "level": 1, "prerequisite_id": None},
+            
+            # Shooting challenges - Level 2
+            {"title": "Long Range Shooting", "description": "Score 5 goals from outside the box.", "xp_reward": 125, "category": "shooting", "level": 2, "prerequisite_id": 7},
+            {"title": "Volley Shots", "description": "Score 5 volley shots from a lofted pass.", "xp_reward": 125, "category": "shooting", "level": 2, "prerequisite_id": 8},
+            
+            # Dribbling challenges - Level 1
+            {"title": "Cone Slalom", "description": "Dribble through 10 cones without touching any of them.", "xp_reward": 100, "category": "dribbling", "level": 1, "prerequisite_id": None},
+            {"title": "Quick Feet", "description": "Complete 20 toe taps in 30 seconds.", "xp_reward": 100, "category": "dribbling", "level": 1, "prerequisite_id": None},
+            
+            # Weekly challenge
+            {"title": "7-Day Streak", "description": "Train for 7 consecutive days.", "xp_reward": 200, "category": "weekly", "is_weekly": True, "level": 1, "prerequisite_id": None},
+        ]
+
+        for challenge_data in challenges:
+            challenge = db.query(models.Challenge).filter(models.Challenge.title == challenge_data["title"]).first()
+            if not challenge:
+                db.add(models.Challenge(**challenge_data))
+
+        db.commit()
         
         # Create a challenge
         challenge = db.query(models.Challenge).filter(models.Challenge.title == "Test Challenge").first()
@@ -225,6 +265,70 @@ def insert_test_data():
         else:
             print(f"Exercise already exists: {exercise.title} (ID: {exercise.id})")
         
+    finally:
+        db.close()
+
+def add_test_data():
+    """
+    Add test data to the database.
+    """
+    logger.info("Adding test data...")
+    
+    # Get database session
+    db = next(get_db())
+    
+    try:
+        # Add challenges with level and prerequisite relationships
+        challenges = [
+            # Passing challenges - Level 1
+            {"title": "Short Passing Accuracy", "description": "Complete 20 accurate short passes against a wall from 5 meters distance.", "xp_reward": 100, "category": "passing", "level": 1, "prerequisite_id": None},
+            {"title": "Pass and Control", "description": "Pass the ball against a wall and control the ball with different parts of your body 15 times.", "xp_reward": 100, "category": "passing", "level": 1, "prerequisite_id": None},
+            
+            # Passing challenges - Level 2 (require level 1 completion)
+            {"title": "Medium Range Passing", "description": "Complete 15 accurate passes to a target 15 meters away.", "xp_reward": 125, "category": "passing", "level": 2, "prerequisite_id": 1},
+            {"title": "First-Touch Passing", "description": "Pass against a wall and receive with one touch, then pass again without stopping, 10 times.", "xp_reward": 125, "category": "passing", "level": 2, "prerequisite_id": 2},
+            
+            # Passing challenges - Level 3 (require level 2 completion)
+            {"title": "Long Ball Precision", "description": "Hit a 2x2 meter target from 30 meters away 10 times.", "xp_reward": 150, "category": "passing", "level": 3, "prerequisite_id": 3},
+            {"title": "No-Look Passing", "description": "Complete 10 no-look passes to a training partner with accuracy.", "xp_reward": 150, "category": "passing", "level": 3, "prerequisite_id": 4},
+            
+            # Shooting challenges - Level 1
+            {"title": "Target Practice", "description": "Hit each corner of the goal 5 times from the penalty spot.", "xp_reward": 100, "category": "shooting", "level": 1, "prerequisite_id": None},
+            {"title": "First-Time Shots", "description": "Score 10 first-time shots from a rolling ball.", "xp_reward": 100, "category": "shooting", "level": 1, "prerequisite_id": None},
+            
+            # Shooting challenges - Level 2
+            {"title": "Long Range Shooting", "description": "Score 5 goals from outside the box.", "xp_reward": 125, "category": "shooting", "level": 2, "prerequisite_id": 7},
+            {"title": "Volley Shots", "description": "Score 5 volley shots from a lofted pass.", "xp_reward": 125, "category": "shooting", "level": 2, "prerequisite_id": 8},
+            
+            # Dribbling challenges - Level 1
+            {"title": "Cone Slalom", "description": "Dribble through 10 cones without touching any of them.", "xp_reward": 100, "category": "dribbling", "level": 1, "prerequisite_id": None},
+            {"title": "Quick Feet", "description": "Complete 20 toe taps in 30 seconds.", "xp_reward": 100, "category": "dribbling", "level": 1, "prerequisite_id": None},
+            
+            # Weekly challenge
+            {"title": "7-Day Streak", "description": "Train for 7 consecutive days.", "xp_reward": 200, "category": "weekly", "is_weekly": True, "level": 1, "prerequisite_id": None},
+        ]
+
+        for challenge_data in challenges:
+            challenge = db.query(models.Challenge).filter(models.Challenge.title == challenge_data["title"]).first()
+            if not challenge:
+                db.add(models.Challenge(**challenge_data))
+            else:
+                # Update existing challenge with new fields
+                for key, value in challenge_data.items():
+                    setattr(challenge, key, value)
+
+        db.commit()
+        logger.info("Test data added successfully!")
+        
+        return True
+    
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error adding test data: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return False
+    
     finally:
         db.close()
 

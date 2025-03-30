@@ -86,6 +86,11 @@ class PlayerStat(PlayerStatBase):
         from_attributes = True
 
 
+# Create an alias for PlayerStatsResponse to match the endpoint
+class PlayerStatsResponse(PlayerStat):
+    pass
+
+
 # -------- ACHIEVEMENTS --------
 class AchievementBase(BaseModel):
     title: str
@@ -119,6 +124,10 @@ class ChallengeBase(BaseModel):
     title: str
     description: Optional[str] = None
     xp_reward: int
+    category: Optional[str] = None
+    is_weekly: Optional[bool] = False
+    level: Optional[int] = 1
+    prerequisite_id: Optional[int] = None
 
 
 class ChallengeCreate(ChallengeBase):
@@ -127,6 +136,37 @@ class ChallengeCreate(ChallengeBase):
 
 class ChallengeResponse(ChallengeBase):
     id: int
+
+    class Config:
+        from_attributes = True
+
+
+# -------- CHALLENGE STATUS --------
+class ChallengeStatusBase(BaseModel):
+    user_id: int
+    challenge_id: int
+    status: str = "LOCKED"  # LOCKED, AVAILABLE, COMPLETED
+    unlocked_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+
+
+class ChallengeStatusCreate(BaseModel):
+    challenge_id: int
+    status: str = "LOCKED"
+
+
+class ChallengeStatusResponse(ChallengeStatusBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+
+# -------- CHALLENGE WITH STATUS --------
+class ChallengeWithStatus(ChallengeResponse):
+    status: str = "LOCKED"
+    unlocked_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -209,6 +249,7 @@ class ChallengeCompletion(ChallengeCompletionBase):
 
     class Config:
         from_attributes = True
+
 # -------- SIMPLE PLAYER STATS TEST (til test route) --------
 class SimplePlayerStatBase(BaseModel):
     pace: int

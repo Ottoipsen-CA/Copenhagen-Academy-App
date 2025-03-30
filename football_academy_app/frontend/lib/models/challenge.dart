@@ -179,11 +179,32 @@ class UserChallenge {
   }
   
   factory UserChallenge.fromJson(Map<String, dynamic> json) {
+    ChallengeStatus statusValue;
+    
+    try {
+      // For backward compatibility - try the old format first
+      statusValue = ChallengeStatus.values.firstWhere(
+        (e) => e.toString() == 'ChallengeStatus.${json['status']}',
+        orElse: () {
+          // Try parsing directly from the lowercase string value
+          final statusString = json['status']?.toString().toLowerCase();
+          switch (statusString) {
+            case 'available': return ChallengeStatus.available;
+            case 'completed': return ChallengeStatus.completed;
+            case 'in_progress': return ChallengeStatus.inProgress;
+            case 'locked': 
+            default: return ChallengeStatus.locked;
+          }
+        }
+      );
+    } catch (e) {
+      print('Error parsing status: ${json['status']} - defaulting to locked');
+      statusValue = ChallengeStatus.locked;
+    }
+    
     return UserChallenge(
       challengeId: json['challengeId'],
-      status: ChallengeStatus.values.firstWhere(
-        (e) => e.toString() == 'ChallengeStatus.${json['status']}',
-      ),
+      status: statusValue,
       currentValue: json['currentValue'] ?? 0,
       startedAt: DateTime.parse(json['startedAt']),
       completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt']) : null,

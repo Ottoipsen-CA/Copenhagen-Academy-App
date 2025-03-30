@@ -16,7 +16,7 @@ class ApiService {
     required this.secureStorage,
   }) {
     // Use localhost for web, 10.0.2.2 for Android emulator
-    baseUrl = kIsWeb ? 'http://localhost:8000' : 'http://10.0.2.2:8000';
+    baseUrl = kIsWeb ? 'http://localhost:8080' : 'http://10.0.2.2:8080';
   }
 
   // Helper method to get headers with auth token
@@ -51,11 +51,15 @@ class ApiService {
     
     try {
       final headers = await _getHeaders(withAuth: withAuth);
+      print('GET request to: $baseUrl$endpoint');
+      
       final response = await client.get(
         Uri.parse('$baseUrl$endpoint'),
         headers: headers,
       );
-
+      
+      print('GET response status: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {

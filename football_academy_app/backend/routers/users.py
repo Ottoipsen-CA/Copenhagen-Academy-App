@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 import logging
+from datetime import datetime
 
-from models import User as UserModel
+from models import User as UserModel, ChallengeStatus, Challenge
 from database import get_db
 from auth import get_password_hash, get_current_active_user
-
-from schemas import UserCreate, UserBase, UserResponse  # Sørg for at UserResponse eksisterer i schemas.py
+from schemas import UserCreate, UserBase, UserResponse
 
 router = APIRouter(
     prefix="/users",
@@ -132,3 +132,52 @@ def delete_user(
     db.delete(current_user)
     db.commit()
     return None
+
+
+# -----------------------------
+# Update Challenge Status and Unlock Next Challenge
+# -----------------------------
+@router.patch("/update_challenge_status")
+async def update_challenge_status(
+    user_id: int,
+    challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_active_user)
+):
+    # Find udfordringen for den pågældende bruger
+    challenge_status = db.query(ChallengeStatus).filter(
+        ChallengeStatus.user_id == user_id,
+        ChallengeStatus.challenge_id == challenge_id
+    ).first()
+
+    if not challenge_status:
+        raise HTTPException(status_code=404, detail="Challenge not found for the user")
+
+    # Hvis udfordringen er låst (LOCKED), gør den til tilgængelig (AVAILABLE)
+    if challenge_status.status == "LOCKED":
+        challenge_status.status = "AVAILABLE"
+        db.commit()
+
+    # Hvis udfordringen er fuldført (COMPLETED), gør den det officielt
+    if challenge_status.status == "AVAILABLE":
+        challenge_status.status = "COMPLETED"
+        challenge_status.completed_at = datetime.utcnow()  # Mark as completed at current time
+        db.commit()
+
+    # Find næste udfordring og opdater dens status
+    next_challenge = db.query(Challenge).filter(
+        Challenge.prerequisite_id == challenge_id
+    ).first()
+
+    if next_challenge:
+        # Sæt næste udfordring som tilgængelig
+        next_challenge_status = ChallengeStatus(
+            user_id=user_id,
+            challenge_id=next_challenge.id,
+            status="AVAILABLE",
+            unlocked_at=datetime.utcnow()  # Mark as unlocked at current time
+        )
+        db.add(next_challenge_status)
+        db.commit()
+
+    return {"message": "Challenge status updated successfully!"}

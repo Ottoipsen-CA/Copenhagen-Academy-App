@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
+import 'services/challenge_service.dart';
 import 'screens/auth/login_page.dart';
 import 'screens/dashboard/dashboard_page.dart';
 import 'screens/exercises/exercises_page.dart';
@@ -37,6 +38,9 @@ void main() async {
     apiService: apiService,
     secureStorage: secureStorage,
   );
+  
+  // Initialize challenge service
+  ChallengeService.initialize(apiService);
   
   runApp(
     MultiProvider(

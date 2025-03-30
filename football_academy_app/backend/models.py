@@ -37,8 +37,28 @@ class Challenge(Base):
     xp_reward = Column(Integer, default=0)
     category = Column(String)
     is_weekly = Column(Boolean, default=False)
+    level = Column(Integer, default=1)
+    prerequisite_id = Column(Integer, ForeignKey("challenges.id"), nullable=True)
 
     user_challenges = relationship("UserChallenge", back_populates="challenge")
+    prerequisite = relationship("Challenge", remote_side=[id], backref="next_challenges", uselist=False)
+
+
+# -----------------------------
+# ChallengeStatus - new model to track user challenge status
+# -----------------------------
+class ChallengeStatus(Base):
+    __tablename__ = "challenge_statuses"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    challenge_id = Column(Integer, ForeignKey("challenges.id"))
+    status = Column(String, default="LOCKED")  # LOCKED, AVAILABLE, COMPLETED
+    unlocked_at = Column(DateTime, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    
+    user = relationship("User", backref="challenge_statuses")
+    challenge = relationship("Challenge", backref="statuses")
 
 
 # -----------------------------

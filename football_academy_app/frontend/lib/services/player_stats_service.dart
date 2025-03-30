@@ -35,12 +35,17 @@ class PlayerStatsService {
       final userJson = await apiService.get('/users/me');
       final userId = userJson['id'];
       
+      // Force clear the cache to ensure we get the most up-to-date stats
+      print('Fetching fresh player stats for user $userId from API');
+      
       // Get player stats from API
-      final statsJson = await apiService.get('/player-stats/$userId');
+      final statsJson = await apiService.get('/player-stats/$userId?ts=${DateTime.now().millisecondsSinceEpoch}');
       
       if (statsJson != null) {
+        print('Successfully fetched player stats: $statsJson');
+        
         // Convert backend stats format to our model
-        return PlayerStats(
+        final stats = PlayerStats(
           id: statsJson['id'],
           playerId: statsJson['player_id'].toString(),
           pace: statsJson['pace'].toDouble(),
@@ -52,6 +57,11 @@ class PlayerStatsService {
           overallRating: statsJson['overall_rating'].toDouble(),
           lastUpdated: DateTime.parse(statsJson['last_updated']),
         );
+        
+        // Save to local storage as a backup
+        await savePlayerStats(stats);
+        
+        return stats;
       }
     } catch (e) {
       print('Error fetching player stats from API: $e');

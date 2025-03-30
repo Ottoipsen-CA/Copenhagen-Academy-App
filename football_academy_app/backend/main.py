@@ -19,7 +19,8 @@ from routers import (
     achievements,
     player_stats,
     challenge_progress,
-    test_player_stats  # 👈 NY router til test
+    test_player_stats,  # 👈 NY router til test
+    challenges,  # Added challenges router
 )
 
 # Configure logging
@@ -97,6 +98,7 @@ app.include_router(achievements.router)
 app.include_router(player_stats.router)
 app.include_router(challenge_progress.router)
 app.include_router(test_player_stats.router)  # 👈 NY test-router
+app.include_router(challenges.router)  # Challenge router for progression system
 
 # Token login endpoint
 @app.post("/token", 

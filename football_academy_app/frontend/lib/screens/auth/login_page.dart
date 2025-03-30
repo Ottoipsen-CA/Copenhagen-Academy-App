@@ -6,6 +6,7 @@ import '../../services/auth_service.dart';
 import '../../theme/colors.dart';
 import '../dashboard/dashboard_page.dart';
 import 'register_page.dart';
+import '../../services/challenge_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -48,6 +49,9 @@ class _LoginPageState extends State<LoginPage> {
       );
       
       if (!mounted) return;
+      
+      // Initialize challenges for the user after successful login
+      await ChallengeService.initializeUserChallenges();
       
       // Navigate to dashboard
       Navigator.of(context).pushReplacement(

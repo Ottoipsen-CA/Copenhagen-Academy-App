@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session
 import sys
 import os
+from datetime import datetime
 
 # Add the parent directory to the path so we can import modules from the backend package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -41,24 +42,45 @@ def create_player_stats(
     db.refresh(db_player_stats)
     return db_player_stats
 
-@router.get("/{player_id}", response_model=schemas.PlayerStat)
-def read_player_stats(
+@router.get("/{player_id}", response_model=schemas.PlayerStatsResponse)
+async def get_player_stats(
     player_id: int,
-    current_user: models.User = Depends(auth.get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_active_user)
 ):
-    if player_id != current_user.id and not current_user.is_coach:
+    # Authorization check - only allow users to access their own stats
+    # or admins to access anyone's stats
+    if player_id != current_user.id and current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
+            detail="Not authorized to access this player's stats"
         )
     
-    player_stats = db.query(models.PlayerStats).filter(
+    # Get player stats from database
+    stats = db.query(models.PlayerStats).filter(
         models.PlayerStats.player_id == player_id
     ).first()
-    if player_stats is None:
-        raise HTTPException(status_code=404, detail="Player stats not found")
-    return player_stats
+    
+    if not stats:
+        # If no stats exist yet, create default stats
+        print(f"Creating default player stats for player {player_id}")
+        stats = models.PlayerStats(
+            player_id=player_id,
+            pace=50,
+            shooting=50,
+            passing=50,
+            dribbling=50,
+            defense=50,
+            physical=50,
+            overall_rating=50,
+            last_updated=datetime.utcnow()
+        )
+        db.add(stats)
+        db.commit()
+        db.refresh(stats)
+    
+    print(f"Returning player stats for player {player_id}: pace={stats.pace}, shooting={stats.shooting}, passing={stats.passing}, overall={stats.overall_rating}")
+    return stats
 
 @router.put("/{player_id}", response_model=schemas.PlayerStat)
 def update_player_stats(
