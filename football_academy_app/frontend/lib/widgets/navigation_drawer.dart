@@ -65,13 +65,6 @@ class CustomNavigationDrawer extends StatelessWidget {
                   Icons.person,
                   () => _navigateTo(context, 'player_stats'),
                 ),
-                _buildNavItem(
-                  context,
-                  'chat',
-                  'Chat',
-                  Icons.chat_outlined,
-                  () => _navigateTo(context, 'chat'),
-                ),
                 const Divider(),
                 _buildNavItem(
                   context,
@@ -259,9 +252,6 @@ class CustomNavigationDrawer extends StatelessWidget {
         break;
       case 'player_stats':
         Navigator.pushReplacementNamed(context, '/player-stats');
-        break;
-      case 'chat':
-        Navigator.pushReplacementNamed(context, '/chat');
         break;
       case 'profile':
         Navigator.pushReplacementNamed(context, '/profile');
