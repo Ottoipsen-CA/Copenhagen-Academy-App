@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer white circle -->
+  <circle cx="250" cy="250" r="240" fill="white"/>
+  
+  <!-- Inner black circle -->
+  <circle cx="250" cy="250" r="230" fill="black"/>
+  
+  <!-- Soccer ball pattern -->
+  <path d="M250 50 
+           C 400 50, 450 200, 450 250
+           C 450 300, 400 450, 250 450
+           C 100 450, 50 300, 50 250
+           C 50 200, 100 50, 250 50" 
+        fill="none" 
+        stroke="white" 
+        stroke-width="4"/>
+  
+  <path d="M250 50 
+           C 100 50, 50 200, 50 250
+           C 50 300, 100 450, 250 450
+           C 400 450, 450 300, 450 250
+           C 450 200, 400 50, 250 50" 
+        fill="none" 
+        stroke="white" 
+        stroke-width="4"/>
+  
+  <!-- Text "COPENHAGEN" -->
+  <text x="250" y="180" 
+        text-anchor="middle" 
+        font-family="Arial" 
+        font-size="50" 
+        font-weight="900"
+        fill="white"
+        style="text-transform: uppercase;">
+    COPENHAGEN
+  </text>
+  
+  <!-- Text "ACADEMY" -->
+  <text x="250" y="280" 
+        text-anchor="middle" 
+        font-family="Arial" 
+        font-size="70" 
+        font-weight="900"
+        fill="white"
+        style="text-transform: uppercase;">
+    ACADEMY
+  </text>
+  
+  <!-- Five stars -->
+  <g transform="translate(250, 350)" fill="white">
+    <path d="M-100,-10 l6,18h19l-15,11l6,18l-16-11l-15,11l6-18l-15-11h19z" transform="translate(-80, 0) scale(0.6)"/>
+    <path d="M-100,-10 l6,18h19l-15,11l6,18l-16-11l-15,11l6-18l-15-11h19z" transform="translate(-40, 0) scale(0.6)"/>
+    <path d="M-100,-10 l6,18h19l-15,11l6,18l-16-11l-15,11l6-18l-15-11h19z" transform="translate(0, 0) scale(0.6)"/>
+    <path d="M-100,-10 l6,18h19l-15,11l6,18l-16-11l-15,11l6-18l-15-11h19z" transform="translate(40, 0) scale(0.6)"/>
+    <path d="M-100,-10 l6,18h19l-15,11l6,18l-16-11l-15,11l6-18l-15-11h19z" transform="translate(80, 0) scale(0.6)"/>
+  </g>
+</svg> 
