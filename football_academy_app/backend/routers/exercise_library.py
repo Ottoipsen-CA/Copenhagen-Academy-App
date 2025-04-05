@@ -5,23 +5,26 @@ import os
 import uuid
 from datetime import datetime
 
-import models
-import schemas
-import auth
+from models import User, ExerciseLibrary
 from database import get_db
+from services.auth import get_current_user_dependency
+from schemas import ExerciseLibraryCreate, ExerciseLibrary as ExerciseLibrarySchema
 
 router = APIRouter(
     prefix="/exercise-library",
-    tags=["exercise library"],
-    responses={404: {"description": "Not found"}},
+    tags=["exercise_library"],
+    responses={
+        404: {"description": "Not found"},
+        401: {"description": "Not authenticated"},
+        403: {"description": "Not authorized to perform requested action"}
+    }
 )
 
-# Create an exercise (coach only)
-@router.post("/", response_model=schemas.ExerciseLibrary)
+@router.post("/", response_model=ExerciseLibrarySchema)
 async def create_exercise(
-    exercise: schemas.ExerciseLibraryCreate,
+    exercise: ExerciseLibraryCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # Check if user is a coach
     if not current_user.is_coach:
@@ -30,7 +33,7 @@ async def create_exercise(
             detail="Only coaches can create exercises"
         )
     
-    db_exercise = models.ExerciseLibrary(
+    db_exercise = ExerciseLibrary(
         **exercise.dict(),
         created_by=current_user.id
     )
@@ -39,46 +42,43 @@ async def create_exercise(
     db.refresh(db_exercise)
     return db_exercise
 
-# Get all exercises with optional filtering
-@router.get("/", response_model=List[schemas.ExerciseLibrary])
+@router.get("/", response_model=List[ExerciseLibrarySchema])
 async def get_exercises(
     category: Optional[str] = None,
     difficulty_level: Optional[str] = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
-    query = db.query(models.ExerciseLibrary)
+    query = db.query(ExerciseLibrary)
     
     # Apply filters if provided
     if category:
-        query = query.filter(models.ExerciseLibrary.category == category)
+        query = query.filter(ExerciseLibrary.category == category)
     if difficulty_level:
-        query = query.filter(models.ExerciseLibrary.difficulty_level == difficulty_level)
+        query = query.filter(ExerciseLibrary.difficulty_level == difficulty_level)
     
     exercises = query.offset(skip).limit(limit).all()
     return exercises
 
-# Get a specific exercise
-@router.get("/{exercise_id}", response_model=schemas.ExerciseLibrary)
+@router.get("/{exercise_id}", response_model=ExerciseLibrarySchema)
 async def get_exercise(
     exercise_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
-    exercise = db.query(models.ExerciseLibrary).filter(models.ExerciseLibrary.id == exercise_id).first()
+    exercise = db.query(ExerciseLibrary).filter(ExerciseLibrary.id == exercise_id).first()
     if exercise is None:
         raise HTTPException(status_code=404, detail="Exercise not found")
     return exercise
 
-# Update an exercise (coach only)
-@router.put("/{exercise_id}", response_model=schemas.ExerciseLibrary)
+@router.put("/{exercise_id}", response_model=ExerciseLibrarySchema)
 async def update_exercise(
     exercise_id: int,
-    exercise: schemas.ExerciseLibraryCreate,
+    exercise: ExerciseLibraryCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # Check if user is a coach
     if not current_user.is_coach:
@@ -87,7 +87,7 @@ async def update_exercise(
             detail="Only coaches can update exercises"
         )
     
-    db_exercise = db.query(models.ExerciseLibrary).filter(models.ExerciseLibrary.id == exercise_id).first()
+    db_exercise = db.query(ExerciseLibrary).filter(ExerciseLibrary.id == exercise_id).first()
     if db_exercise is None:
         raise HTTPException(status_code=404, detail="Exercise not found")
     
@@ -100,12 +100,11 @@ async def update_exercise(
     db.refresh(db_exercise)
     return db_exercise
 
-# Delete an exercise (coach only)
 @router.delete("/{exercise_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_exercise(
     exercise_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # Check if user is a coach
     if not current_user.is_coach:
@@ -114,7 +113,7 @@ async def delete_exercise(
             detail="Only coaches can delete exercises"
         )
     
-    db_exercise = db.query(models.ExerciseLibrary).filter(models.ExerciseLibrary.id == exercise_id).first()
+    db_exercise = db.query(ExerciseLibrary).filter(ExerciseLibrary.id == exercise_id).first()
     if db_exercise is None:
         raise HTTPException(status_code=404, detail="Exercise not found")
     
@@ -130,13 +129,12 @@ async def delete_exercise(
     db.commit()
     return {"status": "success"}
 
-# Upload video for an exercise (coach only)
-@router.post("/{exercise_id}/upload", response_model=schemas.ExerciseLibrary)
+@router.post("/{exercise_id}/upload", response_model=ExerciseLibrarySchema)
 async def upload_exercise_video(
     exercise_id: int,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # Check if user is a coach
     if not current_user.is_coach:
@@ -146,7 +144,7 @@ async def upload_exercise_video(
         )
     
     # Check if exercise exists
-    db_exercise = db.query(models.ExerciseLibrary).filter(models.ExerciseLibrary.id == exercise_id).first()
+    db_exercise = db.query(ExerciseLibrary).filter(ExerciseLibrary.id == exercise_id).first()
     if db_exercise is None:
         raise HTTPException(status_code=404, detail="Exercise not found")
     
@@ -170,22 +168,20 @@ async def upload_exercise_video(
     
     return db_exercise
 
-# Get available categories
 @router.get("/categories", response_model=List[str])
 async def get_categories(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # Get distinct category values
-    categories = db.query(models.ExerciseLibrary.category).distinct().all()
+    categories = db.query(ExerciseLibrary.category).distinct().all()
     return [category[0] for category in categories if category[0]]
 
-# Get available difficulty levels
 @router.get("/difficulty-levels", response_model=List[str])
 async def get_difficulty_levels(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # Get distinct difficulty level values
-    difficulty_levels = db.query(models.ExerciseLibrary.difficulty_level).distinct().all()
+    difficulty_levels = db.query(ExerciseLibrary.difficulty_level).distinct().all()
     return [level[0] for level in difficulty_levels if level[0]] 

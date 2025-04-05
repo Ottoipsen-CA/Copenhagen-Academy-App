@@ -3,27 +3,30 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-import models
-import schemas
-import auth
+from models import User, LeagueTableEntry, ChallengeEntry, Test, TestEntry
 from database import get_db
+from services.auth import get_current_user_dependency
+from schemas import LeagueTableEntry as LeagueTableEntrySchema
 
 router = APIRouter(
     prefix="/league-table",
-    tags=["league table"],
-    responses={404: {"description": "Not found"}},
+    tags=["league_table"],
+    responses={
+        404: {"description": "Not found"},
+        401: {"description": "Not authenticated"},
+        403: {"description": "Not authorized to perform requested action"}
+    }
 )
 
-# Get the league table (sorted by rank)
-@router.get("/", response_model=List[schemas.LeagueTableEntry])
+@router.get("/", response_model=List[LeagueTableEntrySchema])
 async def get_league_table(
     season: Optional[str] = "current",
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # Get all league table entries
-    league_entries = db.query(models.LeagueTableEntry).filter(
-        models.LeagueTableEntry.season == season
+    league_entries = db.query(LeagueTableEntry).filter(
+        LeagueTableEntry.season == season
     ).all()
     
     # If there are no entries, return empty list
@@ -41,18 +44,17 @@ async def get_league_table(
     
     return league_entries
 
-# Get a user's league table entry
-@router.get("/user/{user_id}", response_model=schemas.LeagueTableEntry)
+@router.get("/user/{user_id}", response_model=LeagueTableEntrySchema)
 async def get_user_league_entry(
     user_id: int,
     season: Optional[str] = "current",
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # Get user's league table entry
-    league_entry = db.query(models.LeagueTableEntry).filter(
-        models.LeagueTableEntry.user_id == user_id,
-        models.LeagueTableEntry.season == season
+    league_entry = db.query(LeagueTableEntry).filter(
+        LeagueTableEntry.user_id == user_id,
+        LeagueTableEntry.season == season
     ).first()
     
     if not league_entry:
@@ -63,12 +65,11 @@ async def get_user_league_entry(
     
     return league_entry
 
-# Recalculate the league table (coach only)
-@router.post("/recalculate", response_model=List[schemas.LeagueTableEntry])
+@router.post("/recalculate", response_model=List[LeagueTableEntrySchema])
 async def recalculate_league_table(
     season: Optional[str] = "current",
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # Check if user is a coach
     if not current_user.is_coach:
@@ -78,38 +79,38 @@ async def recalculate_league_table(
         )
     
     # Get all active players
-    players = db.query(models.User).filter(
-        models.User.is_active == True,
-        models.User.is_coach == False
+    players = db.query(User).filter(
+        User.is_active == True,
+        User.is_coach == False
     ).all()
     
     # Process each player
     for player in players:
         # Calculate challenge points
-        challenge_points = db.query(models.ChallengeEntry).filter(
-            models.ChallengeEntry.user_id == player.id,
-            models.ChallengeEntry.status == "approved"
-        ).with_entities(models.ChallengeEntry.points_awarded).all()
+        challenge_points = db.query(ChallengeEntry).filter(
+            ChallengeEntry.user_id == player.id,
+            ChallengeEntry.status == "approved"
+        ).with_entities(ChallengeEntry.points_awarded).all()
         
         total_challenge_points = sum(point[0] for point in challenge_points) if challenge_points else 0
         
         # Calculate test points
-        test_entries = db.query(models.TestEntry, models.Test).join(
-            models.Test, models.TestEntry.test_id == models.Test.id
+        test_entries = db.query(TestEntry, Test).join(
+            Test, TestEntry.test_id == Test.id
         ).filter(
-            models.TestEntry.user_id == player.id
+            TestEntry.user_id == player.id
         ).all()
         
         total_test_points = int(sum(entry.score * test.points_scale for entry, test in test_entries)) if test_entries else 0
         
         # Get or create league table entry
-        league_entry = db.query(models.LeagueTableEntry).filter(
-            models.LeagueTableEntry.user_id == player.id,
-            models.LeagueTableEntry.season == season
+        league_entry = db.query(LeagueTableEntry).filter(
+            LeagueTableEntry.user_id == player.id,
+            LeagueTableEntry.season == season
         ).first()
         
         if not league_entry:
-            league_entry = models.LeagueTableEntry(
+            league_entry = LeagueTableEntry(
                 user_id=player.id,
                 season=season,
                 challenge_points=total_challenge_points,
@@ -127,8 +128,8 @@ async def recalculate_league_table(
     db.commit()
     
     # Get all entries and sort by total points
-    league_entries = db.query(models.LeagueTableEntry).filter(
-        models.LeagueTableEntry.season == season
+    league_entries = db.query(LeagueTableEntry).filter(
+        LeagueTableEntry.season == season
     ).all()
     
     league_entries.sort(key=lambda x: x.total_points, reverse=True)
@@ -141,12 +142,11 @@ async def recalculate_league_table(
     
     return league_entries
 
-# Create a new season (coach only)
 @router.post("/seasons/{season_name}", status_code=status.HTTP_201_CREATED)
 async def create_new_season(
     season_name: str,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # Check if user is a coach
     if not current_user.is_coach:
@@ -156,8 +156,8 @@ async def create_new_season(
         )
     
     # Check if season already exists
-    existing_entries = db.query(models.LeagueTableEntry).filter(
-        models.LeagueTableEntry.season == season_name
+    existing_entries = db.query(LeagueTableEntry).filter(
+        LeagueTableEntry.season == season_name
     ).count()
     
     if existing_entries > 0:
@@ -167,14 +167,14 @@ async def create_new_season(
         )
     
     # Get all active players
-    players = db.query(models.User).filter(
-        models.User.is_active == True,
-        models.User.is_coach == False
+    players = db.query(User).filter(
+        User.is_active == True,
+        User.is_coach == False
     ).all()
     
     # Create new season entries for all players
     for player in players:
-        new_entry = models.LeagueTableEntry(
+        new_entry = LeagueTableEntry(
             user_id=player.id,
             season=season_name,
             challenge_points=0,
@@ -189,12 +189,11 @@ async def create_new_season(
     
     return {"message": f"Season '{season_name}' created successfully"}
 
-# Get all available seasons
 @router.get("/seasons", response_model=List[str])
 async def get_seasons(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # Get distinct season values
-    seasons = db.query(models.LeagueTableEntry.season).distinct().all()
+    seasons = db.query(LeagueTableEntry.season).distinct().all()
     return [season[0] for season in seasons] 

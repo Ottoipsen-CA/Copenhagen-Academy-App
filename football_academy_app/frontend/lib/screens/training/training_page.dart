@@ -264,7 +264,7 @@ class _TrainingPageState extends State<TrainingPage> with TickerProviderStateMix
           _getExerciseIcon(exercise.category),
           color: Theme.of(context).primaryColor,
         ),
-        title: Text(exercise.name),
+        title: Text(exercise.title),
         subtitle: Text(exercise.difficulty),
         trailing: IconButton(
           icon: Icon(
@@ -301,7 +301,7 @@ class _TrainingPageState extends State<TrainingPage> with TickerProviderStateMix
 
   Future<void> _toggleFavorite(Exercise exercise) async {
     try {
-      final updatedExercise = await _exerciseService.toggleFavorite(exercise.id);
+      final updatedExercise = await _exerciseService.toggleFavorite(int.parse(exercise.id!));
       setState(() {
         // Update in all exercises list
         final index = _allExercises.indexWhere((e) => e.id == exercise.id);
@@ -471,14 +471,14 @@ class _TrainingPageState extends State<TrainingPage> with TickerProviderStateMix
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         title: Text(
-          day.dayName,
+          day.day,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
         subtitle: Text(
-          day.description ?? 'No training scheduled',
+          day.notes ?? 'No training scheduled',
           style: const TextStyle(color: Colors.white70),
         ),
         trailing: const Icon(

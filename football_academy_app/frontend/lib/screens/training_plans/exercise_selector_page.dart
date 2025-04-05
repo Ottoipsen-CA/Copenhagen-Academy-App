@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
 import '../../models/exercise.dart';
 import '../../services/exercise_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/api_service.dart';
 import '../../theme/colors.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/gradient_background.dart';
@@ -39,7 +43,15 @@ class _ExerciseSelectorPageState extends State<ExerciseSelectorPage> {
   void _loadExercises() {
     setState(() {
       _isLoading = true;
-      _exercisesFuture = ExerciseService.getAllExercisesStatic();
+      final apiService = ApiService(
+        client: http.Client(),
+        secureStorage: const FlutterSecureStorage(),
+      );
+      final authService = AuthService(
+        apiService: apiService,
+        secureStorage: const FlutterSecureStorage(),
+      );
+      _exercisesFuture = ExerciseService(authService).getExercises();
     });
   }
 

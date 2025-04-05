@@ -80,7 +80,13 @@ class Challenge {
   final bool isWeekly;
   final List<String>? tips;
   final String? videoUrl;
+  final String? imageUrl;
   final int xpReward;
+  final bool isActive;
+  final String timeRemaining;
+  final int participantCount;
+  final List<ChallengeSubmission> leaderboard;
+  final ChallengeSubmission? userSubmission;
 
   const Challenge({
     required this.id,
@@ -95,6 +101,12 @@ class Challenge {
     this.isWeekly = false,
     this.tips,
     this.videoUrl,
+    this.imageUrl,
+    this.isActive = true,
+    this.timeRemaining = '',
+    this.participantCount = 0,
+    this.leaderboard = const [],
+    this.userSubmission,
   });
   
   factory Challenge.fromJson(Map<String, dynamic> json) {
@@ -113,6 +125,16 @@ class Challenge {
       isWeekly: json['isWeekly'] ?? false,
       tips: json['tips'] != null ? List<String>.from(json['tips']) : null,
       videoUrl: json['videoUrl'],
+      imageUrl: json['imageUrl'],
+      isActive: json['isActive'] ?? true,
+      timeRemaining: json['timeRemaining'] ?? '',
+      participantCount: json['participantCount'] ?? 0,
+      leaderboard: json['leaderboard'] != null 
+          ? (json['leaderboard'] as List).map((e) => ChallengeSubmission.fromJson(e)).toList()
+          : [],
+      userSubmission: json['userSubmission'] != null 
+          ? ChallengeSubmission.fromJson(json['userSubmission'])
+          : null,
     );
   }
   
@@ -130,7 +152,17 @@ class Challenge {
       'isWeekly': isWeekly,
       'tips': tips,
       'videoUrl': videoUrl,
+      'imageUrl': imageUrl,
+      'isActive': isActive,
+      'timeRemaining': timeRemaining,
+      'participantCount': participantCount,
+      'leaderboard': leaderboard.map((e) => e.toJson()).toList(),
+      'userSubmission': userSubmission?.toJson(),
     };
+  }
+
+  String formatMetric(double value) {
+    return '$value $unit';
   }
 }
 
@@ -253,6 +285,47 @@ class ChallengeAttempt {
       'timestamp': timestamp.toIso8601String(),
       'value': value,
       'notes': notes,
+    };
+  }
+}
+
+@immutable
+class ChallengeSubmission {
+  final String userId;
+  final String userName;
+  final String? userImageUrl;
+  final double value;
+  final DateTime submittedAt;
+  final int rank;
+
+  const ChallengeSubmission({
+    required this.userId,
+    required this.userName,
+    this.userImageUrl,
+    required this.value,
+    required this.submittedAt,
+    required this.rank,
+  });
+
+  factory ChallengeSubmission.fromJson(Map<String, dynamic> json) {
+    return ChallengeSubmission(
+      userId: json['user_id'].toString(),
+      userName: json['user_name'],
+      userImageUrl: json['user_image_url'],
+      value: json['value'].toDouble(),
+      submittedAt: DateTime.parse(json['submitted_at']),
+      rank: json['rank'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'user_id': userId,
+      'user_name': userName,
+      'user_image_url': userImageUrl,
+      'value': value,
+      'submitted_at': submittedAt.toIso8601String(),
+      'rank': rank,
     };
   }
 } 

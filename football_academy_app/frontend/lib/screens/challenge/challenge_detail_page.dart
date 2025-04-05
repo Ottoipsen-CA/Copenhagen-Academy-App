@@ -1,11 +1,36 @@
 import 'package:flutter/material.dart';
+import '../../models/challenge.dart';
 
 class ChallengeDetailPage extends StatefulWidget {
-  // ... (existing code)
+  final Challenge challenge;
+
+  const ChallengeDetailPage({
+    Key? key,
+    required this.challenge,
+  }) : super(key: key);
+
+  @override
+  State<ChallengeDetailPage> createState() => _ChallengeDetailPageState();
 }
 
 class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
-  // ... (existing code)
+  late Challenge _challenge;
+
+  @override
+  void initState() {
+    super.initState();
+    _challenge = widget.challenge;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_challenge.title),
+      ),
+      body: Container(), // TODO: Implement the body
+    );
+  }
 
   List<IconData> _getCategoryIcons() {
     switch (_challenge.category) {
@@ -26,7 +51,7 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
       case ChallengeCategory.weekly:
         return [Icons.emoji_events, Icons.calendar_today, Icons.star];
       case ChallengeCategory.wallTouches:
-        return [Icons.sports_soccer, Icons.wall, Icons.touch_app];
+        return [Icons.sports_soccer, Icons.grid_on, Icons.touch_app];
     }
   }
 
@@ -52,6 +77,4 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
         return Colors.green;
     }
   }
-
-  // ... (rest of the existing code)
 } 

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import '../models/user.dart';
 import '../models/challenge.dart';
+import '../models/challenge_completion.dart';
+import '../models/badge.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
 

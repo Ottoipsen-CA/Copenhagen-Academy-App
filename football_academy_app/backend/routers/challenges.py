@@ -1,13 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List, Optional
+from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
 from sqlalchemy import and_
 
-import models
-import schemas
-import auth
+from models import (
+    User, Challenge, ChallengeStatus, ChallengeCompletion, 
+    Badge, PlayerStats, Achievement
+)
 from database import get_db
+from services.auth import get_current_user_dependency
+from schemas import (
+    ChallengeCreate, ChallengeResponse, ChallengeWithStatus,
+    ChallengeStatusResponse, ChallengeCompletionCreate, ChallengeCompletionResponse,
+    ChallengeCompletionWithDetails, BadgeWithChallenge, AchievementCreate, AchievementResponse
+)
 
 router = APIRouter(
     prefix="/challenges",
@@ -15,46 +22,55 @@ router = APIRouter(
     responses={
         404: {"description": "Not found"},
         401: {"description": "Not authenticated"},
-        403: {"description": "Not authorized"}
-    },
+        403: {"description": "Not authorized to perform requested action"}
+    }
 )
 
-# Get all challenges
-@router.get(
-    "/", 
-    response_model=List[schemas.ChallengeResponse],
-    summary="Get all challenges",
-    description="Retrieve a list of all available challenges"
-)
+# -------------- Challenge Management Endpoints --------------
+
+@router.post("/", response_model=ChallengeResponse, status_code=status.HTTP_201_CREATED)
+async def create_challenge(
+    challenge: ChallengeCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    # Only coaches can create challenges
+    if not current_user.is_coach:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only coaches can create challenges"
+        )
+    
+    db_challenge = Challenge(**challenge.dict())
+    db.add(db_challenge)
+    db.commit()
+    db.refresh(db_challenge)
+    return db_challenge
+
+@router.get("/", response_model=List[ChallengeResponse])
 async def get_all_challenges(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_active_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
-    challenges = db.query(models.Challenge).all()
+    challenges = db.query(Challenge).all()
     return challenges
 
-# Get all challenges with user status
-@router.get(
-    "/with-status", 
-    response_model=List[schemas.ChallengeWithStatus],
-    summary="Get all challenges with user status",
-    description="Retrieve a list of all challenges with user-specific status information"
-)
+@router.get("/with-status", response_model=List[ChallengeWithStatus])
 async def get_challenges_with_status(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_active_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # Get all challenges and statuses in one query with join
     result = db.query(
-        models.Challenge,
-        models.ChallengeStatus.status,
-        models.ChallengeStatus.unlocked_at,
-        models.ChallengeStatus.completed_at
+        Challenge,
+        ChallengeStatus.status,
+        ChallengeStatus.unlocked_at,
+        ChallengeStatus.completed_at
     ).outerjoin(
-        models.ChallengeStatus,
+        ChallengeStatus,
         and_(
-            models.ChallengeStatus.challenge_id == models.Challenge.id,
-            models.ChallengeStatus.user_id == current_user.id
+            ChallengeStatus.challenge_id == Challenge.id,
+            ChallengeStatus.user_id == current_user.id
         )
     ).all()
     
@@ -78,27 +94,23 @@ async def get_challenges_with_status(
     
     return challenges_with_status
 
-# Initialize challenge statuses for a user
-@router.post(
-    "/initialize-status",
-    status_code=status.HTTP_201_CREATED,
-    summary="Initialize challenge statuses",
-    description="Initialize the status of all challenges for the current user. First level challenges will be available, others locked."
-)
+# -------------- Challenge Status Endpoints --------------
+
+@router.post("/initialize-status", status_code=status.HTTP_201_CREATED)
 async def initialize_challenge_statuses(
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_active_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # Check if statuses already exist
-    existing_statuses = db.query(models.ChallengeStatus).filter(
-        models.ChallengeStatus.user_id == current_user.id
+    existing_statuses = db.query(ChallengeStatus).filter(
+        ChallengeStatus.user_id == current_user.id
     ).first()
     
     if existing_statuses:
         raise HTTPException(status_code=400, detail="Challenge statuses already initialized")
     
     # Get all challenges
-    challenges = db.query(models.Challenge).all()
+    challenges = db.query(Challenge).all()
     
     # Group challenges by category
     categories = {}
@@ -117,7 +129,7 @@ async def initialize_challenge_statuses(
             status = "AVAILABLE" if challenge.level == 1 or challenge.is_weekly else "LOCKED"
             unlocked_at = now if status == "AVAILABLE" else None
             
-            status_record = models.ChallengeStatus(
+            status_record = ChallengeStatus(
                 user_id=current_user.id,
                 challenge_id=challenge.id,
                 status=status,
@@ -131,28 +143,22 @@ async def initialize_challenge_statuses(
     
     return {"detail": f"Initialized {len(statuses_to_add)} challenge statuses"}
 
-# Complete a challenge
-@router.post(
-    "/complete/{challenge_id}", 
-    response_model=schemas.ChallengeStatusResponse,
-    summary="Complete a challenge",
-    description="Mark a challenge as completed and unlock the next challenge in the progression"
-)
+@router.post("/complete/{challenge_id}", response_model=ChallengeStatusResponse)
 async def complete_challenge(
     challenge_id: int,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_active_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
     # 1. Find challenge
-    challenge = db.query(models.Challenge).filter(models.Challenge.id == challenge_id).first()
+    challenge = db.query(Challenge).filter(Challenge.id == challenge_id).first()
     
     if not challenge:
         raise HTTPException(status_code=404, detail="Challenge not found")
     
     # 2. Check challenge status
-    challenge_status = db.query(models.ChallengeStatus).filter(
-        models.ChallengeStatus.user_id == current_user.id,
-        models.ChallengeStatus.challenge_id == challenge_id
+    challenge_status = db.query(ChallengeStatus).filter(
+        ChallengeStatus.user_id == current_user.id,
+        ChallengeStatus.challenge_id == challenge_id
     ).first()
     
     if not challenge_status:
@@ -170,11 +176,11 @@ async def complete_challenge(
     challenge_status.completed_at = now
     
     # 4. Update player stats based on challenge category
-    stats = db.query(models.PlayerStats).filter(models.PlayerStats.player_id == current_user.id).first()
+    stats = db.query(PlayerStats).filter(PlayerStats.player_id == current_user.id).first()
     
     # Create stats if they don't exist
     if not stats:
-        stats = models.PlayerStats(
+        stats = PlayerStats(
             player_id=current_user.id,
             pace=50, shooting=50, passing=50, dribbling=50, juggles=50, first_touch=50,
             overall_rating=60,
@@ -182,39 +188,30 @@ async def complete_challenge(
         )
         db.add(stats)
     
-    # Print before values for debugging
-    print(f"BEFORE - User {current_user.id} stats: pace={stats.pace}, shooting={stats.shooting}, passing={stats.passing}, dribbling={stats.dribbling}, juggles={stats.juggles}, first_touch={stats.first_touch}, overall={stats.overall_rating}")
-    
     # Determine which stat to improve based on challenge category
     xp_boost = challenge.xp_reward  # Base XP boost from the challenge
-    base_boost = xp_boost * 2  # Increased overall rating boost (was xp_boost/2)
-    specific_boost = xp_boost * 5  # Much larger boost for the specific skill (was xp_boost*1.5)
+    base_boost = xp_boost * 2  # Overall rating boost
+    specific_boost = xp_boost * 5  # Larger boost for the specific skill
     
     # Update specific attribute based on challenge category
     if challenge.category.lower() == "passing":
         stats.passing += specific_boost
         stats.first_touch += specific_boost * 0.5
-        print(f"Improved passing by {specific_boost} and first touch by {specific_boost * 0.5} for user {current_user.id}")
     elif challenge.category.lower() == "shooting":
         stats.shooting += specific_boost
-        print(f"Improved shooting by {specific_boost} for user {current_user.id}")
     elif challenge.category.lower() == "dribbling":
         stats.dribbling += specific_boost
         stats.first_touch += specific_boost * 0.3
-        print(f"Improved dribbling by {specific_boost} and first touch by {specific_boost * 0.3} for user {current_user.id}")
     elif challenge.category.lower() == "fitness":
         stats.pace += specific_boost 
-        print(f"Improved pace by {specific_boost} for user {current_user.id}")
     elif challenge.category.lower() == "juggles":
         stats.juggles += specific_boost
         stats.first_touch += specific_boost * 0.3
-        print(f"Improved juggles by {specific_boost} and first touch by {specific_boost * 0.3} for user {current_user.id}")
     elif challenge.category.lower() == "first_touch" or challenge.category.lower() == "first touch":
         stats.first_touch += specific_boost
         stats.dribbling += specific_boost * 0.3
-        print(f"Improved first touch by {specific_boost} and dribbling by {specific_boost * 0.3} for user {current_user.id}")
     elif challenge.category.lower() == "tactical":
-        # Tactical challenges improve all stats significantly
+        # Tactical challenges improve all stats
         all_stats_boost = specific_boost / 2
         stats.passing += all_stats_boost
         stats.shooting += all_stats_boost
@@ -222,10 +219,6 @@ async def complete_challenge(
         stats.pace += all_stats_boost
         stats.juggles += all_stats_boost
         stats.first_touch += all_stats_boost
-        print(f"Improved all stats by {all_stats_boost} for user {current_user.id}")
-    else:
-        # For weekly challenges or other categories, just boost overall rating more
-        print(f"Improved overall rating for weekly challenge for user {current_user.id}")
     
     # Make sure no stat goes over 99
     stats.pace = min(stats.pace, 99)
@@ -241,107 +234,195 @@ async def complete_challenge(
     # Apply additional base boost to the calculated overall rating
     stats.overall_rating = min(new_overall + base_boost, 99)
     
-    print(f"Updated overall rating to {stats.overall_rating} for user {current_user.id}")
-    
     # Update the last_updated timestamp
     stats.last_updated = now
     
-    # Print after values for debugging
-    print(f"AFTER - User {current_user.id} stats: pace={stats.pace}, shooting={stats.shooting}, passing={stats.passing}, dribbling={stats.dribbling}, juggles={stats.juggles}, first_touch={stats.first_touch}, overall={stats.overall_rating}")
+    # 5. Unlock next challenge in the progression if available
+    next_challenge = db.query(Challenge).filter(
+        Challenge.prerequisite_id == challenge_id
+    ).first()
     
-    # 5. Unlock next challenges (only for non-weekly challenges)
-    if not challenge.is_weekly:
-        # Check if there's a direct next challenge with this as prerequisite
-        next_challenges = db.query(models.Challenge).filter(
-            models.Challenge.prerequisite_id == challenge.id
-        ).all()
+    if next_challenge:
+        # Check if player already has a status for this challenge
+        next_status = db.query(ChallengeStatus).filter(
+            ChallengeStatus.user_id == current_user.id,
+            ChallengeStatus.challenge_id == next_challenge.id
+        ).first()
         
-        # If there are direct prerequisite relationships, unlock those challenges
-        if next_challenges:
-            for next_challenge in next_challenges:
-                next_status = db.query(models.ChallengeStatus).filter(
-                    models.ChallengeStatus.user_id == current_user.id,
-                    models.ChallengeStatus.challenge_id == next_challenge.id
-                ).first()
-                
-                if next_status and next_status.status == "LOCKED":
-                    next_status.status = "AVAILABLE"
-                    next_status.unlocked_at = now
+        if not next_status:
+            # Create new status record
+            next_status = ChallengeStatus(
+                user_id=current_user.id,
+                challenge_id=next_challenge.id,
+                status="AVAILABLE",
+                unlocked_at=now
+            )
+            db.add(next_status)
         else:
-            # Default to level-based progression
-            # Find next level challenges in the same category
-            next_level_challenges = db.query(models.Challenge).filter(
-                models.Challenge.category == challenge.category,
-                models.Challenge.level == challenge.level + 1
-            ).all()
-            
-            # Check if all previous level challenges are completed
-            current_level_challenges = db.query(models.Challenge).filter(
-                models.Challenge.category == challenge.category,
-                models.Challenge.level == challenge.level
-            ).all()
-            
-            current_level_challenge_ids = [c.id for c in current_level_challenges]
-            
-            completed_count = db.query(models.ChallengeStatus).filter(
-                models.ChallengeStatus.user_id == current_user.id,
-                models.ChallengeStatus.challenge_id.in_(current_level_challenge_ids),
-                models.ChallengeStatus.status == "COMPLETED"
-            ).count()
-            
-            # Only unlock next level if all current level challenges are completed
-            if completed_count == len(current_level_challenges):
-                for next_challenge in next_level_challenges:
-                    next_status = db.query(models.ChallengeStatus).filter(
-                        models.ChallengeStatus.user_id == current_user.id,
-                        models.ChallengeStatus.challenge_id == next_challenge.id
-                    ).first()
-                    
-                    if next_status and next_status.status == "LOCKED":
-                        next_status.status = "AVAILABLE"
-                        next_status.unlocked_at = now
+            # Update existing status record
+            next_status.status = "AVAILABLE"
+            next_status.unlocked_at = now
     
     db.commit()
     db.refresh(challenge_status)
-    
     return challenge_status
 
-# Get challenge by ID
-@router.get(
-    "/{challenge_id}", 
-    response_model=schemas.ChallengeWithStatus,
-    summary="Get challenge by ID",
-    description="Retrieve details of a specific challenge by its ID along with user status"
-)
-async def get_challenge(
-    challenge_id: int,
+# -------------- Challenge Completion Endpoints --------------
+
+@router.post("/completion", response_model=ChallengeCompletionResponse)
+async def record_challenge_completion(
+    completion: ChallengeCompletionCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth.get_current_active_user)
+    current_user: User = Depends(get_current_user_dependency)
 ):
-    challenge = db.query(models.Challenge).filter(models.Challenge.id == challenge_id).first()
-    
+    # Check if the challenge exists
+    challenge = db.query(Challenge).filter(Challenge.id == completion.challenge_id).first()
     if not challenge:
         raise HTTPException(status_code=404, detail="Challenge not found")
     
-    status = db.query(models.ChallengeStatus).filter(
-        models.ChallengeStatus.user_id == current_user.id,
-        models.ChallengeStatus.challenge_id == challenge_id
+    # Create the challenge completion record
+    challenge_completion = ChallengeCompletion(
+        user_id=current_user.id,
+        challenge_id=completion.challenge_id,
+        status=ChallengeStatus.ACTIVE,
+        progress=0.0,
+        notes=completion.notes if hasattr(completion, 'notes') else None
+    )
+    
+    db.add(challenge_completion)
+    db.commit()
+    db.refresh(challenge_completion)
+    
+    # Award a badge for completing the challenge
+    # Check if the user already has a badge for this challenge
+    existing_badge = db.query(Badge).filter(
+        Badge.user_id == current_user.id,
+        Badge.id == challenge.badge_id
     ).first()
     
-    # Create response with status information
-    result = {
-        "id": challenge.id,
-        "title": challenge.title,
-        "description": challenge.description,
-        "xp_reward": challenge.xp_reward,
-        "category": challenge.category,
-        "is_weekly": challenge.is_weekly,
-        "level": challenge.level,
-        "prerequisite_id": challenge.prerequisite_id,
-        "status": status.status if status else "LOCKED",
-        "unlocked_at": status.unlocked_at if status else None,
-        "completed_at": status.completed_at if status else None
-    }
+    if not existing_badge and challenge.badge_id:
+        # Create a new badge award (Achievement)
+        new_achievement = Achievement(
+            user_id=current_user.id,
+            badge_id=challenge.badge_id,
+            earned_at=datetime.utcnow()
+        )
+        
+        db.add(new_achievement)
+        db.commit()
     
-    return result
+    return challenge_completion
+
+@router.get("/completions", response_model=List[ChallengeCompletionWithDetails])
+async def get_user_completions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    completions = db.query(ChallengeCompletion).filter(
+        ChallengeCompletion.user_id == current_user.id
+    ).all()
+    
+    return completions
+
+@router.get("/completions/{challenge_id}", response_model=List[ChallengeCompletionResponse])
+async def get_challenge_completions(
+    challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    completions = db.query(ChallengeCompletion).filter(
+        ChallengeCompletion.user_id == current_user.id,
+        ChallengeCompletion.challenge_id == challenge_id
+    ).all()
+    
+    if not completions:
+        raise HTTPException(status_code=404, detail="No completions found for this challenge")
+    
+    return completions
+
+# -------------- Badges and Achievements Endpoints --------------
+
+@router.get("/badges", response_model=List[BadgeWithChallenge])
+async def get_user_badges(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    badges = db.query(Badge).all()
+    
+    # Filter to only include badges that have been earned by the current user
+    user_achievements = db.query(Achievement).filter(Achievement.user_id == current_user.id).all()
+    user_badge_ids = [a.badge_id for a in user_achievements]
+    
+    user_badges = [badge for badge in badges if badge.id in user_badge_ids]
+    
+    return user_badges
+
+@router.get("/badge-stats", response_model=Dict[str, int])
+async def get_badge_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    # Get all challenges to get their categories
+    challenges = db.query(Challenge).all()
+    challenge_categories = {c.id: c.category for c in challenges}
+    
+    # Get all badges earned by the user through achievements
+    user_achievements = db.query(Achievement).filter(Achievement.user_id == current_user.id).all()
+    user_badges = db.query(Badge).filter(Badge.id.in_([a.badge_id for a in user_achievements])).all()
+    
+    # Group badges by challenge category based on which challenge they're associated with
+    category_counts = {}
+    for badge in user_badges:
+        # Find challenges that use this badge
+        badge_challenges = [c for c in challenges if c.badge_id == badge.id]
+        if badge_challenges:
+            for challenge in badge_challenges:
+                category = challenge.category
+                category_counts[category] = category_counts.get(category, 0) + 1
+        else:
+            category_counts["Other"] = category_counts.get("Other", 0) + 1
+    
+    return category_counts
+
+@router.post("/achievements", response_model=AchievementResponse)
+def create_achievement(
+    achievement: AchievementCreate,
+    current_user: User = Depends(get_current_user_dependency),
+    db: Session = Depends(get_db)
+):
+    # Verify player ownership (only for coaches or self)
+    if achievement.player_id != current_user.id and not current_user.is_coach:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    db_achievement = Achievement(**achievement.dict())
+    db.add(db_achievement)
+    db.commit()
+    db.refresh(db_achievement)
+    return db_achievement
+
+@router.get("/achievements", response_model=List[AchievementResponse])
+def read_achievements(
+    user_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_user_dependency),
+    db: Session = Depends(get_db)
+):
+    # If no user_id provided, use current user's id
+    user_id = user_id or current_user.id
+    
+    # Verify access rights (only for coaches or self)
+    if user_id != current_user.id and not current_user.is_coach:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    achievements = db.query(Achievement).filter(
+        Achievement.user_id == user_id
+    ).offset(skip).limit(limit).all()
+    return achievements
 

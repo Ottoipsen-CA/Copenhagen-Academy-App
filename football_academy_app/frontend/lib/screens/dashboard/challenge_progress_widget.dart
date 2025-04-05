@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/challenge.dart';
 import '../../models/badge.dart';
+import '../../models/challenge_completion.dart';
 import '../../services/challenge_progress_service.dart';
 import '../badges/badges_page.dart';
 import '../challenges/challenge_detail_page.dart';
@@ -17,7 +18,6 @@ class ChallengeProgressWidget extends StatefulWidget {
 class _ChallengeProgressWidgetState extends State<ChallengeProgressWidget> {
   bool _isLoading = true;
   List<BadgeWithChallenge> _badges = [];
-  Map<String, dynamic> _stats = {};
   List<ChallengeCompletionWithDetails> _recentCompletions = [];
 
   @override
@@ -37,19 +37,15 @@ class _ChallengeProgressWidgetState extends State<ChallengeProgressWidget> {
       // Get user badges
       final badges = await service.getUserBadges();
       
-      // Get challenge statistics
-      final stats = await service.getChallengeStatistics();
-      
       // Get user completions
-      final completions = await service.getUserCompletions();
+      final List<ChallengeCompletionWithDetails> completions = await service.getUserCompletions();
       
       // Sort completions by date (newest first)
-      completions.sort((a, b) => b.completionDate.compareTo(a.completionDate));
+      completions.sort((a, b) => b.completedAt!.compareTo(a.completedAt!));
       
       if (mounted) {
         setState(() {
           _badges = badges;
-          _stats = stats;
           _recentCompletions = completions.take(3).toList(); // Take most recent 3
           _isLoading = false;
         });
@@ -69,21 +65,22 @@ class _ChallengeProgressWidgetState extends State<ChallengeProgressWidget> {
   // Convert our BadgeWithChallenge to UserBadge for compatibility
   List<UserBadge> _convertToUserBadges() {
     return _badges.map((badge) {
-      // Convert category to a badge icon and color
-      IconData iconData = _getCategoryIcon(badge.challenge.category);
-      Color color = _getCategoryColor(badge.challenge.category);
+      // Default to passing category for now
+      final category = ChallengeCategory.passing;
+      IconData iconData = _getCategoryIcon(category);
+      Color color = _getCategoryColor(category);
       
       return UserBadge(
         id: badge.id.toString(),
-        name: badge.name,
-        description: badge.description,
-        category: badge.challenge.category,
+        name: badge.badgeName,
+        description: 'Awarded for completing ${badge.challengeTitle}',
+        category: category.toString().split('.').last,
         rarity: UserBadge.rarityFromString('rare'), // Default to rare
         isEarned: true, // All badges here are earned
-        earnedDate: badge.earnedAt,
+        earnedDate: DateTime.now(), // Use current date as placeholder
         badgeIcon: iconData,
         badgeColor: color,
-        imageUrl: badge.imageUrl,
+        imageUrl: null,
         iconName: UserBadge.getTypeForIcon(iconData),
         requirement: const BadgeRequirement(
           type: 'challenge',
@@ -201,19 +198,21 @@ class _ChallengeProgressWidgetState extends State<ChallengeProgressWidget> {
             itemCount: _badges.length > 5 ? 5 : _badges.length,
             itemBuilder: (context, index) {
               final badge = _badges[index];
-              final color = _getCategoryColor(badge.challenge.category);
+              final category = ChallengeCategory.passing;
+              final color = _getCategoryColor(category);
+              final iconData = _getCategoryIcon(category);
               return Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: Column(
                   children: [
                     CircleAvatar(
                       radius: 30,
-                      backgroundColor: color.withOpacity(0.3),
+                      backgroundColor: color.withAlpha(77), // 0.3 opacity
                       child: CircleAvatar(
                         radius: 28,
                         backgroundColor: color,
                         child: Icon(
-                          _getCategoryIcon(badge.challenge.category),
+                          iconData,
                           color: Colors.white,
                           size: 26,
                         ),
@@ -221,7 +220,7 @@ class _ChallengeProgressWidgetState extends State<ChallengeProgressWidget> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      badge.name,
+                      badge.badgeName,
                       style: const TextStyle(fontSize: 12),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -251,91 +250,82 @@ class _ChallengeProgressWidgetState extends State<ChallengeProgressWidget> {
       );
     }
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _recentCompletions.length,
-      itemBuilder: (context, index) {
-        final completion = _recentCompletions[index];
+    return Column(
+      children: _recentCompletions.map((completion) {
         return ListTile(
-          contentPadding: EdgeInsets.zero,
           leading: CircleAvatar(
-            backgroundColor: _getCategoryColor(completion.challenge.category),
-            child: Icon(
-              _getCategoryIcon(completion.challenge.category),
-              color: Colors.white,
+            backgroundColor: Colors.blue.withAlpha(77),
+            child: const Icon(
+              Icons.sports_soccer,
+              color: Colors.blue,
             ),
           ),
-          title: Text(completion.challenge.name),
+          title: Text(completion.challengeTitle),
           subtitle: Text(
-            'Score: ${completion.score.toStringAsFixed(1)} | Time: ${_formatTime(completion.completionTime)}',
+            'Completed on ${completion.completedAt?.toString().split(' ')[0] ?? ''}',
           ),
-          trailing: Text(
-            '${_formatDate(completion.completionDate)}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-            ),
-          ),
+          trailing: const Icon(Icons.chevron_right),
           onTap: () {
-            // Navigate to our challenge completion page
+            // Navigate to challenge details
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ChallengeCompletionPage(
-                  challengeId: completion.challenge.id,
-                  challengeName: completion.challenge.name,
-                  challengeCategory: completion.challenge.category,
+                  challengeId: completion.challengeId,
+                  challengeName: completion.challengeTitle,
+                  challengeCategory: 'general',
                 ),
               ),
             );
           },
         );
-      },
+      }).toList(),
     );
   }
 
-  Color _getCategoryColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'passing':
-        return Colors.blue;
-      case 'shooting':
-        return Colors.red;
-      case 'dribbling':
-        return Colors.green;
-      case 'fitness':
-        return Colors.orange;
-      case 'defense':
-        return Colors.purple;
-      default:
-        return Colors.blueGrey;
-    }
-  }
-
-  IconData _getCategoryIcon(String category) {
-    switch (category.toLowerCase()) {
-      case 'passing':
+  IconData _getCategoryIcon(ChallengeCategory category) {
+    switch (category) {
+      case ChallengeCategory.passing:
         return Icons.sports_soccer;
-      case 'shooting':
+      case ChallengeCategory.shooting:
         return Icons.sports_soccer;
-      case 'dribbling':
+      case ChallengeCategory.dribbling:
         return Icons.directions_run;
-      case 'fitness':
+      case ChallengeCategory.fitness:
         return Icons.fitness_center;
-      case 'defense':
+      case ChallengeCategory.defense:
         return Icons.shield;
-      default:
+      case ChallengeCategory.goalkeeping:
+        return Icons.sports_soccer;
+      case ChallengeCategory.tactical:
+        return Icons.psychology;
+      case ChallengeCategory.weekly:
         return Icons.emoji_events;
+      case ChallengeCategory.wallTouches:
+        return Icons.sports_soccer;
     }
   }
 
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+  Color _getCategoryColor(ChallengeCategory category) {
+    switch (category) {
+      case ChallengeCategory.passing:
+        return Colors.blue;
+      case ChallengeCategory.shooting:
+        return Colors.red;
+      case ChallengeCategory.dribbling:
+        return Colors.orange;
+      case ChallengeCategory.fitness:
+        return Colors.purple;
+      case ChallengeCategory.defense:
+        return Colors.indigo;
+      case ChallengeCategory.goalkeeping:
+        return Colors.teal;
+      case ChallengeCategory.tactical:
+        return Colors.brown;
+      case ChallengeCategory.weekly:
+        return Colors.amber;
+      case ChallengeCategory.wallTouches:
+        return Colors.green;
+    }
   }
 } 

@@ -9,14 +9,17 @@ class ApiService {
   final FlutterSecureStorage secureStorage;
   
   // Flag to use mock data when server is unavailable
-  bool _useMockData = false;
+  bool _useMockData = true; // Set to true for development
 
   ApiService({
     required this.client,
     required this.secureStorage,
   }) {
-    // Use localhost for web, 10.0.2.2 for Android emulator
-    baseUrl = kIsWeb ? 'http://localhost:8080' : 'http://10.0.2.2:8080';
+    // Use localhost for development
+    baseUrl = 'http://localhost:8080';
+    
+    // In production, use the actual API URL
+    // baseUrl = 'https://api.footballacademy.dev/v1';
   }
 
   // Helper method to get headers with auth token

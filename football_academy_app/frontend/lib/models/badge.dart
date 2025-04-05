@@ -196,4 +196,27 @@ class BadgeRequirement {
       'currentValue': currentValue,
     };
   }
+}
+
+class BadgeWithChallenge {
+  final int id;
+  final String badgeName;
+  final int challengeId;
+  final String challengeTitle;
+
+  BadgeWithChallenge({
+    required this.id,
+    required this.badgeName,
+    required this.challengeId,
+    required this.challengeTitle,
+  });
+
+  factory BadgeWithChallenge.fromJson(Map<String, dynamic> json) {
+    return BadgeWithChallenge(
+      id: json['id'],
+      badgeName: json['badge_name'],
+      challengeId: json['challenge_id'],
+      challengeTitle: json['challenge_title'],
+    );
+  }
 } 

@@ -12,7 +12,7 @@ class ChallengeService {
   static const String _userChallengesKey = 'user_challenges';
   
   static final Uuid _uuid = Uuid();
-  static late ApiService _apiService;
+  static ApiService? _apiService;
   
   // Initialize with API service
   static void initialize(ApiService apiService) {
@@ -21,9 +21,13 @@ class ChallengeService {
   
   // Get all challenges with their status from the API
   static Future<List<Challenge>> getAllChallengesWithStatus() async {
+    if (_apiService == null) {
+      throw Exception('ChallengeService not initialized. Call initialize() first.');
+    }
+    
     try {
       // Try to get from API
-      final response = await _apiService.get('/challenges/with-status');
+      final response = await _apiService!.get('/challenges/with-status');
       
       if (response != null) {
         print('API response: Got ${(response as List).length} challenges');
@@ -188,7 +192,7 @@ class ChallengeService {
   static Future<bool> completeChallenge(String challengeId) async {
     try {
       // Call the API to complete the challenge
-      final response = await _apiService.post(
+      final response = await _apiService!.post(
         '/challenges/complete/${challengeId}', 
         {}
       );
@@ -266,7 +270,7 @@ class ChallengeService {
       await clearChallengeData();
       
       // Try to initialize via API
-      await _apiService.post('/challenges/initialize-status', {});
+      await _apiService!.post('/challenges/initialize-status', {});
       
       // Refresh all challenges
       await getAllChallengesWithStatus();
@@ -1141,5 +1145,42 @@ class ChallengeService {
     }
     
     return userChallenges[index];
+  }
+
+  // Get challenge by ID
+  Future<Challenge?> getChallengeById(String id) async {
+    if (_apiService == null) {
+      throw Exception('ChallengeService not initialized. Call initialize() first.');
+    }
+    
+    try {
+      final response = await _apiService!.get('/challenges/$id');
+      if (response != null) {
+        return Challenge.fromJson(response);
+      }
+      return null;
+    } catch (e) {
+      print('Error getting challenge by ID: $e');
+      return null;
+    }
+  }
+
+  // Submit challenge result
+  Future<bool> submitChallengeResult(String challengeId, double value) async {
+    if (_apiService == null) {
+      throw Exception('ChallengeService not initialized. Call initialize() first.');
+    }
+    
+    try {
+      final response = await _apiService!.post(
+        '/challenges/$challengeId/submit',
+        {'value': value}
+      );
+      
+      return response != null;
+    } catch (e) {
+      print('Error submitting challenge result: $e');
+      return false;
+    }
   }
 } 

@@ -14,6 +14,7 @@ import 'screens/challenges/challenges_page.dart';
 import 'screens/league_table/league_table_page.dart';
 import 'screens/player_stats/player_stats_page.dart';
 import 'screens/info/info_page.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -74,8 +75,9 @@ class MyApp extends StatelessWidget {
         ),
         fontFamily: 'Roboto',
       ),
-      initialRoute: '/login',
+      initialRoute: '/splash',
       routes: {
+        '/splash': (context) => const SplashScreen(),
         '/login': (context) => const LoginPage(),
         '/dashboard': (context) => const DashboardPage(),
         '/exercises': (context) => const ExercisesPage(),

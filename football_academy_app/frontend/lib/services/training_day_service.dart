@@ -98,10 +98,9 @@ class TrainingDayService {
   Future<TrainingDay?> createTrainingDay(TrainingDayCreate trainingDayData) async {
     try {
       final apiService = await _getApiService();
-      final response = await apiService.client.post(
-        Uri.parse('${apiService.baseUrl}/training-days/'),
-        headers: await apiService.getHeaders(),
-        body: json.encode(trainingDayData.toJson()),
+      final response = await apiService.post(
+        '/training-days/',
+        trainingDayData.toJson(),
       );
       
       if (response.statusCode == 201) {
@@ -120,10 +119,9 @@ class TrainingDayService {
   Future<TrainingDayEntry?> updatePreSessionNotes(dynamic entryId, String preNotes) async {
     try {
       final apiService = await _getApiService();
-      final response = await apiService.client.put(
-        Uri.parse('${apiService.baseUrl}/training-days/entries/$entryId/pre'),
-        headers: await apiService.getHeaders(),
-        body: json.encode({'pre_session_notes': preNotes}),
+      final response = await apiService.put(
+        '/training-days/entries/$entryId/pre',
+        {'pre_session_notes': preNotes},
       );
       
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -142,10 +140,9 @@ class TrainingDayService {
   Future<TrainingDayEntry?> updatePostSessionNotes(dynamic entryId, String postNotes) async {
     try {
       final apiService = await _getApiService();
-      final response = await apiService.client.put(
-        Uri.parse('${apiService.baseUrl}/training-days/entries/$entryId/post'),
-        headers: await apiService.getHeaders(),
-        body: json.encode({'post_session_notes': postNotes}),
+      final response = await apiService.put(
+        '/training-days/entries/$entryId/post',
+        {'post_session_notes': postNotes},
       );
       
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -164,10 +161,9 @@ class TrainingDayService {
   Future<TrainingDayEntry?> updateAttendanceStatus(dynamic entryId, String status) async {
     try {
       final apiService = await _getApiService();
-      final response = await apiService.client.put(
-        Uri.parse('${apiService.baseUrl}/training-days/entries/$entryId/attendance'),
-        headers: await apiService.getHeaders(),
-        body: json.encode({'attendance_status': status}),
+      final response = await apiService.put(
+        '/training-days/entries/$entryId/attendance',
+        {'attendance_status': status},
       );
       
       if (response.statusCode >= 200 && response.statusCode < 300) {
