@@ -6,12 +6,19 @@ from sqlalchemy import select
 
 from models.skill_tests import PlayerStats, PlayerTest
 from models.users import User
-from models.position_weights import Position, POSITION_WEIGHTS
+from constants.position_weights import Position, POSITION_WEIGHTS
 from schemas.skill_tests import (
     PlayerStatsCreate, PlayerStatsUpdate, PlayerStatsResponse,
     PlayerTestCreate, PlayerTestUpdate, PlayerTestResponse
 )
 from services.base import BaseService
+from constants.test_scores import (
+    MAX_PACE_SCORE, MAX_SHOOTING_SCORE, MAX_PASSING_SCORE,
+    MAX_DRIBBLING_SCORE, MAX_JUGGLES_SCORE, MAX_FIRST_TOUCH_SCORE,
+    MIN_PACE_SCORE, MIN_SHOOTING_SCORE, MIN_PASSING_SCORE,
+    MIN_DRIBBLING_SCORE, MIN_JUGGLES_SCORE, MIN_FIRST_TOUCH_SCORE,
+    MAX_RATING, MIN_RATING
+)
 
 class SkillTestsService:
     def __init__(self, db: AsyncSession):
@@ -54,20 +61,51 @@ class SkillTestsService:
         return db_stats
     
     async def calculate_overall_rating(self, player_id: int) -> float:
-        """Calculate and update the player's overall rating based on all attributes"""
+        """Calculate and update the player's overall rating based on all attributes weighted by position"""
+        # Get player stats and position
         result = await self.db.execute(
-            select(PlayerStats).where(PlayerStats.player_id == player_id)
+            select(PlayerStats, User.position)
+            .join(User, PlayerStats.player_id == User.id)
+            .where(PlayerStats.player_id == player_id)
         )
-        stats = result.scalar_one_or_none()
+        stats, position = result.first()
+        
         if not stats:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Player stats not found"
             )
         
-        # Calculate overall rating as an average of all attributes
-        attributes = [stats.pace, stats.shooting, stats.passing, stats.dribbling, stats.juggles, stats.first_touch]
-        overall = sum(attributes) / len(attributes)
+        # Get position weights
+        weights = POSITION_WEIGHTS.get(position, POSITION_WEIGHTS[Position.MIDFIELDER])  # Default to midfielder weights
+        
+        # Calculate weighted average of all non-None attributes
+        weighted_sum = 0.0
+        total_weight = 0.0
+        
+        if stats.pace is not None:
+            weighted_sum += stats.pace * weights["pace"]
+            total_weight += weights["pace"]
+        if stats.shooting is not None:
+            weighted_sum += stats.shooting * weights["shooting"]
+            total_weight += weights["shooting"]
+        if stats.passing is not None:
+            weighted_sum += stats.passing * weights["passing"]
+            total_weight += weights["passing"]
+        if stats.dribbling is not None:
+            weighted_sum += stats.dribbling * weights["dribbling"]
+            total_weight += weights["dribbling"]
+        if stats.juggles is not None:
+            weighted_sum += stats.juggles * weights["juggles"]
+            total_weight += weights["juggles"]
+        if stats.first_touch is not None:
+            weighted_sum += stats.first_touch * weights["first_touch"]
+            total_weight += weights["first_touch"]
+        
+        if total_weight == 0:
+            return MIN_RATING  # Return minimum rating if no valid attributes
+            
+        overall = weighted_sum / total_weight
         
         # Update the player's overall rating
         stats.overall_rating = round(overall, 1)
@@ -81,39 +119,31 @@ class SkillTestsService:
         """Convert raw test result to a 1-99 rating based on test type."""
         if test_type == "pace":
             # Convert seconds to rating (lower is better)
-            # World record for 15m sprint is around 1.9s
-            # Average player might be around 3.0s
-            # We'll scale this to 1-99 where 1.9s = 99 and 3.0s = 50
-            if raw_value <= 1.9:
-                return 99.0
-            if raw_value >= 3.0:
-                return 50.0
-            return 99.0 - ((raw_value - 1.9) * (49.0 / 1.1))
+            # Invert the calculation since lower time is better
+            normalized_score = MAX_PACE_SCORE / raw_value
+            return min(normalized_score * MAX_RATING, MAX_RATING)
         elif test_type == "shooting":
             # Convert score out of 10 to rating
-            return raw_value * 9.9
+            normalized_score = raw_value / MAX_SHOOTING_SCORE
+            return min(normalized_score * MAX_RATING, MAX_RATING)
         elif test_type == "passing":
             # Convert score out of 10 to rating
-            return raw_value * 9.9
+            normalized_score = raw_value / MAX_PASSING_SCORE
+            return min(normalized_score * MAX_RATING, MAX_RATING)
         elif test_type == "dribbling":
             # Convert seconds to rating (lower is better)
-            # Similar to pace but with different thresholds
-            if raw_value <= 2.0:
-                return 99.0
-            if raw_value >= 4.0:
-                return 50.0
-            return 99.0 - ((raw_value - 2.0) * (49.0 / 2.0))
+            # Invert the calculation since lower time is better
+            normalized_score = MAX_DRIBBLING_SCORE / raw_value
+            return min(normalized_score * MAX_RATING, MAX_RATING)
         elif test_type == "juggles":
             # Convert number of juggles to rating
-            if raw_value >= 100:
-                return 99.0
-            if raw_value <= 10:
-                return 50.0
-            return 50.0 + ((raw_value - 10) * (49.0 / 90.0))
+            normalized_score = raw_value / MAX_JUGGLES_SCORE
+            return min(normalized_score * MAX_RATING, MAX_RATING)
         elif test_type == "first_touch":
             # Convert score out of 10 to rating
-            return raw_value * 9.9
-        return 50.0  # Default rating if test type not recognized
+            normalized_score = raw_value / MAX_FIRST_TOUCH_SCORE
+            return min(normalized_score * MAX_RATING, MAX_RATING)
+        return MIN_RATING  # Default rating if test type not recognized
     
     async def _update_player_stats(self, player_id: int, test: PlayerTest) -> None:
         """Update player stats based on test results."""
@@ -123,22 +153,31 @@ class SkillTestsService:
         stats = result.scalar_one_or_none()
         
         if not stats:
-            stats = PlayerStats(player_id=player_id)
+            # Initialize new PlayerStats with test ratings
+            stats = PlayerStats(
+                player_id=player_id,
+                pace=test.pace_rating,
+                shooting=test.shooting_rating,
+                passing=test.passing_rating,
+                dribbling=test.dribbling_rating,
+                juggles=test.juggles_rating,
+                first_touch=test.first_touch_rating
+            )
             self.db.add(stats)
-        
-        # Update stats with weighted average (70% old, 30% new)
-        if test.pace is not None:
-            stats.pace = (stats.pace * 0.7) + (test.pace_rating * 0.3) if stats.pace else test.pace_rating
-        if test.shooting is not None:
-            stats.shooting = (stats.shooting * 0.7) + (test.shooting_rating * 0.3) if stats.shooting else test.shooting_rating
-        if test.passing is not None:
-            stats.passing = (stats.passing * 0.7) + (test.passing_rating * 0.3) if stats.passing else test.passing_rating
-        if test.dribbling is not None:
-            stats.dribbling = (stats.dribbling * 0.7) + (test.dribbling_rating * 0.3) if stats.dribbling else test.dribbling_rating
-        if test.juggles is not None:
-            stats.juggles = (stats.juggles * 0.7) + (test.juggles_rating * 0.3) if stats.juggles else test.juggles_rating
-        if test.first_touch is not None:
-            stats.first_touch = (stats.first_touch * 0.7) + (test.first_touch_rating * 0.3) if stats.first_touch else test.first_touch_rating
+        else:
+            # Update existing stats with weighted average (70% old, 30% new)
+            if test.pace is not None:
+                stats.pace = (stats.pace * 0.7) + (test.pace_rating * 0.3) if stats.pace else test.pace_rating
+            if test.shooting is not None:
+                stats.shooting = (stats.shooting * 0.7) + (test.shooting_rating * 0.3) if stats.shooting else test.shooting_rating
+            if test.passing is not None:
+                stats.passing = (stats.passing * 0.7) + (test.passing_rating * 0.3) if stats.passing else test.passing_rating
+            if test.dribbling is not None:
+                stats.dribbling = (stats.dribbling * 0.7) + (test.dribbling_rating * 0.3) if stats.dribbling else test.dribbling_rating
+            if test.juggles is not None:
+                stats.juggles = (stats.juggles * 0.7) + (test.juggles_rating * 0.3) if stats.juggles else test.juggles_rating
+            if test.first_touch is not None:
+                stats.first_touch = (stats.first_touch * 0.7) + (test.first_touch_rating * 0.3) if stats.first_touch else test.first_touch_rating
         
         # Calculate overall rating based on position
         stats.overall_rating = await self.calculate_overall_rating(player_id)
@@ -196,6 +235,32 @@ class SkillTestsService:
         if test_data.first_touch is not None:
             ratings["first_touch"] = self._convert_raw_to_rating("first_touch", test_data.first_touch)
         
+        # Calculate overall rating for this test session
+        weights = POSITION_WEIGHTS.get(player.position, POSITION_WEIGHTS[Position.MIDFIELDER])
+        weighted_sum = 0.0
+        total_weight = 0.0
+        
+        if "pace" in ratings:
+            weighted_sum += ratings["pace"] * weights["pace"]
+            total_weight += weights["pace"]
+        if "shooting" in ratings:
+            weighted_sum += ratings["shooting"] * weights["shooting"]
+            total_weight += weights["shooting"]
+        if "passing" in ratings:
+            weighted_sum += ratings["passing"] * weights["passing"]
+            total_weight += weights["passing"]
+        if "dribbling" in ratings:
+            weighted_sum += ratings["dribbling"] * weights["dribbling"]
+            total_weight += weights["dribbling"]
+        if "juggles" in ratings:
+            weighted_sum += ratings["juggles"] * weights["juggles"]
+            total_weight += weights["juggles"]
+        if "first_touch" in ratings:
+            weighted_sum += ratings["first_touch"] * weights["first_touch"]
+            total_weight += weights["first_touch"]
+        
+        test_overall_rating = round(weighted_sum / total_weight, 1) if total_weight > 0 else MIN_RATING
+        
         # Create new player test record
         db_test = PlayerTest(
             player_id=test_data.player_id,
@@ -213,6 +278,7 @@ class SkillTestsService:
             dribbling_rating=ratings.get("dribbling"),
             juggles_rating=ratings.get("juggles"),
             first_touch_rating=ratings.get("first_touch"),
+            overall_rating=test_overall_rating,  # Add the calculated overall rating
             notes=test_data.notes,
             recorded_by=current_user.id
         )

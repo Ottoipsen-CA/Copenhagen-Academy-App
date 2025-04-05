@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 
 from database import Base
-from models.position_weights import Position
+from constants.position_weights import Position
 
 class User(Base):
     __tablename__ = "users"

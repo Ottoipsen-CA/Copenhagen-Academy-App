@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 
 from database import Base
-from models.position_weights import Position, POSITION_WEIGHTS
+from constants.position_weights import Position, POSITION_WEIGHTS
 
 class PlayerStats(Base):
     __tablename__ = "player_stats"
