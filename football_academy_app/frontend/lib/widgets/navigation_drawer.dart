@@ -4,6 +4,8 @@ import '../services/auth_service.dart';
 import '../screens/dashboard/dashboard_page.dart';
 import '../screens/info/info_page.dart';
 import '../screens/auth/landing_page.dart';
+import '../screens/auth/login_page.dart';
+import '../config/feature_flags.dart';  // Import feature flags from config
 
 class CustomNavigationDrawer extends StatelessWidget {
   final String currentPage;
@@ -30,20 +32,22 @@ class CustomNavigationDrawer extends StatelessWidget {
                   Icons.dashboard_outlined,
                   () => _navigateTo(context, 'dashboard'),
                 ),
-                _buildNavItem(
-                  context,
-                  'training',
-                  'Training Plan',
-                  Icons.fitness_center,
-                  () => _navigateTo(context, 'training'),
-                ),
-                _buildNavItem(
-                  context,
-                  'exercises',
-                  'Exercise Library',
-                  Icons.video_library_outlined,
-                  () => _navigateTo(context, 'exercises'),
-                ),
+                if (FeatureFlags.trainingPlanEnabled)
+                  _buildNavItem(
+                    context,
+                    'training',
+                    'Training Plan',
+                    Icons.fitness_center,
+                    () => _navigateTo(context, 'training'),
+                  ),
+                if (FeatureFlags.exercisesEnabled)
+                  _buildNavItem(
+                    context,
+                    'exercises',
+                    'Exercise Library',
+                    Icons.video_library_outlined,
+                    () => _navigateTo(context, 'exercises'),
+                  ),
                 _buildNavItem(
                   context,
                   'challenges',
@@ -177,6 +181,9 @@ class CustomNavigationDrawer extends StatelessWidget {
   }
 
   Widget _buildLogoutButton(BuildContext context) {
+    // Get the auth service early, before any navigation happens
+    final authService = Provider.of<AuthService>(context, listen: false);
+    
     return ListTile(
       leading: const Icon(
         Icons.exit_to_app,
@@ -212,17 +219,9 @@ class CustomNavigationDrawer extends StatelessWidget {
         );
         
         if (confirm == true) {
-          // Logout
-          final authService = Provider.of<AuthService>(context, listen: false);
+          // Logout - all navigation will be handled by the AuthService
           await authService.logout();
-          
-          // Navigate to landing page
-          if (context.mounted) {
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const LandingPage()),
-              (route) => false,
-            );
-          }
+          // No need for additional navigation here - AuthService will handle it
         }
       },
     );
@@ -239,19 +238,29 @@ class CustomNavigationDrawer extends StatelessWidget {
         Navigator.pushReplacementNamed(context, '/dashboard');
         break;
       case 'training':
-        Navigator.pushReplacementNamed(context, '/training-schedule');
+        if (FeatureFlags.trainingPlanEnabled) {
+          Navigator.pushReplacementNamed(context, '/training-schedule');
+        }
         break;
       case 'exercises':
-        Navigator.pushReplacementNamed(context, '/exercises');
+        if (FeatureFlags.exercisesEnabled) {
+          Navigator.pushReplacementNamed(context, '/exercises');
+        }
         break;
       case 'challenges':
-        Navigator.pushReplacementNamed(context, '/challenges');
+        if (FeatureFlags.challengesEnabled) {
+          Navigator.pushReplacementNamed(context, '/challenges');
+        }
         break;
       case 'leagueTable':
-        Navigator.pushReplacementNamed(context, '/league-table');
+        if (FeatureFlags.leagueTableEnabled) {
+          Navigator.pushReplacementNamed(context, '/league-table');
+        }
         break;
       case 'player_stats':
-        Navigator.pushReplacementNamed(context, '/player-stats');
+        if (FeatureFlags.playerStatsEnabled) {
+          Navigator.pushReplacementNamed(context, '/player-stats');
+        }
         break;
       case 'profile':
         Navigator.pushReplacementNamed(context, '/profile');

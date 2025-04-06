@@ -14,7 +14,11 @@ import '../../widgets/player_stats_radar_chart.dart';
 import '../../widgets/fifa_player_card.dart';
 import '../../widgets/skill_progress_bar.dart';
 import '../../widgets/player_test_widget.dart';
+import '../../config/feature_flags.dart';
 import 'dart:math' as math;
+
+// Import main feature flag
+import '../../main.dart';
 
 // Import pages
 import '../badges/badges_page.dart';
@@ -232,45 +236,55 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
             
-            const SizedBox(height: 24),
-            
             // Weekly Challenge
-            _buildWeeklyChallengeCard(),
+            if (FeatureFlags.challengesEnabled)
+              _buildWeeklyChallengeCard(),
             
-            const SizedBox(height: 24),
+            if (FeatureFlags.challengesEnabled)
+              const SizedBox(height: 24),
             
             // 30-Day Wall Touches Challenge
-            _buildWallTouchesChallengeCard(),
+            if (FeatureFlags.challengesEnabled)
+              _buildWallTouchesChallengeCard(),
             
-            const SizedBox(height: 24),
+            if (FeatureFlags.challengesEnabled)
+              const SizedBox(height: 24),
             
             // Stats and badges
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Radar chart - left side
-                Expanded(
-                  flex: 3,
-                  child: _buildStatsCard(),
-                ),
-                const SizedBox(width: 16),
-                // Badges - right side
-                Expanded(
-                  flex: 2,
-                  child: _buildBadgesSection(),
-                ),
-              ],
-            ),
+            if (FeatureFlags.playerStatsEnabled || FeatureFlags.badgesEnabled)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Radar chart - left side
+                  if (FeatureFlags.playerStatsEnabled)
+                    Expanded(
+                      flex: 3,
+                      child: _buildStatsCard(),
+                    ),
+                  if (FeatureFlags.playerStatsEnabled && FeatureFlags.badgesEnabled)
+                    const SizedBox(width: 16),
+                  // Badges - right side
+                  if (FeatureFlags.badgesEnabled)
+                    Expanded(
+                      flex: 2,
+                      child: _buildBadgesSection(),
+                    ),
+                ],
+              ),
             
-            const SizedBox(height: 24),
+            if (FeatureFlags.playerStatsEnabled || FeatureFlags.badgesEnabled)
+              const SizedBox(height: 24),
             
             // Player Tests Widget
-            const PlayerTestWidget(),
+            if (FeatureFlags.playerTestsEnabled)
+              const PlayerTestWidget(),
             
-            const SizedBox(height: 24),
+            if (FeatureFlags.playerTestsEnabled)
+              const SizedBox(height: 24),
             
             // Performance data
-            _buildPerformanceSection(),
+            if (FeatureFlags.playerStatsEnabled)
+              _buildPerformanceSection(),
           ],
         ),
       ),
@@ -314,12 +328,14 @@ class _DashboardPageState extends State<DashboardPage> {
       color: const Color(0xFF1E1E1E),
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ChallengesPage(),
-            ),
-          );
+          if (FeatureFlags.challengesEnabled) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ChallengesPage(),
+              ),
+            );
+          }
         },
         borderRadius: BorderRadius.circular(16.0),
         child: Stack(

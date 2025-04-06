@@ -9,17 +9,26 @@ class ApiService {
   final FlutterSecureStorage secureStorage;
   
   // Flag to use mock data when server is unavailable
-  bool _useMockData = true; // Set to true for development
+  bool _useMockData = false; // Set to true for development
 
   ApiService({
     required this.client,
     required this.secureStorage,
   }) {
     // Use localhost for development
-    baseUrl = 'http://localhost:8080';
+    baseUrl = 'http://localhost:8000';
     
     // In production, use the actual API URL
     // baseUrl = 'https://api.footballacademy.dev/v1';
+  }
+
+  // Reset the API service state (can be called on logout)
+  void reset() {
+    // Cancel any ongoing requests
+    client.close();
+    
+    // Log the reset
+    print('API Service reset - client closed');
   }
 
   // Helper method to get headers with auth token
@@ -114,13 +123,13 @@ class ApiService {
         return json.decode(response.body);
       } else {
         print('POST request failed with status: ${response.statusCode}');
-        // Fall back to mock data if server request fails
-        return _getMockDataForPost(endpoint, data);
+        // Do not fall back to mock data - throw an error instead
+        throw Exception('POST request failed with status: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       print('Error in POST request: $e');
-      // Fall back to mock data if server request fails
-      return _getMockDataForPost(endpoint, data);
+      // Do not fall back to mock data - rethrow the error
+      rethrow;
     }
   }
 

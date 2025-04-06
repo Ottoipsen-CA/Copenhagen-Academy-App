@@ -6,6 +6,9 @@ import 'package:http/http.dart' as http;
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/challenge_service.dart';
+import 'services/navigation_service.dart';
+import 'repositories/auth_repository.dart';
+import 'repositories/api_auth_repository.dart';
 import 'screens/auth/login_page.dart';
 import 'screens/dashboard/dashboard_page.dart';
 import 'screens/exercises/exercises_page.dart';
@@ -15,6 +18,11 @@ import 'screens/league_table/league_table_page.dart';
 import 'screens/player_stats/player_stats_page.dart';
 import 'screens/info/info_page.dart';
 import 'screens/splash_screen.dart';
+import 'config/feature_flags.dart';
+
+// Conditionally import training plans only if enabled
+// This ensures the training plan pages won't be compiled if disabled
+// import 'screens/training_plans/training_plan_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,10 +42,17 @@ void main() async {
     secureStorage: secureStorage,
   );
   
-  // Initialize auth service
+  // Initialize repositories
+  final authRepository = ApiAuthRepository(
+    apiService,
+    secureStorage,
+  );
+  
+  // Initialize auth service with repository
   final authService = AuthService(
-    apiService: apiService,
+    authRepository: authRepository,
     secureStorage: secureStorage,
+    apiService: apiService,
   );
   
   // Initialize challenge service
@@ -50,6 +65,11 @@ void main() async {
         Provider<FlutterSecureStorage>.value(value: secureStorage),
         Provider<http.Client>.value(value: httpClient),
         Provider<ApiService>.value(value: apiService),
+        
+        // Provide repositories
+        Provider<AuthRepository>.value(value: authRepository),
+        
+        // Provide services
         Provider<AuthService>.value(value: authService),
       ],
       child: const MyApp(),
@@ -63,6 +83,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Copenhagen Academy',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -80,12 +101,20 @@ class MyApp extends StatelessWidget {
         '/splash': (context) => const SplashScreen(),
         '/login': (context) => const LoginPage(),
         '/dashboard': (context) => const DashboardPage(),
-        '/exercises': (context) => const ExercisesPage(),
-        '/challenges': (context) => const ChallengesPage(),
+        if (FeatureFlags.exercisesEnabled)
+          '/exercises': (context) => const ExercisesPage(),
+        if (FeatureFlags.challengesEnabled)
+          '/challenges': (context) => const ChallengesPage(),
         '/training-schedule': (context) => const TrainingSchedulePage(),
-        '/league-table': (context) => const LeagueTablePage(),
-        '/player-stats': (context) => const PlayerStatsPage(),
+        if (FeatureFlags.leagueTableEnabled)
+          '/league-table': (context) => const LeagueTablePage(),
+        if (FeatureFlags.playerStatsEnabled)
+          '/player-stats': (context) => const PlayerStatsPage(),
         '/info': (context) => const InfoPage(),
+        
+        // Training plans route is completely disabled via feature flag
+        // if (FeatureFlags.trainingPlanEnabled)
+        //   '/training-plans': (context) => const TrainingPlanPage(),
       },
     );
   }

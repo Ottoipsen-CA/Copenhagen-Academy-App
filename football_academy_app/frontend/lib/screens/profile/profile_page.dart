@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../services/auth_service.dart';
+import '../../screens/auth/login_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -196,8 +199,34 @@ class ProfilePage extends StatelessWidget {
           _buildActionTile(
             icon: Icons.logout,
             title: 'Logout',
-            onTap: () {
-              Navigator.of(context).pushReplacementNamed('/login');
+            onTap: () async {
+              // Get auth service
+              final authService = Provider.of<AuthService>(context, listen: false);
+              
+              // Show confirmation dialog
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('CANCEL'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('LOGOUT'),
+                    ),
+                  ],
+                ),
+              );
+              
+              if (confirmed == true) {
+                // Logout - all navigation will be handled by the AuthService
+                await authService.logout();
+                // No need for additional navigation here - AuthService will handle it
+              }
             },
           ),
         ],

@@ -1,35 +1,35 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'dart:convert';
 import '../models/auth.dart';
 import '../models/user.dart';
+import '../repositories/auth_repository.dart';
+import 'navigation_service.dart';
 import 'api_service.dart';
 
 class AuthService {
-  final ApiService apiService;
+  final AuthRepository _authRepository;
   final FlutterSecureStorage secureStorage;
+  final ApiService _apiService;
   
   // Flag to use mock auth for development 
   bool _useMockAuth = false;
 
   AuthService({
-    required this.apiService,
+    required AuthRepository authRepository,
     required this.secureStorage,
-  });
+    required ApiService apiService,
+  }) : _authRepository = authRepository,
+       _apiService = apiService;
 
   // Check if user is logged in
   Future<bool> isLoggedIn() async {
-    final token = await secureStorage.read(key: 'access_token');
-    return token != null;
+    return _authRepository.isLoggedIn();
   }
 
   // Register a new user
   Future<User> register(RegisterRequest request) async {
     if (_useMockAuth) {
       // Create mock user
-      await secureStorage.write(
-        key: 'access_token',
-        value: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
-      );
+      await _createMockToken();
       
       return User(
         id: 123,
@@ -41,23 +41,24 @@ class AuthService {
     }
     
     try {
-      final response = await apiService.post('/users/', request.toJson(), withAuth: false);
-      return User.fromJson(response);
-    } catch (e) {
-      print('Error during registration: $e');
-      // Use mock response as fallback
-      await secureStorage.write(
-        key: 'access_token',
-        value: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
+      final user = await _authRepository.registerUser(
+        request.email, 
+        request.fullName, 
+        request.password
       );
       
-      return User(
-        id: 123,
-        email: request.email,
-        fullName: request.fullName,
-        isActive: true,
-        isCoach: false,
-      );
+      if (user != null) {
+        // Login automatically after successful registration
+        await _authRepository.login(request.email, request.password);
+        return user;
+      }
+      
+      // If we get here, registration failed but didn't throw an exception
+      throw Exception("Registration failed: No user returned from the server");
+    } catch (e) {
+      print('Error during registration: $e');
+      // Rethrow the error instead of falling back to mock data
+      throw Exception("Registration failed: $e");
     }
   }
 
@@ -65,111 +66,67 @@ class AuthService {
   Future<void> login(LoginRequest request) async {
     if (_useMockAuth) {
       print('Using mock login with: ${request.email}');
-      
-      // Save mock token to secure storage
-      await secureStorage.write(
-        key: 'access_token',
-        value: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
-      );
-      print('Mock token saved to secure storage');
+      await _createMockToken();
       return;
     }
     
-    // FastAPI uses form data for OAuth token endpoint
-    final headers = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    };
-
-    final data = {
-      'username': request.email,
-      'password': request.password,
-      'grant_type': 'password',
-    };
-
-    // Convert map to URL encoded form data
-    final formData = data.entries
-        .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-        .join('&');
-
-    final uri = Uri.parse('${apiService.baseUrl}/token');
-    print('Login request to: $uri');
-    print('Login request headers: $headers');
-    print('Login request body: $formData');
-    
     try {
-      final response = await apiService.client.post(
-        uri,
-        headers: headers,
-        body: formData,
-      );
+      final token = await _authRepository.login(request.email, request.password);
       
-      print('Login response status: ${response.statusCode}');
-      
-      if (response.statusCode == 200) {
-        print('Login response body: ${response.body}');
-        final authResponse = AuthResponse.fromJson(
-          jsonDecode(response.body),
-        );
-
-        // Save token to secure storage
-        await secureStorage.write(
-          key: 'access_token',
-          value: authResponse.accessToken,
-        );
-        print('Token saved to secure storage');
-      } else {
-        print('Login failed with status code: ${response.statusCode}');
-        print('Falling back to mock login');
-        
-        // Save mock token to secure storage as fallback
-        await secureStorage.write(
-          key: 'access_token',
-          value: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
-        );
+      if (token == null) {
+        print('Login failed, falling back to mock login');
+        await _createMockToken();
       }
     } catch (e) {
       print('Error during login: $e');
       print('Falling back to mock login');
-      
-      // Save mock token to secure storage as fallback
-      await secureStorage.write(
-        key: 'access_token',
-        value: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
-      );
+      await _createMockToken();
     }
   }
 
   // Get current user
   Future<User> getCurrentUser() async {
     if (_useMockAuth) {
-      return User(
-        id: 123,
-        email: 'demo@example.com',
-        fullName: 'Otto',
-        isActive: true,
-        isCoach: false,
-      );
+      return _createMockUser();
     }
     
     try {
-      final response = await apiService.get('/users/me');
-      return User.fromJson(response);
+      final user = await _authRepository.getCurrentUser();
+      if (user != null) {
+        return user;
+      }
+      // Return a mock user as fallback
+      return _createMockUser();
     } catch (e) {
       print('Error getting current user: $e');
       // Return a mock user as fallback
-      return User(
-        id: 123,
-        email: 'demo@example.com',
-        fullName: 'Otto',
-        isActive: true,
-        isCoach: false,
-      );
+      return _createMockUser();
     }
   }
 
   // Logout
   Future<void> logout() async {
-    await secureStorage.delete(key: 'access_token');
+    try {
+      // Clear token via repository
+      await _authRepository.logout();
+      
+      // Also clear from secure storage directly as a backup
+      await secureStorage.delete(key: 'access_token');
+      
+      // Clear any other potential stored auth data
+      await secureStorage.delete(key: 'refresh_token');
+      await secureStorage.delete(key: 'user_data');
+      
+      // Reset API service state
+      _apiService.reset();
+      
+      print('Logout complete - all tokens cleared and services reset');
+    } catch (e) {
+      print('Error during logout: $e');
+    } finally {
+      // Always reset navigation to ensure user is logged out UI-wise
+      NavigationService.resetToLogin();
+    }
   }
 
   // Get current user ID - static helper for services
@@ -178,5 +135,28 @@ class AuthService {
     // For simplicity, we'll use a mock ID
     // In a real app, this would decode the JWT token or query the server
     return '123'; // Mock user ID
+  }
+  
+  // Helper method to create a mock token for development
+  Future<void> _createMockToken() async {
+    await secureStorage.write(
+      key: 'access_token',
+      value: 'mock_token_${DateTime.now().millisecondsSinceEpoch}',
+    );
+    print('Mock token saved to secure storage');
+  }
+  
+  // Helper method to create a mock user for development
+  User _createMockUser({
+    String email = 'demo@example.com', 
+    String fullName = 'Otto'
+  }) {
+    return User(
+      id: 123,
+      email: email,
+      fullName: fullName,
+      isActive: true,
+      isCoach: false,
+    );
   }
 } 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import 'auth/login_page.dart';
+import 'dashboard/dashboard_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -21,8 +23,27 @@ class _SplashScreenState extends State<SplashScreen> {
     
     if (!mounted) return;
     
-    // For simplicity, always go to login page
-    Navigator.of(context).pushReplacementNamed('/login');
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final isLoggedIn = await authService.isLoggedIn();
+      
+      if (!mounted) return;
+      
+      // Direct navigation with MaterialPageRoute instead of named routes
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => isLoggedIn 
+              ? const DashboardPage() 
+              : const LoginPage(),
+        ),
+      );
+    } catch (e) {
+      // If anything goes wrong, go to login page
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    }
   }
 
   @override

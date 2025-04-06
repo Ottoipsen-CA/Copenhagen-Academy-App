@@ -8,6 +8,9 @@ class User {
   final bool isActive;
   final bool isCoach;
   final bool isCaptain;
+  final String role;
+  final DateTime? createdAt;
+  final DateTime? lastLogin;
 
   User({
     this.id,
@@ -19,6 +22,9 @@ class User {
     this.isActive = true,
     this.isCoach = false,
     this.isCaptain = false,
+    this.role = "player",
+    this.createdAt,
+    this.lastLogin,
   });
 
   String get firstName => fullName.split(' ').first;
@@ -39,6 +45,13 @@ class User {
       isActive: json['is_active'] ?? true,
       isCoach: json['is_coach'] ?? false,
       isCaptain: json['is_captain'] ?? false,
+      role: json['role'] ?? 'player',
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at']) 
+          : null,
+      lastLogin: json['last_login'] != null 
+          ? DateTime.parse(json['last_login']) 
+          : null,
     );
   }
 
@@ -53,6 +66,9 @@ class User {
       'is_active': isActive,
       'is_coach': isCoach,
       'is_captain': isCaptain,
+      'role': role,
+      'created_at': createdAt?.toIso8601String(),
+      'last_login': lastLogin?.toIso8601String(),
     };
   }
 } 
