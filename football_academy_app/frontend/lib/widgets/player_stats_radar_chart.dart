@@ -9,6 +9,7 @@ class PlayerStatsRadarChart extends StatefulWidget {
   final PlayerStats? playerStats;
   final PlayerTest? playerTest;
   final bool fetchData;
+  final bool useLatestTest;
 
   const PlayerStatsRadarChart({
     super.key,
@@ -16,6 +17,7 @@ class PlayerStatsRadarChart extends StatefulWidget {
     this.playerStats,
     this.playerTest,
     this.fetchData = true,
+    this.useLatestTest = false,
   });
 
   @override
@@ -25,6 +27,7 @@ class PlayerStatsRadarChart extends StatefulWidget {
 class _PlayerStatsRadarChartState extends State<PlayerStatsRadarChart> {
   PlayerStats? _stats;
   bool _isLoading = true;
+  String _errorMessage = '';
   
   @override
   void initState() {
@@ -40,6 +43,11 @@ class _PlayerStatsRadarChartState extends State<PlayerStatsRadarChart> {
       _stats = _convertTestToStats(widget.playerTest!);
       _isLoading = false;
     }
+    // If using latest test is requested, prioritize that
+    else if (widget.useLatestTest) {
+      // Initialize the service
+      _loadLatestTestFromApi();
+    }
     // Otherwise fetch stats if requested
     else if (widget.fetchData) {
       // Initialize the service
@@ -49,6 +57,65 @@ class _PlayerStatsRadarChartState extends State<PlayerStatsRadarChart> {
       // No data source provided and not fetching
       _stats = PlayerStats.empty();
       _isLoading = false;
+    }
+  }
+  
+  // Load the latest test directly from the API endpoint
+  Future<void> _loadLatestTestFromApi() async {
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+    
+    try {
+      // Initialize the service if needed
+      PlayerTestsService.initialize(context);
+      
+      // Get all tests from the API endpoint
+      final tests = await PlayerTestsService.getPlayerTests(context);
+      
+      if (!mounted) return;
+      
+      if (tests.isNotEmpty) {
+        // Sort tests by date (most recent first)
+        tests.sort((a, b) {
+          if (a.testDate == null) return 1;
+          if (b.testDate == null) return -1;
+          return b.testDate!.compareTo(a.testDate!);
+        });
+        
+        // Use the most recent test
+        final latestTest = tests.first;
+        
+        print('Latest test loaded: ${latestTest.testDate} with ID: ${latestTest.id}');
+        print('Ratings - Pace: ${latestTest.paceRating}, Shooting: ${latestTest.shootingRating}');
+        
+        // Convert to stats for the radar chart
+        final stats = _convertTestToStats(latestTest);
+        
+        setState(() {
+          _stats = stats;
+          _isLoading = false;
+        });
+      } else {
+        // No tests found
+        setState(() {
+          _stats = PlayerStats.empty();
+          _isLoading = false;
+          _errorMessage = 'No test data available';
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      
+      print('Error loading latest player test from API: $e');
+      setState(() {
+        _stats = PlayerStats.empty(); // Use empty stats when error occurs
+        _isLoading = false;
+        _errorMessage = 'Failed to load test data: $e';
+      });
     }
   }
   
@@ -110,6 +177,18 @@ class _PlayerStatsRadarChartState extends State<PlayerStatsRadarChart> {
         height: 200,
         child: Center(
           child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
+    if (_errorMessage.isNotEmpty) {
+      return SizedBox(
+        height: 200,
+        child: Center(
+          child: Text(
+            _errorMessage,
+            style: const TextStyle(color: Colors.white70),
+          ),
         ),
       );
     }
@@ -227,13 +306,16 @@ class RadarChartPainter extends CustomPainter {
       final x = center.dx + radius * value * math.cos(currentAngle);
       final y = center.dy + radius * value * math.sin(currentAngle);
       
+      // Get color for the point
+      final Color pointColor = _getPointColor(i);
+      
       // Draw glowing point
       for (double j = 4; j >= 0; j--) {
         canvas.drawCircle(
           Offset(x, y),
           j + 2,
           Paint()
-            ..color = _getPointColor(i).withOpacity(0.3 - (j * 0.05))
+            ..color = pointColor.withOpacity(0.3 - (j * 0.05))
             ..style = PaintingStyle.fill
         );
       }
@@ -243,7 +325,7 @@ class RadarChartPainter extends CustomPainter {
         Offset(x, y),
         4,
         Paint()
-          ..color = _getPointColor(i)
+          ..color = pointColor
           ..style = PaintingStyle.fill
       );
     }
@@ -254,6 +336,14 @@ class RadarChartPainter extends CustomPainter {
     );
     
     final labels = ['PACE', 'SHOOTING', 'PASSING', 'DRIBBLING', 'JUGGLES', 'FIRST TOUCH'];
+    final rawValues = [
+      stats.pace.toInt(),
+      stats.shooting.toInt(),
+      stats.passing.toInt(),
+      stats.dribbling.toInt(),
+      stats.juggles.toInt(),
+      stats.firstTouch.toInt(),
+    ];
     
     for (int i = 0; i < sides; i++) {
       final currentAngle = angle * i - math.pi / 2;
@@ -291,14 +381,14 @@ class RadarChartPainter extends CustomPainter {
         ),
       );
       
-      // Draw value number next to each point
-      final valueText = (values[i] * 100).toInt().toString();
+      // Draw value number inside the radar chart at each point
+      final valueText = rawValues[i].toString();
       
       final valuePaint = TextPainter(
         text: TextSpan(
           text: valueText,
           style: TextStyle(
-            color: color,
+            color: Colors.white,
             fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
@@ -308,8 +398,9 @@ class RadarChartPainter extends CustomPainter {
       
       valuePaint.layout();
       
-      final valueX = center.dx + (radius * 0.75) * values[i] * math.cos(currentAngle);
-      final valueY = center.dy + (radius * 0.75) * values[i] * math.sin(currentAngle);
+      // Calculate position for value text to be displayed ON the point
+      final valueX = center.dx + (radius * 0.7) * values[i] * math.cos(currentAngle);
+      final valueY = center.dy + (radius * 0.7) * values[i] * math.sin(currentAngle);
       
       valuePaint.paint(
         canvas, 
@@ -323,7 +414,7 @@ class RadarChartPainter extends CustomPainter {
   
   Color _getPointColor(int index) {
     final labels = ['PACE', 'SHOOTING', 'PASSING', 'DRIBBLING', 'JUGGLES', 'FIRST TOUCH'];
-    return labelColors[labels[index]] ?? Color(0xFF00F5A0);
+    return labelColors[labels[index]] ?? const Color(0xFF00F5A0);
   }
 
   void _drawPolygon(

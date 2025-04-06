@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../../models/user.dart';
 import '../../models/player_stats.dart';
 import '../../models/challenge.dart';
@@ -61,17 +62,59 @@ class _DashboardPageState extends State<DashboardPage> {
       // Load user data
       final user = await authService.getCurrentUser();
       
-      // Use mock data for player stats
-      final playerStats = PlayerStats(
-        pace: 85.0,
-        shooting: 84.0,
-        passing: 78.0,
-        dribbling: 88.0,
-        juggles: 75.0,
-        firstTouch: 82.0,
-        overallRating: 83.0,
-        lastUpdated: DateTime.now(),
-      );
+      // Set up player test service
+      PlayerTestsService.initialize(context);
+      
+      // Load player stats from the latest test
+      List<PlayerTest> tests = [];
+      try {
+        tests = await PlayerTestsService.getPlayerTests(context);
+        tests.sort((a, b) {
+          if (a.testDate == null) return 1;
+          if (b.testDate == null) return -1;
+          return b.testDate!.compareTo(a.testDate!);
+        });
+      } catch (e) {
+        print('Error loading test data: $e');
+      }
+      
+      // Create player stats from latest test or use default values if no tests
+      PlayerStats playerStats;
+      if (tests.isNotEmpty) {
+        // Convert the latest test to PlayerStats
+        final latestTest = tests.first;
+        playerStats = PlayerStats(
+          pace: (latestTest.paceRating ?? 50).toDouble(),
+          shooting: (latestTest.shootingRating ?? 50).toDouble(),
+          passing: (latestTest.passingRating ?? 50).toDouble(),
+          dribbling: (latestTest.dribblingRating ?? 50).toDouble(),
+          juggles: (latestTest.jugglesRating ?? 50).toDouble(),
+          firstTouch: (latestTest.firstTouchRating ?? 50).toDouble(),
+          overallRating: latestTest.overallRating != null ? latestTest.overallRating!.toDouble() : null,
+          lastUpdated: latestTest.testDate,
+          lastTestId: latestTest.id,
+        );
+        
+        // Check if player has any record-breaking scores
+        _hasRecordBreakingScores = latestTest.isPassingRecord == true || 
+                                latestTest.isSprintRecord == true || 
+                                latestTest.isFirstTouchRecord == true || 
+                                latestTest.isShootingRecord == true || 
+                                latestTest.isJugglingRecord == true || 
+                                latestTest.isDribblingRecord == true;
+      } else {
+        // Create default stats if no tests are available
+        playerStats = PlayerStats(
+          pace: 50.0,
+          shooting: 50.0,
+          passing: 50.0,
+          dribbling: 50.0,
+          juggles: 50.0,
+          firstTouch: 50.0,
+          overallRating: 50.0,
+          lastUpdated: DateTime.now(),
+        );
+      }
       
       // Initialize challenges
       await ChallengeService.initializeUserChallenges();
@@ -303,29 +346,74 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     const SizedBox(height: 20),
                     
-                    // Two-column layout: Radar Chart and Skill Bars
+                    // Two-column layout: Overall Rating + Radar Chart (left) and Skill Bars (right)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Left column - Radar Chart
+                        // Left column - Overall Rating + Radar Chart
                         Expanded(
                           flex: 5,
                           child: Column(
                             children: [
+                              // Overall rating display
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: const Color(0xFF00F5A0),
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF00F5A0).withOpacity(0.2),
+                                      blurRadius: 10,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.star,
+                                      color: Color(0xFF00F5A0),
+                                      size: 24,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'OVERALL RATING: ${_playerStats?.overallRating?.round() ?? 0}',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        letterSpacing: 1.0,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              
+                              const SizedBox(height: 20),
+                              
+                              // Radar Chart
                               SizedBox(
                                 height: 280,
                                 child: PlayerStatsRadarChart(
                                   playerStats: _playerStats,
+                                  useLatestTest: true,
                                   labelColors: const {
                                     'PACE': Color(0xFF02D39A),
                                     'SHOOTING': Color(0xFFFFD700),
                                     'PASSING': Color(0xFF00ACF3),
                                     'DRIBBLING': Color(0xFFBE008C),
-                                    'DEFENSE': Color(0xFF3875B9),
-                                    'PHYSICAL': Color(0xFFD48A29),
+                                    'JUGGLES': Color(0xFF3875B9),
+                                    'FIRST TOUCH': Color(0xFFD48A29),
                                   },
                                 ),
                               ),
+                              
                               // Stat Rating explanation
                               const Center(
                                 child: Text(
@@ -347,6 +435,23 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                       ],
                     ),
+                    
+                    // Last updated timestamp in bottom left corner
+                    if (_playerStats?.lastUpdated != null)
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 16, left: 8),
+                          child: Text(
+                            'Sidst testet: ${_formatDate(_playerStats!.lastUpdated!)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.white70,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -512,9 +617,10 @@ class _DashboardPageState extends State<DashboardPage> {
                         // Completed
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
+                            horizontal: 12,
+                            vertical: 8,
                           ),
+                          margin: const EdgeInsets.only(right: 16),
                           decoration: BoxDecoration(
                             color: Colors.green.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
@@ -524,13 +630,13 @@ class _DashboardPageState extends State<DashboardPage> {
                               const Icon(
                                 Icons.check_circle,
                                 color: Colors.green,
-                                size: 12,
+                                size: 16,
                               ),
                               const SizedBox(width: 4),
                               const Text(
                                 'COMPLETED',
                                 style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.green,
                                 ),
@@ -540,41 +646,49 @@ class _DashboardPageState extends State<DashboardPage> {
                         )
                       else if (_userWeeklyChallenge?.status == ChallengeStatus.inProgress)
                         // In progress - Show "Indtast resultat!" button
-                        ElevatedButton(
-                          onPressed: () => _submitChallengeResult(_weeklyChallenge!.id),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4CAF50), // Green
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 16, top: 4, bottom: 4),
+                          child: ElevatedButton(
+                            onPressed: () => _submitChallengeResult(_weeklyChallenge!.id),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4CAF50), // Green
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              minimumSize: const Size(120, 36),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          ),
-                          child: const Text(
-                            'INDTAST RESULTAT!',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                            child: const Text(
+                              'INDTAST RESULTAT!',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         )
                       else
                         // Not started - Show "Deltag" (participate) button
-                        ElevatedButton(
-                          onPressed: () => _optInToChallenge(_weeklyChallenge!.id),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFA500),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 16, top: 4, bottom: 4),
+                          child: ElevatedButton(
+                            onPressed: () => _optInToChallenge(_weeklyChallenge!.id),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFFA500),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              minimumSize: const Size(100, 36),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          ),
-                          child: const Text(
-                            'DELTAG',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+                            child: const Text(
+                              'DELTAG',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -1174,6 +1288,10 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return DateFormat('dd/MM/yyyy').format(date);
   }
 }
 

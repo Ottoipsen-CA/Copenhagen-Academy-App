@@ -6,6 +6,8 @@ import '../../widgets/navigation_drawer.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../theme/colors.dart';
 import '../../widgets/gradient_background.dart';
+import '../../widgets/player_stats_radar_chart.dart';
+import '../../widgets/player_test_widget.dart';
 
 class PlayerStatsPage extends StatefulWidget {
   const PlayerStatsPage({Key? key}) : super(key: key);
@@ -105,6 +107,36 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
             
             const SizedBox(height: 24),
             
+            // Stats radar chart
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Skill Overview',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Radar chart with latest test data
+                const PlayerStatsRadarChart(
+                  useLatestTest: true, // Use the latest test data
+                  labelColors: {
+                    'PACE': Colors.lightBlue,
+                    'SHOOTING': Colors.orange,
+                    'PASSING': Colors.green,
+                    'DRIBBLING': Colors.purple,
+                    'JUGGLES': Colors.pink,
+                    'FIRST TOUCH': Colors.yellow,
+                  },
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 24),
+            
             // Stats Details
             const Text(
               'Stats Details',
@@ -128,6 +160,11 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
             _buildStatProgressBar('Juggling', _playerStats!.juggles),
             const SizedBox(height: 8),
             _buildStatProgressBar('First Touch', _playerStats!.firstTouch),
+            
+            const SizedBox(height: 24),
+            
+            // Player Test widget to show and manage tests
+            const PlayerTestWidget(),
             
             const SizedBox(height: 24),
             
