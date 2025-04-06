@@ -9,7 +9,9 @@ from .challenges import (
     ChallengeCompletionBase, ChallengeCompletionCreate, ChallengeCompletionUpdate, ChallengeCompletionResponse,
     ChallengeCompletionWithDetails,
     BadgeBase, BadgeCreate, BadgeUpdate, BadgeResponse, BadgeWithChallenge,
-    AchievementBase, AchievementCreate, AchievementUpdate, AchievementResponse
+    AchievementBase, AchievementCreate, AchievementUpdate, AchievementResponse,
+    ChallengeStatusEnum,
+    ChallengeResultBase, ChallengeResultCreate, ChallengeResultResponse, ChallengeResultWithCompletion
 )
 from .league_table import (
     LeagueTableEntryBase, LeagueTableEntryCreate, LeagueTableEntryUpdate, LeagueTableEntryResponse,
@@ -39,6 +41,9 @@ __all__ = [
     "ChallengeCompletionWithDetails",
     "BadgeBase", "BadgeCreate", "BadgeUpdate", "BadgeResponse", "BadgeWithChallenge",
     "AchievementBase", "AchievementCreate", "AchievementUpdate", "AchievementResponse",
+    "ChallengeStatusEnum",
+    # Challenge Result schemas
+    "ChallengeResultBase", "ChallengeResultCreate", "ChallengeResultResponse", "ChallengeResultWithCompletion",
     
     # League table schemas
     "LeagueTableEntryBase", "LeagueTableEntryCreate", "LeagueTableEntryUpdate", "LeagueTableEntryResponse",

@@ -9,7 +9,7 @@ class LeagueTableEntry(Base):
     __tablename__ = "league_table"
 
     id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    player_id = Column(Integer, ForeignKey("users.user_id"), unique=True)
     points = Column(Integer, default=0)
     challenges_completed = Column(Integer, default=0)
     tests_completed = Column(Integer, default=0)
@@ -26,7 +26,7 @@ class ChallengeEntry(Base):
     __tablename__ = "challenge_entries"
 
     id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("users.id"))
+    player_id = Column(Integer, ForeignKey("users.user_id"))
     challenge_id = Column(Integer, ForeignKey("challenges.id"))
     points_earned = Column(Integer, default=0)
     completed_date = Column(DateTime, default=datetime.utcnow)

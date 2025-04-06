@@ -34,7 +34,7 @@ async def create_player_test(
     service = SkillTestsService(db)
     
     # Ensure the user can only submit their own test results (unless they're a coach)
-    if test_data.player_id != current_user.id and not current_user.is_coach:
+    if test_data.player_id != current_user.user_id and not current_user.is_coach:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to submit test results for this player"
@@ -59,7 +59,7 @@ async def get_player_tests(
     service = SkillTestsService(db)
     
     # Check permissions
-    if player_id != current_user.id and not current_user.is_coach:
+    if player_id != current_user.user_id and not current_user.is_coach:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to view this player's tests"
@@ -85,7 +85,7 @@ async def delete_player_test(
         )
     
     # Check permissions
-    if test.player_id != current_user.id and not current_user.is_coach:
+    if test.player_id != current_user.user_id and not current_user.is_coach:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to delete this test"

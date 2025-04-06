@@ -9,7 +9,7 @@ from constants.position_weights import Position
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     full_name = Column(String)
@@ -35,4 +35,8 @@ class User(Base):
             if today.month < self.date_of_birth.month or (today.month == self.date_of_birth.month and today.day < self.date_of_birth.day):
                 age -= 1
             return age
-        return None 
+        return None
+
+    @property
+    def id(self):
+        return self.user_id 

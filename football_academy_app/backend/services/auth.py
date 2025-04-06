@@ -31,6 +31,9 @@ class AuthService(BaseService[User, UserCreate, UserUpdate, User]):
     def get_user_by_email(self, email: str) -> Optional[User]:
         return self.db.query(User).filter(User.email == email).first()
     
+    def get_by_id(self, id: int) -> Optional[User]:
+        return self.db.query(User).filter(User.user_id == id).first()
+    
     def authenticate_user(self, email: str, password: str) -> Optional[User]:
         user = self.get_user_by_email(email)
         if not user:

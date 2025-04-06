@@ -65,7 +65,7 @@ class SkillTestsService:
         # Get player stats and position
         result = await self.db.execute(
             select(PlayerStats, User.position)
-            .join(User, PlayerStats.player_id == User.id)
+            .join(User, PlayerStats.player_id == User.user_id)
             .where(PlayerStats.player_id == player_id)
         )
         stats, position = result.first()
@@ -207,14 +207,14 @@ class SkillTestsService:
     ) -> PlayerTest:
         # Get the player's position from their user record
         result = await self.db.execute(
-            select(User).where(User.id == test_data.player_id)
+            select(User).where(User.user_id == test_data.player_id)
         )
         player = result.scalar_one_or_none()
         if not player:
             raise HTTPException(status_code=404, detail="Player not found")
         
         # Ensure users can only submit their own test results unless they are coaches
-        if current_user.role != "coach" and current_user.id != test_data.player_id:
+        if current_user.role != "coach" and current_user.user_id != test_data.player_id:
             raise HTTPException(
                 status_code=403,
                 detail="Not authorized to submit test results for this player"
@@ -280,7 +280,7 @@ class SkillTestsService:
             first_touch_rating=ratings.get("first_touch"),
             overall_rating=test_overall_rating,  # Add the calculated overall rating
             notes=test_data.notes,
-            recorded_by=current_user.id
+            recorded_by=current_user.user_id
         )
         
         self.db.add(db_test)

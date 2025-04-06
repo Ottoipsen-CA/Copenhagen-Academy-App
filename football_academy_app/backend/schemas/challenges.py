@@ -105,7 +105,32 @@ class ChallengeCompletionResponse(ChallengeCompletionBase):
         orm_mode = True
 
 class ChallengeCompletionWithDetails(ChallengeCompletionResponse):
-    challenge: ChallengeResponse
+    """Extended schema with challenge details"""
+    challenge: Dict[str, Any]
+    results: List[Dict[str, Any]] = []
+
+    class Config:
+        orm_mode = True
+
+# ChallengeResult schemas
+class ChallengeResultBase(BaseModel):
+    completion_id: int
+    result_value: float
+    notes: Optional[str] = None
+
+class ChallengeResultCreate(BaseModel):
+    result_value: float
+    notes: Optional[str] = None
+
+class ChallengeResultResponse(ChallengeResultBase):
+    id: int
+    submitted_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class ChallengeResultWithCompletion(ChallengeResultResponse):
+    completion: ChallengeCompletionResponse
 
     class Config:
         orm_mode = True

@@ -10,7 +10,7 @@ class PlayerStats(Base):
     __tablename__ = "player_stats"
 
     id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    player_id = Column(Integer, ForeignKey("users.user_id"), unique=True)
     pace = Column(Float, default=50)
     shooting = Column(Float, default=50)
     passing = Column(Float, default=50)
@@ -46,7 +46,7 @@ class Test(Base):
     difficulty_level = Column(String, index=True)  # easy, medium, hard
     instructions = Column(String)
     points_scale = Column(Float, default=1.0)
-    created_by = Column(Integer, ForeignKey("users.id"))
+    created_by = Column(Integer, ForeignKey("users.user_id"))
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
@@ -55,7 +55,7 @@ class TestEntry(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     test_id = Column(Integer, ForeignKey("tests.id"))
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.user_id"))
     score = Column(Float)
     details = Column(JSON, nullable=True)
     completed_at = Column(DateTime, default=datetime.utcnow)
@@ -69,7 +69,7 @@ class PlayerTest(Base):
     __tablename__ = "player_tests"
 
     id = Column(Integer, primary_key=True, index=True)
-    player_id = Column(Integer, ForeignKey("users.id"))
+    player_id = Column(Integer, ForeignKey("users.user_id"))
     test_date = Column(DateTime, default=datetime.utcnow)
     position = Column(String)  # Store the player's position at test time
     
@@ -91,7 +91,7 @@ class PlayerTest(Base):
     overall_rating = Column(Integer)  # Overall rating for this test session
     
     notes = Column(String)
-    recorded_by = Column(Integer, ForeignKey("users.id"))
+    recorded_by = Column(Integer, ForeignKey("users.user_id"))
     
     # Relationships
     player = relationship("User", foreign_keys=[player_id], back_populates="tests")

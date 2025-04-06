@@ -14,7 +14,7 @@ class TrainingPlan(Base):
     difficulty_level = Column(String, index=True)  # beginner, intermediate, advanced
     focus_area = Column(String, index=True)  # e.g., "technical", "physical", "tactical"
     duration_weeks = Column(Integer, default=1)
-    created_by = Column(Integer, ForeignKey("users.id"))
+    created_by = Column(Integer, ForeignKey("users.user_id"))
     is_public = Column(Boolean, default=False)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())

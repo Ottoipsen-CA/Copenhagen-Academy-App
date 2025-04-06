@@ -19,7 +19,7 @@ class ExerciseLibrary(Base):
     image_url = Column(String, nullable=True)
     instructions = Column(String)
     benefits = Column(String, nullable=True)
-    created_by = Column(Integer, ForeignKey("users.id"))
+    created_by = Column(Integer, ForeignKey("users.user_id"))
     is_public = Column(Boolean, default=True)
     parameters = Column(JSON, nullable=True)  # Any custom parameters for this exercise
     created_at = Column(DateTime, default=func.now())

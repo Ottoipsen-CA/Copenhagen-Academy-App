@@ -98,9 +98,9 @@ async def login_for_access_token(
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = service.create_access_token(
-        data={"sub": user.email, "user_id": user.id}, expires_delta=access_token_expires
+        data={"sub": user.email, "user_id": user.user_id}, expires_delta=access_token_expires
     )
-    service.update_last_login(user.id)
+    service.update_last_login(user.user_id)
     return {"access_token": access_token, "token_type": "bearer"}
 
 # Keep the /login endpoint for backward compatibility
@@ -127,7 +127,7 @@ def update_user_me(
     current_user: UserModel = Depends(get_current_active_user),
     service: AuthService = Depends(get_auth_service)
 ):
-    updated_user = service.update_user(user_id=current_user.id, user_update=user_update)
+    updated_user = service.update_user(user_id=current_user.user_id, user_update=user_update)
     return updated_user
 
 @router.delete("/me", 
@@ -138,7 +138,7 @@ def delete_user_me(
     current_user: UserModel = Depends(get_current_active_user),
     service: AuthService = Depends(get_auth_service)
 ):
-    deleted = service.delete(id=current_user.id)
+    deleted = service.delete(id=current_user.user_id)
     if not deleted:
          raise HTTPException(status_code=500, detail="Failed to delete user.")
     logger.info(f"User deleted: {current_user.email}")
