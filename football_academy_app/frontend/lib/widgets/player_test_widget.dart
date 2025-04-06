@@ -274,7 +274,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
         _buildTestField(
           label: 'Passing (count)',
           controller: _passingController,
-          icon: Icons.sports_soccer,
+          icon: Icons.swap_horizontal_circle,
           keyboardType: TextInputType.number,
           helperText: 'Number of successful passes in 1 minute',
         ),

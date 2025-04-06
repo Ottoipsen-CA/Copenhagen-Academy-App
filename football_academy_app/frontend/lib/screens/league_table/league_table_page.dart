@@ -382,8 +382,6 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
                         position: player.user.position ?? 'ST',
                         stats: player.stats,
                         rating: player.stats.overallRating?.toInt() ?? 0,
-                        nationality: '🇦🇺', // Default flag
-                        playerImageUrl: 'https://raw.githubusercontent.com/ottoipsen/football_academy_assets/main/player_photos/player_photo.jpg',
                         cardType: _getCardType(player.stats.overallRating?.toInt() ?? 0),
                       ),
                     );

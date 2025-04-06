@@ -183,7 +183,10 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: const Text(
+          'Dashboard',
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
         backgroundColor: const Color(0xFF0B0057),
         leading: Builder(
@@ -274,7 +277,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Welcome,',
+                        'WELCOME',
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -282,7 +285,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                       ),
                       Text(
-                        _user!.firstName,
+                        _user!.firstName.toUpperCase(),
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -299,8 +302,6 @@ class _DashboardPageState extends State<DashboardPage> {
                   position: _user!.position ?? 'ST',
                   stats: _playerStats!,
                   rating: _playerStats?.overallRating?.toInt() ?? 0,
-                  nationality: '🇦🇺', // Australian flag as example
-                  playerImageUrl: 'https://raw.githubusercontent.com/ottoipsen/football_academy_assets/main/player_photos/player_photo.jpg',
                   cardType: _getPlayerCardType(),
                 ),
                 
@@ -543,7 +544,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                       const SizedBox(width: 8),
                       const Text(
-                        'ACTIVE CHALLENGE',
+                        'DENNE UGES CHALLENGE',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,

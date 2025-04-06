@@ -6,8 +6,6 @@ class FifaPlayerCard extends StatelessWidget {
   final String position;
   final PlayerStats stats;
   final int rating;
-  final String nationality;
-  final String? playerImageUrl;
   final CardType cardType;
   
   const FifaPlayerCard({
@@ -16,56 +14,61 @@ class FifaPlayerCard extends StatelessWidget {
     required this.position,
     required this.stats,
     required this.rating,
-    this.nationality = '🇦🇺', // Default flag
-    this.playerImageUrl,
     this.cardType = CardType.normal,
   });
 
   // Get card color based on rating and type
   List<Color> _getCardColors() {
-    // Special card types first
-    switch (cardType) {
-      case CardType.icon:
-        return const [Color(0xFFE5C585), Color(0xFFBA8B31)]; // Icon cards (gold/bronze metallic)
-      case CardType.record_breaker:
-        return const [Color(0xFF03B0F1), Color(0xFF025D7F)]; // Record breaker (bright blue)
-      case CardType.ones_to_watch:
-        return const [Color(0xFF8A27BA), Color(0xFF5A1A7A)]; // Ones to Watch (purple)
-      case CardType.totw:
-        return const [Color(0xFF3875B9), Color(0xFF173968)]; // Team of the Week
-      case CardType.toty:
-        return const [Color(0xFF00ACF3), Color(0xFF0571A0)]; // Team of the Year
-      case CardType.future:
-        return const [Color(0xFFBE008C), Color(0xFF780153)]; // Future Stars
-      case CardType.hero:
-        return const [Color(0xFFD48A29), Color(0xFF89571A)]; // Hero
-      case CardType.normal:
-        // Normal cards based on rating
-        if (rating >= 85) {
-          // Gold card
-          return const [
-            Color(0xFFFFD700), // Gold top
-            Color(0xFFEBC137), // Darker gold bottom
-          ];
-        } else if (rating >= 75) {
-          // Silver card
-          return const [
-            Color(0xFFE1E1E1), // Silver top
-            Color(0xFFAAA9AD), // Darker silver bottom
-          ];
-        } else {
-          // Bronze card
-          return const [
-            Color(0xFFCD7F32), // Bronze top
-            Color(0xFF996515), // Darker bronze bottom
-          ];
-        }
+    // Use a gradient from bright to darker for better text visibility
+    return const [
+      Color(0xFF1C54B2), // Brighter blue at top
+      Color(0xFF0B2265), // Darker blue at bottom
+    ];
+  }
+  
+  // Get position-specific icon and color
+  IconData _getPositionIcon() {
+    // Group positions into categories
+    if (position == 'GK') {
+      return Icons.sports_handball;
+    } else if (['CB', 'RB', 'LB'].contains(position)) {
+      return Icons.shield;
+    } else if (['CDM', 'CM', 'CAM', 'LW', 'RW'].contains(position)) {
+      return Icons.swap_horiz;
+    } else {
+      // Default to striker for ST or unknown positions
+      return Icons.sports_soccer;
+    }
+  }
+  
+  Color _getPositionColor() {
+    if (position == 'GK') {
+      return Colors.amber;
+    } else if (['CB', 'RB', 'LB'].contains(position)) {
+      return Colors.lightGreen;
+    } else if (['CDM', 'CM', 'CAM', 'LW', 'RW'].contains(position)) {
+      return Colors.cyanAccent;
+    } else {
+      // Strikers and unknown positions
+      return Colors.redAccent;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final cardColors = _getCardColors();
+    final positionIcon = _getPositionIcon();
+    final positionColor = _getPositionColor();
+    
+    // Skill colors matching the performance section
+    final Map<String, Color> skillColors = {
+      'Pace': const Color(0xFF02D39A),
+      'Shooting': const Color(0xFFFFD700),
+      'Passing': const Color(0xFF00ACF3),
+      'Dribbling': const Color(0xFFBE008C),
+      'Juggles': const Color(0xFF3875B9),
+      'First Touch': const Color(0xFFD48A29),
+    };
     
     return Container(
       width: 220,
@@ -74,17 +77,21 @@ class FifaPlayerCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withOpacity(0.4),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
+        border: Border.all(
+          color: Colors.white.withOpacity(0.7),
+          width: 1.5,
+        ),
       ),
       child: Stack(
         children: [
-          // Card background
+          // Card background - gradient from lighter to darker for better visibility
           ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(9), // Slightly smaller to account for border
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -92,22 +99,9 @@ class FifaPlayerCard extends StatelessWidget {
                   end: Alignment.bottomCenter,
                   colors: cardColors,
                 ),
-                borderRadius: BorderRadius.circular(10),
               ),
             ),
           ),
-          
-          // Pattern overlay for special cards
-          if (cardType != CardType.normal)
-            Positioned.fill(
-              child: Opacity(
-                opacity: 0.1,
-                child: Image.network(
-                  'https://i.imgur.com/T5l3zTi.png', // Pattern overlay image URL
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
           
           // Content
           Padding(
@@ -124,6 +118,17 @@ class FifaPlayerCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Center(
                         child: Text(
@@ -132,6 +137,13 @@ class FifaPlayerCard extends StatelessWidget {
                             color: Colors.white,
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                blurRadius: 3.0,
+                                color: Colors.black,
+                                offset: Offset(1, 1),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -140,10 +152,21 @@ class FifaPlayerCard extends StatelessWidget {
                     
                     // Position
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 3,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Text(
                         position,
@@ -151,83 +174,60 @@ class FifaPlayerCard extends StatelessWidget {
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          shadows: [
+                            Shadow(
+                              blurRadius: 2.0,
+                              color: Colors.black,
+                              offset: Offset(1, 1),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ],
                 ),
                 
-                // Player image
+                // Position icon instead of player image
                 Expanded(
                   child: Center(
-                    child: playerImageUrl != null
-                      ? Container(
-                          width: 110,
-                          height: 110,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.5),
-                              width: 2,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 5,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
-                          child: ClipOval(
-                            child: Image.network(
-                              playerImageUrl!,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
-                                if (loadingProgress == null) {
-                                  return child;
-                                }
-                                return Center(
-                                  child: CircularProgressIndicator(
-                                    value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                                      : null,
-                                    color: Colors.white,
-                                  ),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
-                                  Icons.person,
-                                  size: 60,
-                                  color: Colors.white,
-                                );
-                              },
-                            ),
-                          ),
-                        )
-                      : Container(
-                          width: 100,
-                          height: 100,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white30,
-                          ),
-                          child: const Icon(
-                            Icons.person,
-                            size: 60,
-                            color: Colors.white,
-                          ),
+                    child: Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: positionColor.withOpacity(0.2),
+                        border: Border.all(
+                          color: positionColor,
+                          width: 2,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: positionColor.withOpacity(0.5),
+                            blurRadius: 10,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        positionIcon,
+                        size: 60,
+                        color: positionColor,
+                      ),
+                    ),
                   ),
                 ),
                 
                 // Player name
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.8),
+                    color: Colors.black.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                      width: 1,
+                    ),
                   ),
                   child: Center(
                     child: Text(
@@ -236,6 +236,14 @@ class FifaPlayerCard extends StatelessWidget {
                         color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 3.0,
+                            color: Colors.black,
+                            offset: Offset(1, 1),
+                          ),
+                        ],
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -244,24 +252,27 @@ class FifaPlayerCard extends StatelessWidget {
                 
                 const SizedBox(height: 8),
                 
-                // Stats
+                // Stats - updated to match performance section names and icons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _buildStatItem(
-                      'PAC',
+                      'Pace',
                       stats.pace?.toInt() ?? 0,
-                      Icons.directions_run,
+                      Icons.speed,
+                      skillColors['Pace']!,
                     ),
                     _buildStatItem(
-                      'SHO',
+                      'Shooting',
                       stats.shooting?.toInt() ?? 0,
                       Icons.sports_soccer,
+                      skillColors['Shooting']!,
                     ),
                     _buildStatItem(
-                      'PAS',
+                      'Passing',
                       stats.passing?.toInt() ?? 0,
-                      Icons.swap_horiz,
+                      Icons.swap_horizontal_circle,
+                      skillColors['Passing']!,
                     ),
                   ],
                 ),
@@ -270,19 +281,22 @@ class FifaPlayerCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _buildStatItem(
-                      'DRI',
+                      'Dribbling',
                       stats.dribbling?.toInt() ?? 0,
-                      Icons.shuffle,
+                      Icons.directions_run,
+                      skillColors['Dribbling']!,
                     ),
                     _buildStatItem(
-                      'JUG',
+                      'Juggles',
                       stats.juggles?.toInt() ?? 0,
-                      Icons.sports_basketball,
+                      Icons.flutter_dash,
+                      skillColors['Juggles']!,
                     ),
                     _buildStatItem(
-                      'TCH',
+                      'First Touch',
                       stats.firstTouch?.toInt() ?? 0,
                       Icons.touch_app,
+                      skillColors['First Touch']!,
                     ),
                   ],
                 ),
@@ -290,53 +304,7 @@ class FifaPlayerCard extends StatelessWidget {
             ),
           ),
           
-          // FIFA Logo - top right
-          Positioned(
-            top: 8,
-            right: 8,
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.black.withOpacity(0.7),
-              ),
-              child: const Center(
-                child: Text(
-                  "FA",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          
-          // Country flag - bottom right
-          Positioned(
-            bottom: 60,
-            right: 8,
-            child: Container(
-              width: 30,
-              height: 20,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(3),
-                color: Colors.blue.withOpacity(0.2),
-              ),
-              child: Center(
-                child: Text(
-                  nationality,
-                  style: const TextStyle(
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          
-          // Special card indicator
+          // Special card indicator - kept this for the card types
           if (cardType != CardType.normal)
             Positioned(
               top: 60,
@@ -346,14 +314,6 @@ class FifaPlayerCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(3),
                   color: Colors.black.withOpacity(0.8),
-                ),
-                child: Text(
-                  _getCardTypeLabel(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
                 ),
               ),
             ),
@@ -383,21 +343,37 @@ class FifaPlayerCard extends StatelessWidget {
     }
   }
   
-  Widget _buildStatItem(String label, int value, IconData icon) {
+  Widget _buildStatItem(String label, int value, IconData icon, Color color) {
     return Column(
       children: [
         Icon(
           icon,
-          size: 20,
-          color: Colors.black.withOpacity(0.8),
+          size: 22,
+          color: color,
+          shadows: [
+            Shadow(
+              blurRadius: 3.0,
+              color: Colors.black.withOpacity(0.5),
+              offset: const Offset(1, 1),
+            ),
+          ],
         ),
         const SizedBox(height: 2),
         Text(
           value.toString(),
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 14,
+          style: TextStyle(
+            color: Colors.white,
+            backgroundColor: color.withOpacity(0.2),
+            fontSize: 16,
             fontWeight: FontWeight.bold,
+            shadows: [
+              Shadow(
+                blurRadius:
+                 3.0,
+                color: Colors.black.withOpacity(0.7),
+                offset: const Offset(1, 1),
+              ),
+            ],
           ),
         ),
       ],
