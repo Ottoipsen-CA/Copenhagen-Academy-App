@@ -50,24 +50,10 @@ class CustomNavigationDrawer extends StatelessWidget {
                   ),
                 _buildNavItem(
                   context,
-                  'challenges',
-                  'Challenges',
-                  Icons.emoji_events,
-                  () => _navigateTo(context, 'challenges'),
-                ),
-                _buildNavItem(
-                  context,
                   'achievements',
                   'League Table',
                   Icons.leaderboard,
                   () => _navigateTo(context, 'leagueTable'),
-                ),
-                _buildNavItem(
-                  context,
-                  'player_stats',
-                  'Player Stats',
-                  Icons.person,
-                  () => _navigateTo(context, 'player_stats'),
                 ),
                 const Divider(),
                 _buildNavItem(
@@ -76,13 +62,6 @@ class CustomNavigationDrawer extends StatelessWidget {
                   'My Profile',
                   Icons.person_outline,
                   () => _navigateTo(context, 'profile'),
-                ),
-                _buildNavItem(
-                  context,
-                  'settings',
-                  'Settings',
-                  Icons.settings_outlined,
-                  () => _navigateTo(context, 'settings'),
                 ),
                 _buildNavItem(
                   context,
@@ -247,33 +226,17 @@ class CustomNavigationDrawer extends StatelessWidget {
           Navigator.pushReplacementNamed(context, '/exercises');
         }
         break;
-      case 'challenges':
-        if (FeatureFlags.challengesEnabled) {
-          Navigator.pushReplacementNamed(context, '/challenges');
-        }
-        break;
       case 'leagueTable':
-        if (FeatureFlags.leagueTableEnabled) {
-          Navigator.pushReplacementNamed(context, '/league-table');
-        }
-        break;
-      case 'player_stats':
-        if (FeatureFlags.playerStatsEnabled) {
-          Navigator.pushReplacementNamed(context, '/player-stats');
-        }
+        Navigator.pushReplacementNamed(context, '/league-table');
         break;
       case 'profile':
         Navigator.pushReplacementNamed(context, '/profile');
         break;
-      case 'settings':
-        Navigator.pushReplacementNamed(context, '/settings');
-        break;
       case 'info':
-        Navigator.push(
-          context, 
-          MaterialPageRoute(builder: (context) => const InfoPage()),
-        );
+        Navigator.pushReplacementNamed(context, '/info');
         break;
+      default:
+        Navigator.pushReplacementNamed(context, '/dashboard');
     }
   }
 } 
