@@ -2,8 +2,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/auth.dart';
 import '../models/user.dart';
 import '../repositories/auth_repository.dart';
+import '../repositories/api_auth_repository.dart';
 import 'navigation_service.dart';
 import 'api_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class AuthService {
   final AuthRepository _authRepository;
@@ -74,13 +77,13 @@ class AuthService {
       final token = await _authRepository.login(request.email, request.password);
       
       if (token == null) {
-        print('Login failed, falling back to mock login');
-        await _createMockToken();
+        // Don't fall back to mock login
+        throw Exception('Login failed: Invalid credentials or server error');
       }
     } catch (e) {
       print('Error during login: $e');
-      print('Falling back to mock login');
-      await _createMockToken();
+      // Don't fall back to mock login
+      throw Exception('Login failed: $e');
     }
   }
 
@@ -95,12 +98,12 @@ class AuthService {
       if (user != null) {
         return user;
       }
-      // Return a mock user as fallback
-      return _createMockUser();
+      // Don't return a mock user as fallback
+      throw Exception('Failed to get current user: User data is null');
     } catch (e) {
       print('Error getting current user: $e');
-      // Return a mock user as fallback
-      return _createMockUser();
+      // Don't return a mock user as fallback
+      throw Exception('Failed to get current user: $e');
     }
   }
 
@@ -131,10 +134,47 @@ class AuthService {
 
   // Get current user ID - static helper for services
   static Future<String> getCurrentUserId() async {
-    const storage = FlutterSecureStorage();
-    // For simplicity, we'll use a mock ID
-    // In a real app, this would decode the JWT token or query the server
-    return '123'; // Mock user ID
+    // Create temporary secure storage and http client
+    final storage = FlutterSecureStorage();
+    final client = http.Client();
+    
+    try {
+      // Get token from secure storage
+      final token = await storage.read(key: 'access_token');
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+      
+      // Create headers with auth token
+      final headers = {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
+      
+      // Make a GET request to the /api/v2/auth/me endpoint
+      final response = await client.get(
+        Uri.parse('http://localhost:8000/api/v2/auth/me'),
+        headers: headers,
+      );
+      
+      if (response.statusCode == 200) {
+        final userData = json.decode(response.body);
+        if (userData != null && userData['id'] != null) {
+          // Return the actual user ID from the API
+          return userData['id'].toString();
+        }
+        throw Exception('User ID not found in API response');
+      } else {
+        throw Exception('Failed to get user data: HTTP ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error getting user ID: $e');
+      throw Exception('Failed to get user ID: $e');
+    } finally {
+      // Always close the client when done to prevent memory leaks
+      client.close();
+    }
   }
   
   // Helper method to create a mock token for development

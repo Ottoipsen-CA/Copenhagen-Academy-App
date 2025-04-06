@@ -69,7 +69,7 @@ class _TestInputScreenState extends State<TestInputScreen> {
       print('Submitting test results: ${test.toJson()}');
       
       // Submit test results to backend
-      final result = await PlayerTestsService.submitTestResults(test);
+      final result = await PlayerTestsService.submitTestResults(context, test);
       
       // Show success dialog with ratings
       if (mounted) {
@@ -111,7 +111,7 @@ class _TestInputScreenState extends State<TestInputScreen> {
                 _buildRatingRow('Shooting', result.shootingRating),
                 _buildRatingRow('Passing', result.passingRating),
                 _buildRatingRow('Dribbling', result.dribblingRating),
-                _buildRatingRow('Juggling', result.jugglingRating),
+                _buildRatingRow('Juggling', result.jugglesRating),
                 _buildRatingRow('First Touch', result.firstTouchRating),
               ],
             ),

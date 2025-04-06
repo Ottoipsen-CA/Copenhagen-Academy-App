@@ -19,16 +19,14 @@ class ApiService {
     baseUrl = 'http://localhost:8000';
     
     // In production, use the actual API URL
-    // baseUrl = 'https://api.footballacademy.dev/v1';
+    // baseUrl = 'https://api.footballacademy.dev';
   }
 
   // Reset the API service state (can be called on logout)
   void reset() {
-    // Cancel any ongoing requests
-    client.close();
-    
-    // Log the reset
-    print('API Service reset - client closed');
+    // Don't close the client as it may be needed for future requests
+    // Instead, log the reset operation
+    print('API Service reset - tokens and state cleared');
   }
 
   // Helper method to get headers with auth token
@@ -55,6 +53,14 @@ class ApiService {
     return headers;
   }
 
+  // Helper to ensure endpoint starts with a slash
+  String _formatEndpoint(String endpoint) {
+    if (!endpoint.startsWith('/')) {
+      return '/$endpoint';
+    }
+    return endpoint;
+  }
+
   // Generic GET request
   Future<dynamic> get(String endpoint, {bool withAuth = true}) async {
     if (_useMockData) {
@@ -63,10 +69,11 @@ class ApiService {
     
     try {
       final headers = await _getHeaders(withAuth: withAuth);
-      print('GET request to: $baseUrl$endpoint');
+      final formattedEndpoint = _formatEndpoint(endpoint);
+      print('GET request to: $baseUrl$formattedEndpoint');
       
       final response = await client.get(
-        Uri.parse('$baseUrl$endpoint'),
+        Uri.parse('$baseUrl$formattedEndpoint'),
         headers: headers,
       );
       
@@ -76,13 +83,13 @@ class ApiService {
         return json.decode(response.body);
       } else {
         print('GET request failed with status: ${response.statusCode}');
-        // Fall back to mock data if server request fails
-        return _getMockData(endpoint);
+        // Don't fall back to mock data - throw an error instead
+        throw Exception('GET request failed with status: ${response.statusCode}');
       }
     } catch (e) {
       print('Error in GET request: $e');
-      // Fall back to mock data if server request fails
-      return _getMockData(endpoint);
+      // Don't fall back to mock data - rethrow the error
+      rethrow;
     }
   }
 
@@ -98,7 +105,8 @@ class ApiService {
     
     try {
       final headers = await _getHeaders(withAuth: withAuth);
-      print('POST Request to: $baseUrl$endpoint');
+      final formattedEndpoint = _formatEndpoint(endpoint);
+      print('POST Request to: $baseUrl$formattedEndpoint');
       print('Headers: $headers');
       print('Body: ${json.encode(data)}');
       
@@ -110,7 +118,7 @@ class ApiService {
       }
       
       final response = await client.post(
-        Uri.parse('$baseUrl$endpoint'),
+        Uri.parse('$baseUrl$formattedEndpoint'),
         headers: headers,
         body: json.encode(data),
       );
@@ -145,8 +153,9 @@ class ApiService {
     
     try {
       final headers = await _getHeaders(withAuth: withAuth);
+      final formattedEndpoint = _formatEndpoint(endpoint);
       final response = await client.put(
-        Uri.parse('$baseUrl$endpoint'),
+        Uri.parse('$baseUrl$formattedEndpoint'),
         headers: headers,
         body: json.encode(data),
       );
@@ -155,13 +164,13 @@ class ApiService {
         return json.decode(response.body);
       } else {
         print('PUT request failed with status: ${response.statusCode}');
-        // Fall back to mock data if server request fails
-        return _getMockDataForPut(endpoint, data);
+        // Don't fall back to mock data - throw an error instead
+        throw Exception('PUT request failed with status: ${response.statusCode}');
       }
     } catch (e) {
       print('Error in PUT request: $e');
-      // Fall back to mock data if server request fails
-      return _getMockDataForPut(endpoint, data);
+      // Don't fall back to mock data - rethrow the error
+      rethrow;
     }
   }
 
@@ -173,8 +182,9 @@ class ApiService {
     
     try {
       final headers = await _getHeaders(withAuth: withAuth);
+      final formattedEndpoint = _formatEndpoint(endpoint);
       final response = await client.delete(
-        Uri.parse('$baseUrl$endpoint'),
+        Uri.parse('$baseUrl$formattedEndpoint'),
         headers: headers,
       );
 
@@ -183,13 +193,13 @@ class ApiService {
         return json.decode(response.body);
       } else {
         print('DELETE request failed with status: ${response.statusCode}');
-        // Fall back to mock data if server request fails
-        return _getMockDataForDelete(endpoint);
+        // Don't fall back to mock data - throw an error instead
+        throw Exception('DELETE request failed with status: ${response.statusCode}');
       }
     } catch (e) {
       print('Error in DELETE request: $e');
-      // Fall back to mock data if server request fails
-      return _getMockDataForDelete(endpoint);
+      // Don't fall back to mock data - rethrow the error
+      rethrow;
     }
   }
   
@@ -197,7 +207,7 @@ class ApiService {
   dynamic _getMockData(String endpoint) {
     print('Using mock data for GET: $endpoint');
     
-    if (endpoint == '/users/me') {
+    if (endpoint == '/api/v2/auth/me' || endpoint == '/users/me') {
       return {
         'id': 123,
         'email': 'demo@example.com',
@@ -212,6 +222,23 @@ class ApiService {
     
     if (endpoint.contains('/challenges')) {
       return _getMockChallenges();
+    }
+    
+    if (endpoint.contains('/skill-tests/player-stats')) {
+      return {
+        'pace': 85.0,
+        'shooting': 84.0,
+        'passing': 78.0,
+        'dribbling': 88.0,
+        'juggles': 75.0,
+        'first_touch': 82.0,
+        'overall_rating': 83.0,
+        'last_updated': DateTime.now().toIso8601String(),
+      };
+    }
+    
+    if (endpoint.contains('/skill-tests/player-tests')) {
+      return [];
     }
     
     return {};

@@ -1,65 +1,75 @@
 class PlayerStats {
-  final int? id;
-  final String playerId;
-  final double pace;
-  final double shooting;
-  final double passing;
-  final double dribbling;
-  final double juggles;
-  final double first_touch;
-  final double overallRating;
-  final double? leadership;
-  final double? improvementRate;
+  final double pace;        // Derived from sprint test
+  final double shooting;    // Derived from shooting test
+  final double passing;     // Derived from passing test
+  final double dribbling;   // Derived from dribbling test
+  final double juggles;     // Derived from juggling test
+  final double firstTouch;  // Derived from first touch test, renamed to camelCase
+  
+  // Other stats that might be useful
+  final double? overallRating;
   final DateTime? lastUpdated;
+  final int? lastTestId;
 
   PlayerStats({
-    this.id,
-    required this.playerId,
-    this.pace = 80,
-    this.shooting = 79,
-    this.passing = 76,
-    this.dribbling = 81,
-    this.juggles = 65,
-    this.first_touch = 72,
-    this.overallRating = 83,
-    this.leadership,
-    this.improvementRate,
+    required this.pace,
+    required this.shooting,
+    required this.passing,
+    required this.dribbling,
+    required this.juggles,
+    required this.firstTouch,
+    this.overallRating,
     this.lastUpdated,
+    this.lastTestId,
   });
 
   factory PlayerStats.fromJson(Map<String, dynamic> json) {
     return PlayerStats(
-      id: json['id'],
-      playerId: json['player_id'].toString(),
-      pace: json['pace']?.toDouble() ?? 80,
-      shooting: json['shooting']?.toDouble() ?? 79,
-      passing: json['passing']?.toDouble() ?? 76,
-      dribbling: json['dribbling']?.toDouble() ?? 81,
-      juggles: json['juggles']?.toDouble() ?? 65,
-      first_touch: json['first_touch']?.toDouble() ?? 72,
-      overallRating: json['overall_rating']?.toDouble() ?? 83,
-      leadership: json['leadership']?.toDouble(),
-      improvementRate: json['improvement_rate']?.toDouble(),
-      lastUpdated: json['last_updated'] != null
-          ? DateTime.parse(json['last_updated'])
+      pace: (json['pace'] ?? 0).toDouble(),
+      shooting: (json['shooting'] ?? 0).toDouble(),
+      passing: (json['passing'] ?? 0).toDouble(),
+      dribbling: (json['dribbling'] ?? 0).toDouble(),
+      juggles: (json['juggles'] ?? 0).toDouble(),
+      firstTouch: (json['first_touch'] ?? 0).toDouble(),
+      overallRating: json['overall_rating'] != null ? (json['overall_rating']).toDouble() : null,
+      lastUpdated: json['last_updated'] != null 
+          ? DateTime.parse(json['last_updated']) 
           : null,
+      lastTestId: json['last_test_id'],
+    );
+  }
+  
+  // Create an empty stats object with zeros
+  factory PlayerStats.empty() {
+    return PlayerStats(
+      pace: 0,
+      shooting: 0,
+      passing: 0,
+      dribbling: 0,
+      juggles: 0,
+      firstTouch: 0,
     );
   }
 
+  // Convert int fields to double for use in charts/radar
+  double get paceAsDouble => pace;
+  double get shootingAsDouble => shooting;
+  double get passingAsDouble => passing;
+  double get dribblingAsDouble => dribbling;
+  double get jugglesAsDouble => juggles;
+  double get firstTouchAsDouble => firstTouch;
+
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'player_id': playerId,
       'pace': pace,
       'shooting': shooting,
       'passing': passing,
       'dribbling': dribbling,
       'juggles': juggles,
-      'first_touch': first_touch,
+      'first_touch': firstTouch,
       'overall_rating': overallRating,
-      'leadership': leadership,
-      'improvement_rate': improvementRate,
       'last_updated': lastUpdated?.toIso8601String(),
+      'last_test_id': lastTestId,
     };
   }
 } 

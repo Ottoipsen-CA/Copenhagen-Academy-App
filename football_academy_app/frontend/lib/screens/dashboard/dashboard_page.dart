@@ -61,10 +61,25 @@ class _DashboardPageState extends State<DashboardPage> {
       // Load user data
       final user = await authService.getCurrentUser();
       
-      // Load player stats from the service
-      final playerStats = await PlayerStatsService.getPlayerStats();
-      if (playerStats == null) {
-        throw Exception("Failed to load player stats");
+      // Load player stats from the service only if the feature is enabled
+      PlayerStats? playerStats;
+      if (FeatureFlags.playerStatsEnabled) {
+        playerStats = await PlayerStatsService.getPlayerStats();
+        if (playerStats == null) {
+          throw Exception("Failed to load player stats");
+        }
+      } else {
+        // Use mock data when feature is disabled
+        playerStats = PlayerStats(
+          pace: 85.0,
+          shooting: 84.0,
+          passing: 78.0,
+          dribbling: 88.0,
+          juggles: 75.0,
+          firstTouch: 82.0,
+          overallRating: 83.0,
+          lastUpdated: DateTime.now(),
+        );
       }
       
       // Initialize challenges
@@ -199,7 +214,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   playerName: _user!.fullName,
                   position: _user!.position ?? 'ST',
                   stats: _playerStats!,
-                  rating: _playerStats!.overallRating.toInt(),
+                  rating: _playerStats?.overallRating?.toInt() ?? 0,
                   nationality: '🇦🇺', // Australian flag as example
                   playerImageUrl: 'https://raw.githubusercontent.com/ottoipsen/football_academy_assets/main/player_photos/player_photo.jpg',
                   cardType: _getPlayerCardType(),
@@ -850,7 +865,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       SizedBox(
                         height: 250,
                         child: PlayerStatsRadarChart(
-                          stats: _playerStats!,
+                          playerStats: _playerStats,
                           labelColors: const {
                             'PACE': Color(0xFF02D39A),
                             'SHOOTING': Color(0xFFFFD700),
@@ -1129,7 +1144,7 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         SkillProgressBar(
           skillName: 'First Touch',
-          currentValue: _playerStats!.first_touch.toInt(),
+          currentValue: _playerStats!.firstTouch?.toInt() ?? 0,
           progressColor: skillColors['Physical']!,
         ),
       ],
@@ -1322,7 +1337,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   // Determine player card type based on various criteria
   CardType _getPlayerCardType() {
-    final rating = _playerStats!.overallRating.toInt();
+    final rating = _playerStats?.overallRating?.toInt() ?? 0;
     
     // Icon card for exceptional players (95+ rating)
     if (rating >= 95) {
@@ -1340,25 +1355,18 @@ class _DashboardPageState extends State<DashboardPage> {
     
     // Record breaker for players who broke test records
     // For demo purposes, let's check if any stats are exceptionally high
-    if (_playerStats!.pace >= 95 || 
-        _playerStats!.shooting >= 95 || 
-        _playerStats!.passing >= 95 || 
-        _playerStats!.dribbling >= 95 || 
-        _playerStats!.juggles >= 95 || 
-        _playerStats!.first_touch >= 95) {
+    if ((_playerStats?.pace ?? 0) >= 95 || 
+        (_playerStats?.shooting ?? 0) >= 95 || 
+        (_playerStats?.passing ?? 0) >= 95 || 
+        (_playerStats?.dribbling ?? 0) >= 95 || 
+        (_playerStats?.juggles ?? 0) >= 95 || 
+        (_playerStats?.firstTouch ?? 0) >= 95) {
       return CardType.record_breaker;
     }
     
-    // Hero card for team captains or consistent performers
-    // For demo, let's use team captain flag or high leadership score
-    if (_user!.isCaptain == true || (_playerStats!.leadership != null && _playerStats!.leadership! >= 90)) {
+    // Hero card for team captains
+    if (_user?.isCaptain == true) {
       return CardType.hero;
-    }
-    
-    // Ones to Watch for players showing consistent growth
-    // For demo, we'll check if improvement rate field is high (if it exists)
-    if (_playerStats!.improvementRate != null && _playerStats!.improvementRate! >= 8) {
-      return CardType.ones_to_watch;
     }
     
     // Team of the Week for high-rated players (85+)
@@ -1379,7 +1387,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _checkForRecordBreakerStatus() async {
     try {
       // Get player tests from service
-      final tests = await PlayerTestsService.getPlayerTests();
+      final tests = await PlayerTestsService.getPlayerTests(context);
       
       // Check each test for record breaking scores
       for (final test in tests) {

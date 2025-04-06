@@ -1,25 +1,127 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/player_stats.dart';
+import '../models/player_test.dart';
+import '../services/player_tests_service.dart';
 
-class PlayerStatsRadarChart extends StatelessWidget {
-  final PlayerStats stats;
+class PlayerStatsRadarChart extends StatefulWidget {
   final Map<String, Color> labelColors;
+  final PlayerStats? playerStats;
+  final PlayerTest? playerTest;
+  final bool fetchData;
 
   const PlayerStatsRadarChart({
     super.key,
-    required this.stats,
     this.labelColors = const {},
+    this.playerStats,
+    this.playerTest,
+    this.fetchData = true,
   });
 
   @override
+  State<PlayerStatsRadarChart> createState() => _PlayerStatsRadarChartState();
+}
+
+class _PlayerStatsRadarChartState extends State<PlayerStatsRadarChart> {
+  PlayerStats? _stats;
+  bool _isLoading = true;
+  
+  @override
+  void initState() {
+    super.initState();
+    
+    // If stats are provided directly, use them
+    if (widget.playerStats != null) {
+      _stats = widget.playerStats;
+      _isLoading = false;
+    } 
+    // If a test is provided, convert to stats
+    else if (widget.playerTest != null) {
+      _stats = _convertTestToStats(widget.playerTest!);
+      _isLoading = false;
+    }
+    // Otherwise fetch stats if requested
+    else if (widget.fetchData) {
+      // Initialize the service
+      PlayerTestsService.initialize(context);
+      _loadStats();
+    } else {
+      // No data source provided and not fetching
+      _stats = PlayerStats.empty();
+      _isLoading = false;
+    }
+  }
+  
+  // Convert a PlayerTest to PlayerStats for the radar chart
+  PlayerStats _convertTestToStats(PlayerTest test) {
+    return PlayerStats(
+      pace: (test.paceRating ?? 50).toDouble(),
+      shooting: (test.shootingRating ?? 50).toDouble(),
+      passing: (test.passingRating ?? 50).toDouble(),
+      dribbling: (test.dribblingRating ?? 50).toDouble(),
+      juggles: (test.jugglesRating ?? 50).toDouble(),
+      firstTouch: (test.firstTouchRating ?? 50).toDouble(),
+      overallRating: test.overallRating != null ? test.overallRating!.toDouble() : test.getOverallRating().toDouble(),
+      lastUpdated: test.testDate,
+      lastTestId: test.id,
+    );
+  }
+  
+  Future<void> _loadStats() async {
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      final statsData = await PlayerTestsService.getPlayerStats(context);
+      if (!mounted) return;
+      
+      if (statsData != null) {
+        final stats = PlayerStats.fromJson(statsData);
+        
+        setState(() {
+          _stats = stats;
+          _isLoading = false;
+        });
+      } else {
+        // Handle the case when statsData is null
+        setState(() {
+          _stats = PlayerStats.empty();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      
+      print('Error loading player stats: $e');
+      setState(() {
+        _stats = PlayerStats.empty(); // Use empty stats when error occurs
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const SizedBox(
+        height: 200,
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+    
+    final stats = _stats ?? PlayerStats.empty();
+    
     return CustomPaint(
       size: const Size(double.infinity, 200),
       painter: RadarChartPainter(
         stats: stats,
         primaryColor: Theme.of(context).primaryColor,
-        labelColors: labelColors,
+        labelColors: widget.labelColors,
       ),
     );
   }
@@ -43,12 +145,12 @@ class RadarChartPainter extends CustomPainter {
     
     // Calculate values
     final values = <double>[
-      stats.pace / 100,
-      stats.shooting / 100,
-      stats.passing / 100,
-      stats.dribbling / 100,
-      stats.juggles / 100,
-      stats.first_touch / 100,
+      (stats.pace ?? 0) / 100,
+      (stats.shooting ?? 0) / 100,
+      (stats.passing ?? 0) / 100,
+      (stats.dribbling ?? 0) / 100,
+      (stats.juggles ?? 0) / 100,
+      (stats.firstTouch ?? 0) / 100,
     ];
     
     // Calculate angles

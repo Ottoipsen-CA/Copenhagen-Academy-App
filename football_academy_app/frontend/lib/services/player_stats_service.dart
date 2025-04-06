@@ -7,6 +7,8 @@ import 'auth_service.dart';
 import 'api_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class PlayerStatsService {
   static const String _playerStatsKey = 'player_stats';
@@ -22,66 +24,53 @@ class PlayerStatsService {
   static const double _maxStartingRating = 65.0;  // Initial cap for new players
   static const double _maxIntermediateRating = 85.0;  // Cap after completing 10 category challenges
   
-  // Load player stats from API or local storage
+  // Get player stats from the API
   static Future<PlayerStats?> getPlayerStats() async {
-    // Try to get stats from the backend API
     try {
-      // Create API client
+      // Get current user ID
+      final userId = await AuthService.getCurrentUserId();
+      
+      // Create API service with required parameters
       final client = http.Client();
       final secureStorage = FlutterSecureStorage();
       final apiService = ApiService(client: client, secureStorage: secureStorage);
       
-      // Get user info to get current user ID
-      final userJson = await apiService.get('/users/me');
-      final userId = userJson['id'];
+      // Fetch player stats from the API
+      final response = await apiService.get('/api/v2/skill-tests/player-stats/$userId');
       
-      // Force clear the cache to ensure we get the most up-to-date stats
-      print('Fetching fresh player stats for user $userId from API');
-      
-      // Get player stats from API
-      final statsJson = await apiService.get('/player-stats/$userId?ts=${DateTime.now().millisecondsSinceEpoch}');
-      
-      if (statsJson != null) {
-        print('Successfully fetched player stats: $statsJson');
-        
-        // Convert backend stats format to our model
-        final stats = PlayerStats(
-          id: statsJson['id'],
-          playerId: statsJson['player_id'].toString(),
-          pace: statsJson['pace'].toDouble(),
-          shooting: statsJson['shooting'].toDouble(),
-          passing: statsJson['passing'].toDouble(),
-          dribbling: statsJson['dribbling'].toDouble(),
-          juggles: statsJson['juggles'].toDouble(),
-          first_touch: statsJson['first_touch'].toDouble(),
-          overallRating: statsJson['overall_rating'].toDouble(),
-          lastUpdated: DateTime.parse(statsJson['last_updated']),
-        );
-        
-        // Save to local storage as a backup
-        await savePlayerStats(stats);
-        
-        return stats;
+      if (response is Map<String, dynamic>) {
+        return PlayerStats.fromJson(response);
       }
+      
+      return null;
     } catch (e) {
-      print('Error fetching player stats from API: $e');
-      print('Falling back to local storage');
+      print('Error fetching player stats: $e');
+      return null;
     }
-    
-    // If API fetch failed, try local storage
-    final prefs = await SharedPreferences.getInstance();
-    final statsJson = prefs.getString(_playerStatsKey);
-    
-    if (statsJson != null) {
-      try {
-        return PlayerStats.fromJson(jsonDecode(statsJson));
-      } catch (e) {
-        print('Error loading player stats from local storage: $e');
-      }
+  }
+  
+  // Update player stats (for future use)
+  static Future<bool> updatePlayerStats(BuildContext context, PlayerStats stats) async {
+    try {
+      // Get current user ID
+      final userId = await AuthService.getCurrentUserId();
+      
+      // Create API service with required parameters
+      final client = http.Client();
+      final secureStorage = FlutterSecureStorage();
+      final apiService = ApiService(client: client, secureStorage: secureStorage);
+      
+      // Create request payload
+      final payload = stats.toJson();
+      
+      // Send update request
+      await apiService.put('/api/v2/skill-tests/player-stats/$userId', payload);
+      
+      return true;
+    } catch (e) {
+      print('Error updating player stats: $e');
+      return false;
     }
-    
-    // If no stats exist, create default stats
-    return await _createDefaultStats();
   }
   
   // Save player stats to local storage
@@ -95,13 +84,12 @@ class PlayerStatsService {
     final currentUserId = await AuthService.getCurrentUserId();
     
     final stats = PlayerStats(
-      playerId: currentUserId,
       pace: 80.0,
       shooting: 79.0,
       passing: 76.0,
       dribbling: 81.0,
       juggles: 65.0,
-      first_touch: 72.0,
+      firstTouch: 72.0,
       overallRating: 83.0,
       lastUpdated: DateTime.now(),
     );
@@ -195,8 +183,8 @@ class PlayerStatsService {
     }
     
     // Get current stats
-    final stats = await getPlayerStats();
-    if (stats == null) {
+    final currentStats = await getPlayerStats();
+    if (currentStats == null) {
       throw Exception('Player stats not found.');
     }
     
@@ -207,237 +195,84 @@ class PlayerStatsService {
     // Get rating cap for this category
     final maxRatingCap = await _getMaxRatingCap(challenge.category);
     
-    // Apply rating increment to appropriate category
-    // and ensure we don't exceed the category's rating cap
-    PlayerStats updatedStats;
+    // Create modifiable copies of the current stats values
+    double pace = currentStats.pace;
+    double shooting = currentStats.shooting;
+    double passing = currentStats.passing;
+    double dribbling = currentStats.dribbling;
+    double juggles = currentStats.juggles;
+    double firstTouch = currentStats.firstTouch;
     
+    // Apply rating increment to appropriate category based on challenge type
     switch (challenge.category) {
       case ChallengeCategory.passing:
-        final newPassingRating = math.min(stats.passing + baseRatingIncrement, maxRatingCap);
-        updatedStats = PlayerStats(
-          id: stats.id,
-          playerId: stats.playerId,
-          pace: stats.pace,
-          shooting: stats.shooting,
-          passing: newPassingRating,
-          dribbling: stats.dribbling,
-          juggles: stats.juggles,
-          first_touch: stats.first_touch,
-          lastUpdated: DateTime.now(),
-          // Recalculate overall rating
-          overallRating: _calculateOverallRating(
-            stats.pace, 
-            stats.shooting, 
-            newPassingRating,
-            stats.dribbling,
-            stats.juggles,
-            stats.first_touch
-          ),
-        );
+        passing = math.min(passing + baseRatingIncrement, maxRatingCap);
         break;
         
       case ChallengeCategory.shooting:
-        final newShootingRating = math.min(stats.shooting + baseRatingIncrement, maxRatingCap);
-        updatedStats = PlayerStats(
-          id: stats.id,
-          playerId: stats.playerId,
-          pace: stats.pace,
-          shooting: newShootingRating,
-          passing: stats.passing,
-          dribbling: stats.dribbling,
-          juggles: stats.juggles,
-          first_touch: stats.first_touch,
-          lastUpdated: DateTime.now(),
-          overallRating: _calculateOverallRating(
-            stats.pace, 
-            newShootingRating, 
-            stats.passing,
-            stats.dribbling,
-            stats.juggles,
-            stats.first_touch
-          ),
-        );
+        shooting = math.min(shooting + baseRatingIncrement, maxRatingCap);
         break;
         
       case ChallengeCategory.dribbling:
-        final newDribblingRating = math.min(stats.dribbling + baseRatingIncrement, maxRatingCap);
-        updatedStats = PlayerStats(
-          id: stats.id,
-          playerId: stats.playerId,
-          pace: stats.pace,
-          shooting: stats.shooting,
-          passing: stats.passing,
-          dribbling: newDribblingRating,
-          juggles: stats.juggles,
-          first_touch: stats.first_touch,
-          lastUpdated: DateTime.now(),
-          overallRating: _calculateOverallRating(
-            stats.pace, 
-            stats.shooting, 
-            stats.passing,
-            newDribblingRating,
-            stats.juggles,
-            stats.first_touch
-          ),
-        );
+        dribbling = math.min(dribbling + baseRatingIncrement, maxRatingCap);
         break;
         
       case ChallengeCategory.fitness:
-        final newPaceRating = math.min(stats.pace + baseRatingIncrement * 0.7, maxRatingCap);
-        final newFirst_touchRating = math.min(stats.first_touch + baseRatingIncrement * 0.3, maxRatingCap);
-        updatedStats = PlayerStats(
-          id: stats.id,
-          playerId: stats.playerId,
-          pace: newPaceRating,
-          shooting: stats.shooting,
-          passing: stats.passing,
-          dribbling: stats.dribbling,
-          juggles: stats.juggles,
-          first_touch: newFirst_touchRating,
-          lastUpdated: DateTime.now(),
-          overallRating: _calculateOverallRating(
-            newPaceRating, 
-            stats.shooting, 
-            stats.passing,
-            stats.dribbling,
-            stats.juggles,
-            newFirst_touchRating
-          ),
-        );
+        pace = math.min(pace + baseRatingIncrement * 0.7, maxRatingCap);
+        firstTouch = math.min(firstTouch + baseRatingIncrement * 0.3, maxRatingCap);
         break;
         
       case ChallengeCategory.defense:
-        final newDefenseRating = math.min(stats.juggles + baseRatingIncrement, maxRatingCap);
-        updatedStats = PlayerStats(
-          id: stats.id,
-          playerId: stats.playerId,
-          pace: stats.pace,
-          shooting: stats.shooting,
-          passing: stats.passing,
-          dribbling: stats.dribbling,
-          juggles: newDefenseRating,
-          first_touch: stats.first_touch,
-          lastUpdated: DateTime.now(),
-          overallRating: _calculateOverallRating(
-            stats.pace, 
-            stats.shooting, 
-            stats.passing,
-            stats.dribbling,
-            newDefenseRating,
-            stats.first_touch
-          ),
-        );
+        juggles = math.min(juggles + baseRatingIncrement, maxRatingCap);
         break;
         
       case ChallengeCategory.goalkeeping:
-        // Goalkeeping challenges primarily improve defense and reactions
-        final newDefenseRating = math.min(stats.juggles + baseRatingIncrement * 0.6, maxRatingCap);
-        final newFirst_touchRating = math.min(stats.first_touch + baseRatingIncrement * 0.4, maxRatingCap);
-        updatedStats = PlayerStats(
-          id: stats.id,
-          playerId: stats.playerId,
-          pace: stats.pace,
-          shooting: stats.shooting,
-          passing: stats.passing,
-          dribbling: stats.dribbling,
-          juggles: newDefenseRating,
-          first_touch: newFirst_touchRating,
-          lastUpdated: DateTime.now(),
-          overallRating: _calculateOverallRating(
-            stats.pace, 
-            stats.shooting, 
-            stats.passing,
-            stats.dribbling,
-            newDefenseRating,
-            newFirst_touchRating
-          ),
-        );
+        juggles = math.min(juggles + baseRatingIncrement * 0.6, maxRatingCap);
+        firstTouch = math.min(firstTouch + baseRatingIncrement * 0.4, maxRatingCap);
         break;
         
       case ChallengeCategory.tactical:
-        // Tactical challenges improve multiple attributes slightly
-        final newPassingRating = math.min(stats.passing + baseRatingIncrement * 0.3, maxRatingCap);
-        final newDefenseRating = math.min(stats.juggles + baseRatingIncrement * 0.3, maxRatingCap);
-        final newDribblingRating = math.min(stats.dribbling + baseRatingIncrement * 0.2, maxRatingCap);
-        final newShootingRating = math.min(stats.shooting + baseRatingIncrement * 0.2, maxRatingCap);
-        updatedStats = PlayerStats(
-          id: stats.id,
-          playerId: stats.playerId,
-          pace: stats.pace,
-          shooting: newShootingRating,
-          passing: newPassingRating,
-          dribbling: newDribblingRating,
-          juggles: newDefenseRating,
-          first_touch: stats.first_touch,
-          lastUpdated: DateTime.now(),
-          overallRating: _calculateOverallRating(
-            stats.pace, 
-            newShootingRating, 
-            newPassingRating,
-            newDribblingRating,
-            newDefenseRating,
-            stats.first_touch
-          ),
-        );
+        passing = math.min(passing + baseRatingIncrement * 0.3, maxRatingCap);
+        juggles = math.min(juggles + baseRatingIncrement * 0.3, maxRatingCap);
+        dribbling = math.min(dribbling + baseRatingIncrement * 0.2, maxRatingCap);
+        shooting = math.min(shooting + baseRatingIncrement * 0.2, maxRatingCap);
         break;
         
       case ChallengeCategory.weekly:
         // Weekly challenges provide small improvements to all stats
         final smallIncrement = baseRatingIncrement * 0.15;
-        final newPaceRating = math.min(stats.pace + smallIncrement, maxRatingCap);
-        final newShootingRating = math.min(stats.shooting + smallIncrement, maxRatingCap);
-        final newPassingRating = math.min(stats.passing + smallIncrement, maxRatingCap);
-        final newDribblingRating = math.min(stats.dribbling + smallIncrement, maxRatingCap);
-        final newDefenseRating = math.min(stats.juggles + smallIncrement, maxRatingCap);
-        final newFirst_touchRating = math.min(stats.first_touch + smallIncrement, maxRatingCap);
-        
-        updatedStats = PlayerStats(
-          id: stats.id,
-          playerId: stats.playerId,
-          pace: newPaceRating,
-          shooting: newShootingRating,
-          passing: newPassingRating,
-          dribbling: newDribblingRating,
-          juggles: newDefenseRating,
-          first_touch: newFirst_touchRating,
-          lastUpdated: DateTime.now(),
-          overallRating: _calculateOverallRating(
-            newPaceRating, 
-            newShootingRating, 
-            newPassingRating,
-            newDribblingRating,
-            newDefenseRating,
-            newFirst_touchRating
-          ),
-        );
+        pace = math.min(pace + smallIncrement, maxRatingCap);
+        shooting = math.min(shooting + smallIncrement, maxRatingCap);
+        passing = math.min(passing + smallIncrement, maxRatingCap);
+        dribbling = math.min(dribbling + smallIncrement, maxRatingCap);
+        juggles = math.min(juggles + smallIncrement, maxRatingCap);
+        firstTouch = math.min(firstTouch + smallIncrement, maxRatingCap);
         break;
         
       case ChallengeCategory.wallTouches:
         // Wall touches challenges improve both dribbling and passing
-        final newDribblingRating = math.min(stats.dribbling + baseRatingIncrement, maxRatingCap);
-        final newPassingRating = math.min(stats.passing + (baseRatingIncrement * 0.5), maxRatingCap);
-        
-        updatedStats = PlayerStats(
-          id: stats.id,
-          playerId: stats.playerId,
-          pace: stats.pace,
-          shooting: stats.shooting,
-          passing: newPassingRating,
-          dribbling: newDribblingRating,
-          juggles: stats.juggles,
-          first_touch: stats.first_touch,
-          lastUpdated: DateTime.now(),
-          overallRating: _calculateOverallRating(
-            stats.pace, 
-            stats.shooting, 
-            newPassingRating,
-            newDribblingRating,
-            stats.juggles,
-            stats.first_touch
-          ),
-        );
+        dribbling = math.min(dribbling + baseRatingIncrement, maxRatingCap);
+        passing = math.min(passing + (baseRatingIncrement * 0.5), maxRatingCap);
         break;
     }
+    
+    // Calculate the new overall rating
+    final newOverallRating = _calculateOverallRating(
+      pace, shooting, passing, dribbling, juggles, firstTouch
+    );
+    
+    // Create updated stats object
+    final updatedStats = PlayerStats(
+      pace: pace,
+      shooting: shooting,
+      passing: passing,
+      dribbling: dribbling,
+      juggles: juggles,
+      firstTouch: firstTouch,
+      overallRating: newOverallRating,
+      lastUpdated: DateTime.now(),
+      lastTestId: currentStats.lastTestId,
+    );
     
     // Save updated stats
     await savePlayerStats(updatedStats);
@@ -446,16 +281,15 @@ class PlayerStatsService {
   }
   
   // Calculate overall rating based on individual stats
-  // Different weightings for different positions could be implemented here
   static double _calculateOverallRating(
     double pace, 
     double shooting, 
     double passing, 
     double dribbling, 
     double juggles, 
-    double first_touch
+    double firstTouch
   ) {
     // Simple average for now
-    return (pace + shooting + passing + dribbling + juggles + first_touch) / 6.0;
+    return (pace + shooting + passing + dribbling + juggles + firstTouch) / 6.0;
   }
 } 

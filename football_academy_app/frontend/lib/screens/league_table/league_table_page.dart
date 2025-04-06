@@ -279,7 +279,7 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
-                            _ratingCell(entry.stats.overallRating.toInt()),
+                            _ratingCell(entry.stats.overallRating?.toInt() ?? 0),
                           ],
                         ),
                     ],
@@ -381,10 +381,10 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
                         playerName: player.user.fullName,
                         position: player.user.position ?? 'ST',
                         stats: player.stats,
-                        rating: player.stats.overallRating.toInt(),
+                        rating: player.stats.overallRating?.toInt() ?? 0,
                         nationality: '🇦🇺', // Default flag
                         playerImageUrl: 'https://raw.githubusercontent.com/ottoipsen/football_academy_assets/main/player_photos/player_photo.jpg',
-                        cardType: _getCardType(player.stats.overallRating.toInt()),
+                        cardType: _getCardType(player.stats.overallRating?.toInt() ?? 0),
                       ),
                     );
                   },

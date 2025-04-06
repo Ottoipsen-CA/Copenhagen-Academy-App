@@ -20,26 +20,30 @@ class _TestHistoryScreenState extends State<TestHistoryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTests();
+    _loadPlayerTests();
   }
   
-  Future<void> _loadTests() async {
+  Future<void> _loadPlayerTests() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
     
     try {
-      final tests = await PlayerTestsService.getPlayerTests();
-      setState(() {
-        _tests = tests;
-        _isLoading = false;
-      });
+      final tests = await PlayerTestsService.getPlayerTests(context);
+      
+      if (mounted) {
+        setState(() {
+          _tests = tests;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Failed to load test history: ${e.toString()}';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
   
@@ -59,7 +63,7 @@ class _TestHistoryScreenState extends State<TestHistoryScreen> {
                 MaterialPageRoute(
                   builder: (context) => const TestInputScreen(),
                 ),
-              ).then((_) => _loadTests());
+              ).then((_) => _loadPlayerTests());
             },
           ),
         ],
@@ -98,7 +102,7 @@ class _TestHistoryScreenState extends State<TestHistoryScreen> {
                           ),
                           const SizedBox(height: 24),
                           ElevatedButton(
-                            onPressed: _loadTests,
+                            onPressed: _loadPlayerTests,
                             child: const Text('Retry'),
                           ),
                         ],
@@ -147,7 +151,7 @@ class _TestHistoryScreenState extends State<TestHistoryScreen> {
                   MaterialPageRoute(
                     builder: (context) => const TestInputScreen(),
                   ),
-                ).then((_) => _loadTests());
+                ).then((_) => _loadPlayerTests());
               },
               icon: const Icon(Icons.add),
               label: const Text('RECORD YOUR FIRST TEST'),
@@ -165,7 +169,7 @@ class _TestHistoryScreenState extends State<TestHistoryScreen> {
   
   Widget _buildTestsList() {
     return RefreshIndicator(
-      onRefresh: _loadTests,
+      onRefresh: _loadPlayerTests,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _tests.length,
@@ -221,7 +225,7 @@ class _TestHistoryScreenState extends State<TestHistoryScreen> {
                       _buildTestResultRow('Sprint', test.sprintTest, test.paceRating, isLowerBetter: true),
                       _buildTestResultRow('First Touch', test.firstTouchTest, test.firstTouchRating),
                       _buildTestResultRow('Shooting', test.shootingTest, test.shootingRating),
-                      _buildTestResultRow('Juggling', test.jugglingTest, test.jugglingRating),
+                      _buildTestResultRow('Juggling', test.jugglingTest, test.jugglesRating),
                       _buildTestResultRow('Dribbling', test.dribblingTest, test.dribblingRating, isLowerBetter: true),
                     ],
                   ),
@@ -277,18 +281,21 @@ class _TestHistoryScreenState extends State<TestHistoryScreen> {
   }
   
   int _calculateOverall(PlayerTest test) {
-    final ratings = [
-      test.paceRating,
-      test.shootingRating,
-      test.passingRating,
-      test.dribblingRating,
-      test.jugglingRating,
-      test.firstTouchRating,
-    ].where((r) => r != null).map((r) => r!).toList();
+    if (test.overallRating != null) {
+      return test.overallRating!;
+    }
     
-    if (ratings.isEmpty) return 0;
+    int sum = 0;
+    int count = 0;
     
-    return ratings.reduce((a, b) => a + b) ~/ ratings.length;
+    if (test.paceRating != null) { sum += test.paceRating!; count++; }
+    if (test.shootingRating != null) { sum += test.shootingRating!; count++; }
+    if (test.passingRating != null) { sum += test.passingRating!; count++; }
+    if (test.dribblingRating != null) { sum += test.dribblingRating!; count++; }
+    if (test.jugglesRating != null) { sum += test.jugglesRating!; count++; }
+    if (test.firstTouchRating != null) { sum += test.firstTouchRating!; count++; }
+    
+    return count > 0 ? sum ~/ count : 50; // Default to 50 if no ratings
   }
   
   Color _getRatingColor(int? rating) {

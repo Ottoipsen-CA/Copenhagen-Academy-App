@@ -6,6 +6,7 @@ import '../models/player_stats.dart';
 import 'package:uuid/uuid.dart';
 import 'player_stats_service.dart';
 import 'api_service.dart';
+import '../config/api_config.dart';
 
 class ChallengeService {
   static const String _challengesKey = 'challenges';
@@ -26,8 +27,8 @@ class ChallengeService {
     }
     
     try {
-      // Try to get from API
-      final response = await _apiService!.get('/challenges/with-status');
+      // Try to get from API using centralized endpoint
+      final response = await _apiService!.get(ApiConfig.challenges);
       
       if (response != null) {
         print('API response: Got ${(response as List).length} challenges');
@@ -191,9 +192,9 @@ class ChallengeService {
   // Complete a challenge using the API
   static Future<bool> completeChallenge(String challengeId) async {
     try {
-      // Call the API to complete the challenge
+      // Call the API to complete the challenge using centralized endpoint configuration
       final response = await _apiService!.post(
-        '/challenges/complete/${challengeId}', 
+        '${ApiConfig.challenges}/complete/${challengeId}', 
         {}
       );
       
@@ -270,7 +271,7 @@ class ChallengeService {
       await clearChallengeData();
       
       // Try to initialize via API
-      await _apiService!.post('/challenges/initialize-status', {});
+      await _apiService!.post('/api/v2/challenges/initialize-status', {});
       
       // Refresh all challenges
       await getAllChallengesWithStatus();
@@ -1154,7 +1155,7 @@ class ChallengeService {
     }
     
     try {
-      final response = await _apiService!.get('/challenges/$id');
+      final response = await _apiService!.get('/api/v2/challenges/$id');
       if (response != null) {
         return Challenge.fromJson(response);
       }
@@ -1173,7 +1174,7 @@ class ChallengeService {
     
     try {
       final response = await _apiService!.post(
-        '/challenges/$challengeId/submit',
+        '/api/v2/challenges/$challengeId/submit',
         {'value': value}
       );
       

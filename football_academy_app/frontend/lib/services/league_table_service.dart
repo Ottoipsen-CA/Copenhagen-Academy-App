@@ -130,13 +130,13 @@ class LeagueTableService {
       
       // Create stats
       final stats = PlayerStats(
-        playerId: 'player_${100 + index}',
+        
         pace: pace,
         shooting: shooting,
         passing: passing,
         dribbling: dribbling,
         juggles: defense,
-        first_touch: physical,
+        firstTouch: physical,
         overallRating: overall,
       );
       

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/player_stats.dart';
-import '../services/auth_service.dart';
 
 class PlayerCard extends StatelessWidget {
   final PlayerStats stats;
@@ -34,8 +33,8 @@ class PlayerCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              _getRatingColor(stats.overallRating).withOpacity(0.7),
-              _getRatingColor(stats.overallRating),
+              _getRatingColor(stats.overallRating ?? 0).withOpacity(0.7),
+              _getRatingColor(stats.overallRating ?? 0),
             ],
           ),
         ),
@@ -72,7 +71,7 @@ class PlayerCard extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  stats.overallRating.round().toString(),
+                  stats.overallRating?.round().toString() ?? "0",
                   style: const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -148,24 +147,24 @@ class PlayerCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildStat(context, stats.pace.round().toString(), "PAC"),
-                  _buildStat(context, stats.dribbling.round().toString(), "DRI"),
+                  _buildStat(context, _formatStat(stats.pace), "PAC"),
+                  _buildStat(context, _formatStat(stats.dribbling), "DRI"),
                 ],
               ),
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildStat(context, stats.shooting.round().toString(), "SHO"),
-                  _buildStat(context, stats.juggles.round().toString(), "JUG"),
+                  _buildStat(context, _formatStat(stats.shooting), "SHO"),
+                  _buildStat(context, _formatStat(stats.juggles), "JUG"),
                 ],
               ),
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildStat(context, stats.passing.round().toString(), "PAS"),
-                  _buildStat(context, stats.first_touch.round().toString(), "TCH"),
+                  _buildStat(context, _formatStat(stats.passing), "PAS"),
+                  _buildStat(context, _formatStat(stats.firstTouch), "TCH"),
                 ],
               ),
             ],
@@ -204,63 +203,82 @@ class PlayerCard extends StatelessWidget {
               color: Color(0xFF1E22AA),
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         
-        // Top 3 Stats
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildStat(context, stats.pace.round().toString(), "PAC"),
-              _buildStat(context, stats.dribbling.round().toString(), "DRI"),
-              _buildStat(context, stats.shooting.round().toString(), "SHO"),
-            ],
+        // Main Rating
+        Text(
+          _formatStat(stats.overallRating),
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
+        ),
+        const Text(
+          "OVR",
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Colors.white70,
+          ),
+        ),
+        
+        // Three primary stats
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildStat(context, _formatStat(stats.pace), "PAC"),
+            const SizedBox(width: 6),
+            _buildStat(context, _formatStat(stats.dribbling), "DRI"),
+            const SizedBox(width: 6),
+            _buildStat(context, _formatStat(stats.shooting), "SHO"),
+          ],
         ),
       ],
     );
   }
 
   Widget _buildStat(BuildContext context, String value, String label) {
-    return Row(
+    return Column(
       children: [
         Text(
           value,
           style: const TextStyle(
-            color: Color(0xFF1E22AA),
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
-        const SizedBox(width: 6),
         Text(
           label,
           style: const TextStyle(
-            color: Color(0xFF1E22AA),
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+            fontSize: 12,
+            color: Colors.white70,
           ),
         ),
       ],
     );
   }
 
-  Color _getRatingColor(double rating) {
-    if (rating >= 90) return const Color(0xFFFF5252); // Red/Bronze
-    if (rating >= 80) return const Color(0xFFFFD700); // Gold
-    if (rating >= 70) return const Color(0xFFC0C0C0); // Silver
-    return const Color(0xFFCD7F32); // Bronze
+  // Helper method to safely format stats
+  String _formatStat(double? value) {
+    if (value == null) return "0";
+    return value.round().toString();
   }
-  
+
   String _formatDate(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    final year = date.year;
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    
-    return '$month/$day/$year $hour:$minute';
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Color _getRatingColor(double rating) {
+    if (rating >= 90) return Colors.amber; // Gold for top tier
+    if (rating >= 80) return Colors.green; // Green for good
+    if (rating >= 70) return Colors.lightGreen; // Light green for average
+    if (rating >= 60) return Colors.orange; // Orange for below average
+    return Colors.red; // Red for poor
   }
 } 

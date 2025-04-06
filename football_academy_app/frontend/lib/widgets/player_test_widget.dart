@@ -26,6 +26,8 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
   @override
   void initState() {
     super.initState();
+    // Initialize the PlayerTestsService
+    PlayerTestsService.initialize(context);
     _loadTests();
   }
   
@@ -46,7 +48,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
     });
     
     try {
-      final tests = await PlayerTestsService.getPlayerTests();
+      final tests = await PlayerTestsService.getPlayerTests(context);
       setState(() {
         _tests = tests;
         _isLoading = false;
@@ -79,6 +81,17 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
     // Create test object
     final test = PlayerTest(
       testDate: DateTime.now(),
+      position: 'Unknown', // This should be set from player profile in a real app
+      
+      // New raw test values
+      pace: double.tryParse(_sprintController.text), // Sprint test becomes pace
+      passing: double.tryParse(_passingController.text),
+      shooting: double.tryParse(_shootingController.text),
+      dribbling: double.tryParse(_dribblingController.text),
+      juggles: double.tryParse(_jugglingController.text),
+      firstTouch: double.tryParse(_firstTouchController.text),
+      
+      // Legacy values for backward compatibility
       passingTest: int.tryParse(_passingController.text),
       sprintTest: double.tryParse(_sprintController.text),
       firstTouchTest: int.tryParse(_firstTouchController.text),
@@ -89,7 +102,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
     
     try {
       // Submit test
-      final submittedTest = await PlayerTestsService.submitTestResults(test);
+      final submittedTest = await PlayerTestsService.submitTestResults(context, test);
       
       // Add to list and close form
       setState(() {
@@ -292,18 +305,18 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
         labelText: label,
         labelStyle: const TextStyle(color: Colors.white70),
         helperText: helperText,
-        helperStyle: TextStyle(color: Colors.white54, fontSize: 10),
+        helperStyle: const TextStyle(color: Colors.white54, fontSize: 10),
         helperMaxLines: 2,
         prefixIcon: Icon(icon, color: Colors.white70),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.white30),
+          borderSide: const BorderSide(color: Colors.white30),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.green),
+          borderSide: const BorderSide(color: Colors.green),
         ),
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
   }
@@ -394,6 +407,37 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
                           ),
                         ),
                         
+                        // Show overall rating if available
+                        if (test.overallRating != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.star,
+                                  color: Colors.white,
+                                  size: 12,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'OVR: ${test.overallRating}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        
                         // Show record breaker badge if applicable
                         if (brokeRecord)
                           Container(
@@ -427,6 +471,25 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
                       ],
                     ),
                     const SizedBox(height: 8),
+                    
+                    // Show ratings if available
+                    if (test.paceRating != null) ...[
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildRating('Pace', test.paceRating!),
+                          _buildRating('Shooting', test.shootingRating ?? 0),
+                          _buildRating('Passing', test.passingRating ?? 0),
+                          _buildRating('Dribbling', test.dribblingRating ?? 0),
+                          _buildRating('Juggles', test.jugglesRating ?? 0),
+                          _buildRating('First Touch', test.firstTouchRating ?? 0),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Divider(color: Colors.white.withOpacity(0.2)),
+                      const SizedBox(height: 8),
+                    ],
                     
                     // Test results
                     Wrap(
@@ -472,6 +535,53 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
           },
         ),
       ],
+    );
+  }
+  
+  Widget _buildRating(String label, int rating) {
+    Color ratingColor;
+    if (rating >= 85) {
+      ratingColor = Colors.green;
+    } else if (rating >= 70) {
+      ratingColor = Colors.lightGreen;
+    } else if (rating >= 60) {
+      ratingColor = Colors.amber;
+    } else if (rating >= 40) {
+      ratingColor = Colors.orange;
+    } else {
+      ratingColor = Colors.red;
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: ratingColor.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: ratingColor, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              color: Colors.white70,
+            ),
+          ),
+          Text(
+            rating.toString(),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: ratingColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
   

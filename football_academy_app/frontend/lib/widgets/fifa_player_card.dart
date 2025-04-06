@@ -248,18 +248,42 @@ class FifaPlayerCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildStatColumn("PAC", stats.pace.toInt()),
-                    _buildStatColumn("SHO", stats.shooting.toInt()),
-                    _buildStatColumn("PAS", stats.passing.toInt()),
+                    _buildStatItem(
+                      'PAC',
+                      stats.pace?.toInt() ?? 0,
+                      Icons.directions_run,
+                    ),
+                    _buildStatItem(
+                      'SHO',
+                      stats.shooting?.toInt() ?? 0,
+                      Icons.sports_soccer,
+                    ),
+                    _buildStatItem(
+                      'PAS',
+                      stats.passing?.toInt() ?? 0,
+                      Icons.swap_horiz,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildStatColumn("DRI", stats.dribbling.toInt()),
-                    _buildStatColumn("JUG", stats.juggles.toInt()),
-                    _buildStatColumn("FT", stats.first_touch.toInt()),
+                    _buildStatItem(
+                      'DRI',
+                      stats.dribbling?.toInt() ?? 0,
+                      Icons.shuffle,
+                    ),
+                    _buildStatItem(
+                      'JUG',
+                      stats.juggles?.toInt() ?? 0,
+                      Icons.sports_basketball,
+                    ),
+                    _buildStatItem(
+                      'TCH',
+                      stats.firstTouch?.toInt() ?? 0,
+                      Icons.touch_app,
+                    ),
                   ],
                 ),
               ],
@@ -359,16 +383,13 @@ class FifaPlayerCard extends StatelessWidget {
     }
   }
   
-  Widget _buildStatColumn(String label, int value) {
+  Widget _buildStatItem(String label, int value, IconData icon) {
     return Column(
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.black.withOpacity(0.8),
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
+        Icon(
+          icon,
+          size: 20,
+          color: Colors.black.withOpacity(0.8),
         ),
         const SizedBox(height: 2),
         Text(

@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/auth.dart';
 import '../models/user.dart';
 import '../services/api_service.dart';
+import '../config/api_config.dart';
 import 'auth_repository.dart';
 
 class ApiAuthRepository implements AuthRepository {
@@ -30,7 +31,7 @@ class ApiAuthRepository implements AuthRepository {
           .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
           .join('&');
 
-      final uri = Uri.parse('${_apiService.baseUrl}/api/v2/auth/token');
+      final uri = Uri.parse('${_apiService.baseUrl}${ApiConfig.login}');
       
       final response = await _apiService.client.post(
         uri,
@@ -73,7 +74,7 @@ class ApiAuthRepository implements AuthRepository {
   @override
   Future<User?> getCurrentUser() async {
     try {
-      final response = await _apiService.get('/api/v2/auth/me');
+      final response = await _apiService.get(ApiConfig.userProfile);
       return User.fromJson(response);
     } catch (e) {
       print('Error getting current user: $e');
@@ -91,9 +92,9 @@ class ApiAuthRepository implements AuthRepository {
       };
       
       print('Registering user with data: $userData');
-      print('POST request to: ${_apiService.baseUrl}/api/v2/auth/register');
+      print('POST request to: ${_apiService.baseUrl}${ApiConfig.register}');
       
-      final response = await _apiService.post('/api/v2/auth/register', userData, withAuth: false);
+      final response = await _apiService.post(ApiConfig.register, userData, withAuth: false);
       
       if (response == null) {
         print('Registration failed: No response from server');
@@ -116,7 +117,7 @@ class ApiAuthRepository implements AuthRepository {
       // Remove id and other fields that shouldn't be sent for update
       userData.remove('id');
       
-      final response = await _apiService.put('/api/v2/auth/me', userData);
+      final response = await _apiService.put(ApiConfig.userProfile, userData);
       return User.fromJson(response);
     } catch (e) {
       print('Error updating user: $e');

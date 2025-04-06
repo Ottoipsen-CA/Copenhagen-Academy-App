@@ -324,13 +324,13 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 5),
-                  _buildStatRow('Overall', playerStats.overallRating),
+                  _buildStatRow('Overall', playerStats.overallRating ?? 0),
                   _buildStatRow('Pace', playerStats.pace),
                   _buildStatRow('Shooting', playerStats.shooting),
                   _buildStatRow('Passing', playerStats.passing),
                   _buildStatRow('Dribbling', playerStats.dribbling),
                   _buildStatRow('Juggles', playerStats.juggles),
-                  _buildStatRow('First Touch', playerStats.first_touch),
+                  _buildStatRow('First Touch', playerStats.firstTouch),
                 ],
                 const SizedBox(height: 20),
                 // Continue button
@@ -365,7 +365,7 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
     );
   }
   
-  Widget _buildStatRow(String statName, double value) {
+  Widget _buildStatRow(String statName, num value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -409,7 +409,7 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
     );
   }
   
-  Color _getColorForStat(double value) {
+  Color _getColorForStat(num value) {
     if (value >= 90) return Colors.red;
     if (value >= 80) return Colors.orange;
     if (value >= 70) return Colors.yellow;

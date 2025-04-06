@@ -4,13 +4,15 @@ class ApiConfig {
   // Base URL for all API requests
   static const String baseUrl = 'https://api.footballacademy.dev/v1';
   
-  // API endpoints
-  static const String login = '/auth/login';
-  static const String register = '/auth/register';
-  static const String refreshToken = '/auth/refresh';
-  static const String userProfile = '/users/me';
-  static const String challenges = '/challenges';
-  static const String badges = '/users/me/badges';
+  // API endpoints - updated to match backend v2 paths
+  static const String login = '/api/v2/auth/token';
+  static const String register = '/api/v2/auth/register';
+  static const String refreshToken = '/api/v2/auth/refresh';
+  static const String userProfile = '/api/v2/auth/me';
+  static const String challenges = '/api/v2/challenges/with-status';
+  static const String badges = '/api/v2/users/me/badges';
+  static const String playerStats = '/api/v2/skill-tests/player-stats'; // Append /{userId}
+  static const String leagueTable = '/api/v2/league-table/challenge'; // Append /{challengeId}
   
   // Get request headers with authorization
   static Map<String, String> get headers {

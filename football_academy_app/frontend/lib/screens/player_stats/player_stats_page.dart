@@ -125,9 +125,9 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
             const SizedBox(height: 8),
             _buildStatProgressBar('Dribbling', _playerStats!.dribbling),
             const SizedBox(height: 8),
-            _buildStatProgressBar('Juggles', _playerStats!.juggles),
+            _buildStatProgressBar('Juggling', _playerStats!.juggles),
             const SizedBox(height: 8),
-            _buildStatProgressBar('First Touch', _playerStats!.first_touch),
+            _buildStatProgressBar('First Touch', _playerStats!.firstTouch),
             
             const SizedBox(height: 24),
             
@@ -160,11 +160,11 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Current Overall Rating: ${_playerStats!.overallRating.round()}',
+                      'Current Overall Rating: ${_playerStats?.overallRating?.round() ?? 0}',
                       style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -267,5 +267,30 @@ class _PlayerStatsPageState extends State<PlayerStatsPage> {
     final minute = date.minute.toString().padLeft(2, '0');
     
     return '$month/$day/$year $hour:$minute';
+  }
+
+  Widget _buildStatItem(String label, double? value, IconData icon) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: Colors.white,
+        size: 30,
+      ),
+      title: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      trailing: Text(
+        value != null ? value.round().toString() : '0',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
   }
 } 
