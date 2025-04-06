@@ -15,7 +15,8 @@ from .challenges import (
 )
 from .league_table import (
     LeagueTableEntryBase, LeagueTableEntryCreate, LeagueTableEntryUpdate, LeagueTableEntryResponse,
-    ChallengeEntryBase, ChallengeEntryCreate, ChallengeEntryUpdate, ChallengeEntryResponse
+    ChallengeEntryBase, ChallengeEntryCreate, ChallengeEntryUpdate, ChallengeEntryResponse,
+    ChallengeLeagueTableEntry, ChallengeLeagueTableResponse
 )
 from .training import (
     TrainingPlanBase, TrainingPlanCreate, TrainingPlanUpdate, TrainingPlanResponse,
@@ -48,6 +49,7 @@ __all__ = [
     # League table schemas
     "LeagueTableEntryBase", "LeagueTableEntryCreate", "LeagueTableEntryUpdate", "LeagueTableEntryResponse",
     "ChallengeEntryBase", "ChallengeEntryCreate", "ChallengeEntryUpdate", "ChallengeEntryResponse",
+    "ChallengeLeagueTableEntry", "ChallengeLeagueTableResponse",
     
     # Training schemas
     "TrainingPlanBase", "TrainingPlanCreate", "TrainingPlanUpdate", "TrainingPlanResponse",

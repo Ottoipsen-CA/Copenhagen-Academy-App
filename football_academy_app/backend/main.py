@@ -6,7 +6,7 @@ import os
 from database import engine, Base
 
 # Import routers
-from routers import auth, skill_tests, challenges
+from routers import auth, skill_tests, challenges, league_table
 
 # Configure logging
 logging.basicConfig(
@@ -51,6 +51,7 @@ if os.path.exists(static_dir):
 app.include_router(auth.router, prefix="/api/v2")
 app.include_router(skill_tests.router, prefix="/api/v2")
 app.include_router(challenges.router, prefix="/api/v2")
+app.include_router(league_table.router, prefix="/api/v2")
 
 @app.get("/")
 async def root():

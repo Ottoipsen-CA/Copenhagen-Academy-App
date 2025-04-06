@@ -2,11 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime
+from sqlalchemy import func, desc, asc
 
-from models import User, LeagueTableEntry, ChallengeEntry, Test, TestEntry
+from models import User, LeagueTableEntry, ChallengeEntry, Test, TestEntry, Challenge, ChallengeCompletion, ChallengeResult
 from database import get_db
 from services.auth import get_current_user_dependency
-from schemas import LeagueTableEntry as LeagueTableEntrySchema
+from schemas import LeagueTableEntryResponse
+from schemas import ChallengeLeagueTableEntry, ChallengeLeagueTableResponse
 
 router = APIRouter(
     prefix="/league-table",
@@ -18,7 +20,7 @@ router = APIRouter(
     }
 )
 
-@router.get("/", response_model=List[LeagueTableEntrySchema])
+@router.get("/", response_model=List[LeagueTableEntryResponse])
 async def get_league_table(
     season: Optional[str] = "current",
     db: Session = Depends(get_db),
@@ -44,7 +46,7 @@ async def get_league_table(
     
     return league_entries
 
-@router.get("/user/{user_id}", response_model=LeagueTableEntrySchema)
+@router.get("/user/{user_id}", response_model=LeagueTableEntryResponse)
 async def get_user_league_entry(
     user_id: int,
     season: Optional[str] = "current",
@@ -65,7 +67,7 @@ async def get_user_league_entry(
     
     return league_entry
 
-@router.post("/recalculate", response_model=List[LeagueTableEntrySchema])
+@router.post("/recalculate", response_model=List[LeagueTableEntryResponse])
 async def recalculate_league_table(
     season: Optional[str] = "current",
     db: Session = Depends(get_db),
@@ -196,4 +198,121 @@ async def get_seasons(
 ):
     # Get distinct season values
     seasons = db.query(LeagueTableEntry.season).distinct().all()
-    return [season[0] for season in seasons] 
+    return [season[0] for season in seasons]
+
+@router.get("/challenge/{challenge_id}", response_model=ChallengeLeagueTableResponse)
+async def get_challenge_league_table(
+    challenge_id: int,
+    sort_order: str = "desc",  # 'asc' for lowest-is-best metrics (like time), 'desc' for highest-is-best (like counts)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    """
+    Create a league table for a specific challenge showing the best result from each user.
+    For challenges where higher is better (like number of juggles), use sort_order='desc'.
+    For challenges where lower is better (like time), use sort_order='asc'.
+    """
+    # First check if the challenge exists
+    challenge = db.query(Challenge).filter(Challenge.id == challenge_id).first()
+    if not challenge:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Challenge with ID {challenge_id} not found"
+        )
+    
+    # Use a CTE (Common Table Expression) to find the best result for each user
+    # This subquery finds the result with the maximum or minimum value for each user
+    if sort_order.lower() == "desc":
+        # For metrics where higher is better (e.g., number of juggles, points)
+        # First get the max value for each user
+        max_values = db.query(
+            ChallengeCompletion.user_id,
+            func.max(ChallengeResult.result_value).label("best_result")
+        ).join(
+            ChallengeResult, ChallengeResult.completion_id == ChallengeCompletion.id
+        ).filter(
+            ChallengeCompletion.challenge_id == challenge_id
+        ).group_by(
+            ChallengeCompletion.user_id
+        ).subquery()
+        
+        # Then find the actual result records that match these max values
+        best_results = db.query(
+            ChallengeCompletion.user_id,
+            ChallengeResult.result_value.label("best_result"),
+            ChallengeResult.submitted_at
+        ).join(
+            ChallengeResult, ChallengeResult.completion_id == ChallengeCompletion.id
+        ).join(
+            max_values, 
+            (ChallengeCompletion.user_id == max_values.c.user_id) & 
+            (ChallengeResult.result_value == max_values.c.best_result)
+        ).filter(
+            ChallengeCompletion.challenge_id == challenge_id
+        ).subquery()
+    else:
+        # For metrics where lower is better (e.g., time)
+        # First get the min value for each user
+        min_values = db.query(
+            ChallengeCompletion.user_id,
+            func.min(ChallengeResult.result_value).label("best_result")
+        ).join(
+            ChallengeResult, ChallengeResult.completion_id == ChallengeCompletion.id
+        ).filter(
+            ChallengeCompletion.challenge_id == challenge_id
+        ).group_by(
+            ChallengeCompletion.user_id
+        ).subquery()
+        
+        # Then find the actual result records that match these min values
+        best_results = db.query(
+            ChallengeCompletion.user_id,
+            ChallengeResult.result_value.label("best_result"),
+            ChallengeResult.submitted_at
+        ).join(
+            ChallengeResult, ChallengeResult.completion_id == ChallengeCompletion.id
+        ).join(
+            min_values, 
+            (ChallengeCompletion.user_id == min_values.c.user_id) & 
+            (ChallengeResult.result_value == min_values.c.best_result)
+        ).filter(
+            ChallengeCompletion.challenge_id == challenge_id
+        ).subquery()
+
+    # Now join with the users table to get user information
+    results = db.query(
+        User.user_id,
+        User.full_name,
+        User.position,
+        User.current_club,
+        best_results.c.best_result,
+        best_results.c.submitted_at
+    ).join(
+        best_results, User.user_id == best_results.c.user_id
+    )
+    
+    # Sort the results
+    if sort_order.lower() == "desc":
+        results = results.order_by(desc(best_results.c.best_result))
+    else:
+        results = results.order_by(asc(best_results.c.best_result))
+    
+    # Execute query and format results
+    league_entries = []
+    for idx, (user_id, full_name, position, current_club, best_result, submitted_at) in enumerate(results.all()):
+        league_entries.append({
+            "user_id": user_id,
+            "full_name": full_name,
+            "position": position,
+            "current_club": current_club,
+            "best_result": best_result,
+            "submitted_at": submitted_at,
+            "rank": idx + 1  # Add rank based on the sorted order
+        })
+    
+    return {
+        "challenge_id": challenge.id,
+        "challenge_title": challenge.title,
+        "challenge_description": challenge.description,
+        "entries": league_entries
+    } 

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 # LeagueTableEntry schemas
@@ -52,4 +52,24 @@ class ChallengeEntryResponse(ChallengeEntryBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True 
+        orm_mode = True
+
+# Challenge League Table schemas
+class ChallengeLeagueTableEntry(BaseModel):
+    user_id: int
+    full_name: str
+    position: Optional[str] = None
+    current_club: Optional[str] = None
+    best_result: float
+    submitted_at: datetime
+    rank: Optional[int] = None
+
+    class Config:
+        orm_mode = True
+
+# Response that includes challenge information
+class ChallengeLeagueTableResponse(BaseModel):
+    challenge_id: int
+    challenge_title: str
+    challenge_description: Optional[str] = None
+    entries: List[ChallengeLeagueTableEntry] 
