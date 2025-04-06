@@ -64,6 +64,64 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
     }
   }
   
+  // Add delete test function
+  Future<void> _deleteTest(int? testId) async {
+    if (testId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot delete test with unknown ID')),
+      );
+      return;
+    }
+    
+    // Show confirmation dialog
+    final bool confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.black87,
+        title: const Text('Delete Test', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'Are you sure you want to delete this test? This action cannot be undone.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('CANCEL', style: TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.red.withOpacity(0.2),
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('DELETE', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    ) ?? false;
+    
+    if (!confirm) return;
+    
+    try {
+      final success = await PlayerTestsService.deletePlayerTest(context, testId);
+      if (success) {
+        // Remove test from list
+        setState(() {
+          _tests.removeWhere((test) => test.id == testId);
+        });
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Test deleted successfully')),
+        );
+      }
+    } catch (e) {
+      // Show error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete test: ${e.toString()}')),
+      );
+    }
+  }
+  
   Future<void> _submitTest() async {
     // Validate inputs
     if (_passingController.text.isEmpty ||
@@ -407,67 +465,93 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
                           ),
                         ),
                         
-                        // Show overall rating if available
-                        if (test.overallRating != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
+                        // Action buttons and badges in a row
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Delete button
+                            IconButton(
+                              onPressed: () => _deleteTest(test.id),
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                                size: 18,
+                              ),
+                              tooltip: 'Delete test',
+                              constraints: const BoxConstraints(),
+                              padding: const EdgeInsets.all(4),
+                              splashRadius: 20,
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.green,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.star,
-                                  color: Colors.white,
-                                  size: 12,
+                            const SizedBox(width: 8),
+                            
+                            // Show overall rating if available
+                            if (test.overallRating != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
                                 ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'OVR: ${test.overallRating}',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                              ],
-                            ),
-                          ),
-                        
-                        // Show record breaker badge if applicable
-                        if (brokeRecord)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF03B0F1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.emoji_events,
-                                  color: Colors.white,
-                                  size: 12,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.star,
+                                      color: Colors.white,
+                                      size: 12,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'OVR: ${test.overallRating}',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 4),
-                                const Text(
-                                  'RECORD BREAKER',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                              ),
+                            
+                            if (test.overallRating != null && brokeRecord)
+                              const SizedBox(width: 8),
+                            
+                            // Show record breaker badge if applicable
+                            if (brokeRecord)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
                                 ),
-                              ],
-                            ),
-                          ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF03B0F1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.emoji_events,
+                                      color: Colors.white,
+                                      size: 12,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'RECORD BREAKER',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),

@@ -134,45 +134,28 @@ class AuthService {
 
   // Get current user ID - static helper for services
   static Future<String> getCurrentUserId() async {
-    // Create temporary secure storage and http client
-    final storage = FlutterSecureStorage();
+    // Create temporary instances to access auth repositories
+    final secureStorage = FlutterSecureStorage();
     final client = http.Client();
     
     try {
-      // Get token from secure storage
-      final token = await storage.read(key: 'access_token');
-      if (token == null) {
-        throw Exception('No authentication token found');
+      // Create API service and repository using the existing patterns
+      final apiService = ApiService(client: client, secureStorage: secureStorage);
+      final authRepository = ApiAuthRepository(apiService, secureStorage);
+      
+      // Get current user through the repository
+      final user = await authRepository.getCurrentUser();
+      
+      if (user != null && user.id != null) {
+        return user.id.toString();
       }
       
-      // Create headers with auth token
-      final headers = {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      };
-      
-      // Make a GET request to the /api/v2/auth/me endpoint
-      final response = await client.get(
-        Uri.parse('http://localhost:8000/api/v2/auth/me'),
-        headers: headers,
-      );
-      
-      if (response.statusCode == 200) {
-        final userData = json.decode(response.body);
-        if (userData != null && userData['id'] != null) {
-          // Return the actual user ID from the API
-          return userData['id'].toString();
-        }
-        throw Exception('User ID not found in API response');
-      } else {
-        throw Exception('Failed to get user data: HTTP ${response.statusCode}');
-      }
+      throw Exception('Failed to get user ID from API');
     } catch (e) {
       print('Error getting user ID: $e');
       throw Exception('Failed to get user ID: $e');
     } finally {
-      // Always close the client when done to prevent memory leaks
+      // Close the temporary client
       client.close();
     }
   }
