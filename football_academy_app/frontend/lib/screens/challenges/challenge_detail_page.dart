@@ -49,8 +49,22 @@ class _ChallengeDetailPageState extends State<ChallengeDetailPage> {
   
   Future<void> _startChallenge() async {
     try {
-      final updatedUserChallenge = await ChallengeService.startChallenge(_challenge.id);
-      if (updatedUserChallenge != null) {
+      final success = await ChallengeService.optInToChallenge(_challenge.id);
+      if (success) {
+        // Refresh the challenges to get updated status
+        final challenges = await ChallengeService.getAllChallengesWithStatus();
+        final updatedChallenge = challenges.firstWhere(
+          (c) => c.id == _challenge.id,
+          orElse: () => _challenge,
+        );
+        
+        // Create a UserChallenge object to update UI
+        final updatedUserChallenge = UserChallenge(
+          challengeId: _challenge.id,
+          status: ChallengeStatus.inProgress,
+          startedAt: DateTime.now(),
+        );
+        
         setState(() {
           _userChallenge = updatedUserChallenge;
         });

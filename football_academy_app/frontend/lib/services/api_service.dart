@@ -202,6 +202,38 @@ class ApiService {
       rethrow;
     }
   }
+
+  // Generic PATCH request
+  Future<dynamic> patch(
+    String endpoint,
+    Map<String, dynamic> data, {
+    bool withAuth = true,
+  }) async {
+    if (_useMockData) {
+      return _getMockDataForPatch(endpoint, data);
+    }
+    
+    try {
+      final headers = await _getHeaders(withAuth: withAuth);
+      final formattedEndpoint = _formatEndpoint(endpoint);
+      final response = await client.patch(
+        Uri.parse('$baseUrl$formattedEndpoint'),
+        headers: headers,
+        body: json.encode(data),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (response.body.isEmpty) return {};
+        return json.decode(response.body);
+      } else {
+        print('PATCH request failed with status: ${response.statusCode}');
+        throw Exception('PATCH request failed with status: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error in PATCH request: $e');
+      rethrow;
+    }
+  }
   
   // Provide mock data for development
   dynamic _getMockData(String endpoint) {
@@ -268,6 +300,11 @@ class ApiService {
   dynamic _getMockDataForDelete(String endpoint) {
     print('Using mock data for DELETE: $endpoint');
     return null;
+  }
+  
+  dynamic _getMockDataForPatch(String endpoint, Map<String, dynamic> data) {
+    print('Using mock data for PATCH: $endpoint');
+    return data;
   }
   
   List<Map<String, dynamic>> _getMockChallenges() {

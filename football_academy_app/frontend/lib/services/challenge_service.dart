@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import 'player_stats_service.dart';
 import 'api_service.dart';
 import '../config/api_config.dart';
+import '../repositories/challenge_repository.dart';
 
 class ChallengeService {
   static const String _challengesKey = 'challenges';
@@ -14,158 +15,37 @@ class ChallengeService {
   
   static final Uuid _uuid = Uuid();
   static ApiService? _apiService;
+  static ChallengeRepository? _challengeRepository;
   
-  // Initialize with API service
+  // Initialize with API service and repository
   static void initialize(ApiService apiService) {
     _apiService = apiService;
+    _challengeRepository = ChallengeRepository(apiService);
   }
   
   // Get all challenges with their status from the API
   static Future<List<Challenge>> getAllChallengesWithStatus() async {
-    if (_apiService == null) {
+    if (_challengeRepository == null) {
       throw Exception('ChallengeService not initialized. Call initialize() first.');
     }
     
     try {
-      // Try to get from API using centralized endpoint
-      final response = await _apiService!.get(ApiConfig.challenges);
+      // Get challenges from repository (which uses the API)
+      final challenges = await _challengeRepository!.getAll();
       
-      if (response != null) {
-        print('API response: Got ${(response as List).length} challenges');
-        
-        // Debug log for understanding challenge statuses
-        for (var item in response) {
-          print('Challenge ${item['id']}: ${item['title']} - Status: ${item['status']}');
-        }
-        
-        // Convert API response to Challenge objects
-        final challenges = (response).map((item) {
-          final challenge = Challenge(
-            id: item['id'].toString(),
-            title: item['title'],
-            description: item['description'],
-            category: _getCategoryFromString(item['category']),
-            level: item['level'],
-            targetValue: 20, // Default value, can be adjusted
-            unit: 'repetitions', // Default value
-            xpReward: item['xp_reward'],
-            isWeekly: item['is_weekly'] ?? false,
-          );
-          
-          // Store status in UserChallenge object in local storage for UI purposes
-          final status = _getStatusFromString(item['status']);
-          print('Challenge ${challenge.id} (${challenge.title}) mapped to status: $status');
-          
-          _updateLocalUserChallengeStatus(
-            challenge.id, 
-            status,
-            item['completed_at'] != null ? DateTime.parse(item['completed_at']) : null
-          );
-          
-          return challenge;
-        }).toList();
-        
+      if (challenges.isNotEmpty) {
         // Save locally for offline access
         await saveChallenges(challenges);
         return challenges;
       }
       
-      // Fallback path if response is null but no exception was thrown
-      print('API response was null, falling back to local storage');
+      // Fallback to local storage if API returned empty list
       return _getLocalChallenges();
     } catch (e) {
       print('Error fetching challenges from API: $e');
       // Fall back to local storage if API fails
       return _getLocalChallenges();
     }
-  }
-  
-  // Helper methods to convert between API and app enums
-  static ChallengeCategory _getCategoryFromString(String? category) {
-    if (category == null) return ChallengeCategory.passing;
-    
-    switch (category.toLowerCase()) {
-      case 'passing': return ChallengeCategory.passing;
-      case 'shooting': return ChallengeCategory.shooting;
-      case 'dribbling': return ChallengeCategory.dribbling;
-      case 'fitness': return ChallengeCategory.fitness;
-      case 'defense': return ChallengeCategory.defense;
-      case 'goalkeeping': return ChallengeCategory.goalkeeping;
-      case 'tactical': return ChallengeCategory.tactical;
-      case 'weekly': return ChallengeCategory.weekly;
-      default: return ChallengeCategory.passing;
-    }
-  }
-  
-  static ChallengeStatus _getStatusFromString(String? status) {
-    if (status == null) return ChallengeStatus.locked;
-    
-    final statusUpper = status.toUpperCase();
-    print('Converting API status "$status" to app status enum');
-    
-    if (statusUpper.contains('AVAILABLE')) return ChallengeStatus.available;
-    if (statusUpper.contains('COMPLETED')) return ChallengeStatus.completed;
-    if (statusUpper.contains('IN_PROGRESS')) return ChallengeStatus.inProgress;
-    if (statusUpper.contains('LOCKED')) return ChallengeStatus.locked;
-    
-    // Default to locked if status can't be recognized
-    print('Unknown status: $status, defaulting to locked');
-    return ChallengeStatus.locked;
-  }
-  
-  static String _getStringFromStatus(ChallengeStatus status) {
-    switch (status) {
-      case ChallengeStatus.available: return 'AVAILABLE';
-      case ChallengeStatus.completed: return 'COMPLETED';
-      case ChallengeStatus.locked: return 'LOCKED';
-      case ChallengeStatus.inProgress: return 'AVAILABLE'; // API doesn't have in-progress
-      default: return 'LOCKED';
-    }
-  }
-  
-  // Update local user challenge status
-  static Future<void> _updateLocalUserChallengeStatus(
-    String challengeId, 
-    ChallengeStatus status,
-    DateTime? completedAt
-  ) async {
-    print('Updating local challenge status - ID: $challengeId, Status: $status');
-    
-    final userChallenges = await getUserChallenges();
-    final index = userChallenges.indexWhere((uc) => uc.challengeId == challengeId);
-    
-    if (index >= 0) {
-      print('Existing challenge found - updating from ${userChallenges[index].status} to $status');
-      userChallenges[index] = userChallenges[index].copyWith(
-        status: status,
-        completedAt: completedAt,
-      );
-    } else {
-      print('New challenge found - creating with status $status');
-      userChallenges.add(UserChallenge(
-        challengeId: challengeId,
-        status: status,
-        startedAt: DateTime.now(),
-        completedAt: completedAt,
-      ));
-    }
-    
-    await saveUserChallenges(userChallenges);
-    
-    // Print stats on user challenges for debugging
-    int lockedCount = 0, availableCount = 0, inProgressCount = 0, completedCount = 0;
-    
-    for (final uc in userChallenges) {
-      switch (uc.status) {
-        case ChallengeStatus.locked: lockedCount++; break;
-        case ChallengeStatus.available: availableCount++; break;
-        case ChallengeStatus.inProgress: inProgressCount++; break;
-        case ChallengeStatus.completed: completedCount++; break;
-      }
-    }
-    
-    print('User challenges status counts - Locked: $lockedCount, Available: $availableCount, '
-        'In Progress: $inProgressCount, Completed: $completedCount');
   }
   
   // Get challenges from local storage
@@ -189,16 +69,72 @@ class ChallengeService {
     return mockChallenges;
   }
   
+  // Opt in to a challenge
+  static Future<bool> optInToChallenge(String challengeId) async {
+    if (_challengeRepository == null) {
+      throw Exception('ChallengeService not initialized. Call initialize() first.');
+    }
+    
+    try {
+      // Use repository to opt in
+      final success = await _challengeRepository!.optInToChallenge(challengeId);
+      
+      if (success) {
+        // Update local status to in progress
+        await _updateLocalUserChallengeStatus(
+          challengeId, 
+          ChallengeStatus.inProgress,
+          null
+        );
+        
+        // Refresh all challenges to get updated statuses
+        await getAllChallengesWithStatus();
+        
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error opting in to challenge via API: $e');
+      // Fallback to local approach
+      return _startChallengeFallback(challengeId);
+    }
+  }
+  
+  // Local fallback for starting a challenge
+  static Future<bool> _startChallengeFallback(String challengeId) async {
+    try {
+      final userChallenges = await getUserChallenges();
+      final index = userChallenges.indexWhere((uc) => uc.challengeId == challengeId);
+      
+      if (index >= 0) {
+        // Update status to in progress
+        userChallenges[index] = userChallenges[index].copyWith(
+          status: ChallengeStatus.inProgress,
+        );
+        
+        await saveUserChallenges(userChallenges);
+        return true;
+      }
+      
+      return false;
+    } catch (e) {
+      print('Error in fallback challenge start: $e');
+      return false;
+    }
+  }
+  
   // Complete a challenge using the API
   static Future<bool> completeChallenge(String challengeId) async {
+    if (_challengeRepository == null) {
+      throw Exception('ChallengeService not initialized. Call initialize() first.');
+    }
+    
     try {
-      // Call the API to complete the challenge using centralized endpoint configuration
-      final response = await _apiService!.post(
-        '${ApiConfig.challenges}/complete/${challengeId}', 
-        {}
-      );
+      // Submit a result to complete the challenge
+      // Using a high value to ensure completion
+      final success = await _challengeRepository!.submitChallengeResult(challengeId, 9999.0);
       
-      if (response != null) {
+      if (success) {
         // Update local status
         await _updateLocalUserChallengeStatus(
           challengeId, 
@@ -216,6 +152,28 @@ class ChallengeService {
       print('Error completing challenge via API: $e');
       // Fallback to local storage approach
       return _completeChallengeFallback(challengeId);
+    }
+  }
+  
+  // Submit a challenge result
+  static Future<bool> submitChallengeResult(String challengeId, double value) async {
+    if (_challengeRepository == null) {
+      throw Exception('ChallengeService not initialized. Call initialize() first.');
+    }
+    
+    try {
+      // Use repository to submit result
+      final success = await _challengeRepository!.submitChallengeResult(challengeId, value);
+      
+      if (success) {
+        // Refresh challenges to get updated statuses
+        await getAllChallengesWithStatus();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error submitting challenge result: $e');
+      return false;
     }
   }
   
@@ -266,26 +224,24 @@ class ChallengeService {
 
   // Initialize challenge statuses from the API
   static Future<void> initializeUserChallenges() async {
+    if (_challengeRepository == null) {
+      throw Exception('ChallengeService not initialized. Call initialize() first.');
+    }
+    
     try {
-      // Clear existing data for testing
-      await clearChallengeData();
+      // Get challenges from API, which should include their status
+      final challenges = await getAllChallengesWithStatus();
       
-      // Try to initialize via API
-      await _apiService!.post('/api/v2/challenges/initialize-status', {});
-      
-      // Refresh all challenges
-      await getAllChallengesWithStatus();
-    } catch (e) {
-      print('Error or status already initialized: $e');
-      
-      // Continue to fetch challenges even if initialization fails
-      // Status code 400 means challenges are already initialized, which is fine
-      await getAllChallengesWithStatus();
-      
-      // Only fall back to local initialization if fetching fails
-      if (e.toString().contains('No challenges found')) {
-        await _initializeUserChallengesFallback();
+      if (challenges.isEmpty) {
+        throw Exception('No challenges found');
       }
+      
+      // We don't need to initialize separately since the API already returns
+      // challenges with their status
+    } catch (e) {
+      print('Error initializing challenges: $e');
+      // Fallback to local initialization
+      await _initializeUserChallengesFallback();
     }
   }
   
@@ -341,6 +297,51 @@ class ChallengeService {
     }
     
     await saveUserChallenges(newUserChallenges);
+  }
+  
+  // Update local user challenge status
+  static Future<void> _updateLocalUserChallengeStatus(
+    String challengeId, 
+    ChallengeStatus status,
+    DateTime? completedAt
+  ) async {
+    print('Updating local challenge status - ID: $challengeId, Status: $status');
+    
+    final userChallenges = await getUserChallenges();
+    final index = userChallenges.indexWhere((uc) => uc.challengeId == challengeId);
+    
+    if (index >= 0) {
+      print('Existing challenge found - updating from ${userChallenges[index].status} to $status');
+      userChallenges[index] = userChallenges[index].copyWith(
+        status: status,
+        completedAt: completedAt,
+      );
+    } else {
+      print('New challenge found - creating with status $status');
+      userChallenges.add(UserChallenge(
+        challengeId: challengeId,
+        status: status,
+        startedAt: DateTime.now(),
+        completedAt: completedAt,
+      ));
+    }
+    
+    await saveUserChallenges(userChallenges);
+    
+    // Print stats on user challenges for debugging
+    int lockedCount = 0, availableCount = 0, inProgressCount = 0, completedCount = 0;
+    
+    for (final uc in userChallenges) {
+      switch (uc.status) {
+        case ChallengeStatus.locked: lockedCount++; break;
+        case ChallengeStatus.available: availableCount++; break;
+        case ChallengeStatus.inProgress: inProgressCount++; break;
+        case ChallengeStatus.completed: completedCount++; break;
+      }
+    }
+    
+    print('User challenges status counts - Locked: $lockedCount, Available: $availableCount, '
+        'In Progress: $inProgressCount, Completed: $completedCount');
   }
   
   // Get user challenges (from local storage)
@@ -429,6 +430,130 @@ class ChallengeService {
     }
     
     await saveUserChallenges(userChallenges);
+  }
+  
+  // Get challenge by ID
+  static Future<Challenge?> getChallengeById(String id) async {
+    if (_challengeRepository == null) {
+      throw Exception('ChallengeService not initialized. Call initialize() first.');
+    }
+    
+    try {
+      return await _challengeRepository!.getById(id);
+    } catch (e) {
+      print('Error getting challenge by ID from API: $e');
+      
+      // Fallback to local storage
+      final challenges = await _getLocalChallenges();
+      return challenges.firstWhere(
+        (c) => c.id == id,
+        orElse: () => null as Challenge,
+      );
+    }
+  }
+  
+  // Get weekly challenge
+  static Future<Challenge?> getWeeklyChallenge() async {
+    if (_challengeRepository == null) {
+      throw Exception('ChallengeService not initialized. Call initialize() first.');
+    }
+    
+    try {
+      // Instead of using the dedicated weekly endpoint, get all challenges and find the active one
+      final challenges = await _challengeRepository!.getAll();
+      
+      // Return the first challenge or null if empty
+      return challenges.isNotEmpty ? challenges.first : null;
+    } catch (e) {
+      print('Error getting active challenge from API: $e');
+      
+      // Fallback to local storage
+      final challenges = await _getLocalChallenges();
+      return challenges.isNotEmpty ? challenges.first : null;
+    }
+  }
+  
+  // Get user's badges (for future implementation)
+  static Future<List<UserBadge>> getUserBadges() async {
+    return [];
+  }
+  
+  // Record an attempt for a challenge
+  static Future<UserChallenge?> recordAttempt(
+    String challengeId, 
+    int attemptValue,
+    {bool markCompleted = false}
+  ) async {
+    if (_challengeRepository == null) {
+      throw Exception('ChallengeService not initialized. Call initialize() first.');
+    }
+    
+    try {
+      // Submit the result to the API
+      final success = await _challengeRepository!.submitChallengeResult(
+        challengeId, 
+        attemptValue.toDouble()
+      );
+      
+      if (success) {
+        // Refresh all challenges
+        await getAllChallengesWithStatus();
+        
+        // Get user challenges to update the UI
+        final userChallenges = await getUserChallenges();
+        final index = userChallenges.indexWhere((uc) => uc.challengeId == challengeId);
+        
+        if (index >= 0) {
+          return userChallenges[index];
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      print('Error recording attempt via API: $e');
+      return _recordAttemptFallback(challengeId, attemptValue, markCompleted);
+    }
+  }
+  
+  // Fallback for recording an attempt locally
+  static Future<UserChallenge?> _recordAttemptFallback(
+    String challengeId, 
+    int attemptValue,
+    bool markCompleted
+  ) async {
+    final userChallenges = await getUserChallenges();
+    final challenges = await _getLocalChallenges();
+    
+    final challenge = challenges.firstWhere(
+      (c) => c.id == challengeId,
+      orElse: () => throw Exception('Challenge not found'),
+    );
+    
+    final index = userChallenges.indexWhere((uc) => uc.challengeId == challengeId);
+    if (index < 0) {
+      throw Exception('Challenge not started');
+    }
+    
+    // Update current value
+    int newValue = userChallenges[index].currentValue + attemptValue;
+    
+    // Check if challenge completed
+    final completed = markCompleted || newValue >= challenge.targetValue.toInt();
+    
+    userChallenges[index] = userChallenges[index].copyWith(
+      currentValue: newValue,
+      status: completed ? ChallengeStatus.completed : ChallengeStatus.inProgress,
+      completedAt: completed ? DateTime.now() : null,
+    );
+    
+    await saveUserChallenges(userChallenges);
+    
+    if (completed) {
+      // Unlock next challenge if completed
+      await _unlockNextChallenge(challenge);
+    }
+    
+    return userChallenges[index];
   }
   
   // Create mock challenges for development
@@ -1073,115 +1198,5 @@ class ChallengeService {
         xpReward: calculateXpReward(7, ChallengeCategory.wallTouches),
       ),
     ];
-  }
-  
-  // Get user's badges (simple mock implementation)
-  static Future<List<UserBadge>> getUserBadges() async {
-    return [];
-  }
-  
-  // Get weekly challenge
-  static Future<Challenge?> getWeeklyChallenge() async {
-    final challenges = await _getLocalChallenges();
-    return challenges.firstWhere(
-      (c) => c.isWeekly, 
-      orElse: () => null as Challenge,
-    );
-  }
-  
-  // Start a challenge
-  static Future<UserChallenge?> startChallenge(String challengeId) async {
-    final userChallenges = await getUserChallenges();
-    final index = userChallenges.indexWhere((uc) => uc.challengeId == challengeId);
-    
-    if (index >= 0) {
-      // Update status to in progress
-      userChallenges[index] = userChallenges[index].copyWith(
-        status: ChallengeStatus.inProgress,
-      );
-      
-      await saveUserChallenges(userChallenges);
-      return userChallenges[index];
-    }
-    
-    return null;
-  }
-  
-  // Record an attempt for a challenge
-  static Future<UserChallenge?> recordAttempt(
-    String challengeId, 
-    int attemptValue,
-    {bool markCompleted = false}
-  ) async {
-    final userChallenges = await getUserChallenges();
-    final challenges = await _getLocalChallenges();
-    
-    final challenge = challenges.firstWhere(
-      (c) => c.id == challengeId,
-      orElse: () => throw Exception('Challenge not found'),
-    );
-    
-    final index = userChallenges.indexWhere((uc) => uc.challengeId == challengeId);
-    if (index < 0) {
-      throw Exception('Challenge not started');
-    }
-    
-    // Update current value
-    int newValue = userChallenges[index].currentValue + attemptValue;
-    
-    // Check if challenge completed
-    final completed = markCompleted || newValue >= challenge.targetValue;
-    
-    userChallenges[index] = userChallenges[index].copyWith(
-      currentValue: newValue,
-      status: completed ? ChallengeStatus.completed : ChallengeStatus.inProgress,
-      completedAt: completed ? DateTime.now() : null,
-    );
-    
-    await saveUserChallenges(userChallenges);
-    
-    if (completed) {
-      // Unlock next challenge if completed
-      await _unlockNextChallenge(challenge);
-    }
-    
-    return userChallenges[index];
-  }
-
-  // Get challenge by ID
-  Future<Challenge?> getChallengeById(String id) async {
-    if (_apiService == null) {
-      throw Exception('ChallengeService not initialized. Call initialize() first.');
-    }
-    
-    try {
-      final response = await _apiService!.get('/api/v2/challenges/$id');
-      if (response != null) {
-        return Challenge.fromJson(response);
-      }
-      return null;
-    } catch (e) {
-      print('Error getting challenge by ID: $e');
-      return null;
-    }
-  }
-
-  // Submit challenge result
-  Future<bool> submitChallengeResult(String challengeId, double value) async {
-    if (_apiService == null) {
-      throw Exception('ChallengeService not initialized. Call initialize() first.');
-    }
-    
-    try {
-      final response = await _apiService!.post(
-        '/api/v2/challenges/$challengeId/submit',
-        {'value': value}
-      );
-      
-      return response != null;
-    } catch (e) {
-      print('Error submitting challenge result: $e');
-      return false;
-    }
   }
 } 

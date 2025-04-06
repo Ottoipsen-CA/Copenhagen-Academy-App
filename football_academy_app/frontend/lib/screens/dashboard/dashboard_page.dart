@@ -76,21 +76,44 @@ class _DashboardPageState extends State<DashboardPage> {
       // Initialize challenges
       await ChallengeService.initializeUserChallenges();
       
-      // Load active challenge
+      // Load active challenge - might be null if no challenges available
       final weeklyChallenge = await ChallengeService.getWeeklyChallenge();
       
       // Load user challenge status
       UserChallenge? userWeeklyChallenge;
       if (weeklyChallenge != null) {
-        final userChallenges = await ChallengeService.getUserChallenges();
-        userWeeklyChallenge = userChallenges.firstWhere(
-          (uc) => uc.challengeId == weeklyChallenge.id,
-          orElse: () => UserChallenge(
+        // Check if the challenge has status information directly
+        if (weeklyChallenge.status != ChallengeStatus.locked) {
+          // Create a user challenge from the challenge's own status
+          userWeeklyChallenge = UserChallenge(
             challengeId: weeklyChallenge.id,
-            status: ChallengeStatus.available,
-            startedAt: DateTime.now(),
-          ),
-        );
+            status: weeklyChallenge.status,
+            startedAt: weeklyChallenge.optedInAt ?? DateTime.now(),
+            completedAt: weeklyChallenge.completedAt,
+            currentValue: weeklyChallenge.userValue?.toInt() ?? 0,
+          );
+        } else {
+          // Fall back to getting user challenges from local storage
+          try {
+            final userChallenges = await ChallengeService.getUserChallenges();
+            userWeeklyChallenge = userChallenges.firstWhere(
+              (uc) => uc.challengeId == weeklyChallenge.id,
+              orElse: () => UserChallenge(
+                challengeId: weeklyChallenge.id,
+                status: ChallengeStatus.available,
+                startedAt: DateTime.now(),
+              ),
+            );
+          } catch (e) {
+            print('Error getting user challenge status: $e');
+            // Create a default user challenge if not found
+            userWeeklyChallenge = UserChallenge(
+              challengeId: weeklyChallenge.id,
+              status: ChallengeStatus.available,
+              startedAt: DateTime.now(),
+            );
+          }
+        }
       }
       
       // Load badges (just get the top 4 for dashboard)
@@ -362,7 +385,7 @@ class _DashboardPageState extends State<DashboardPage> {
           padding: EdgeInsets.all(16.0),
           child: Center(
             child: Text(
-              'No active weekly challenge',
+              'No active challenge',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 16,
@@ -415,7 +438,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                       const SizedBox(width: 8),
                       const Text(
-                        'WEEKLY CHALLENGE',
+                        'ACTIVE CHALLENGE',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -516,63 +539,43 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         )
                       else if (_userWeeklyChallenge?.status == ChallengeStatus.inProgress)
-                        // In progress
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
+                        // In progress - Show "Indtast resultat!" button
+                        ElevatedButton(
+                          onPressed: () => _submitChallengeResult(_weeklyChallenge!.id),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4CAF50), // Green
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.show_chart,
-                                color: Colors.blue,
-                                size: 12,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${(progress * 100).toInt()}%',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                            ],
+                          child: const Text(
+                            'INDTAST RESULTAT!',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         )
                       else
-                        // Not started
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
+                        // Not started - Show "Deltag" (participate) button
+                        ElevatedButton(
+                          onPressed: () => _optInToChallenge(_weeklyChallenge!.id),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFFA500),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.play_arrow,
-                                color: Colors.orange,
-                                size: 12,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                'START',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.orange,
-                                ),
-                              ),
-                            ],
+                          child: const Text(
+                            'DELTAG',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                     ],
@@ -1006,6 +1009,171 @@ class _DashboardPageState extends State<DashboardPage> {
     } catch (e) {
       print('Error checking for record breaker status: $e');
     }
+  }
+
+  Future<void> _optInToChallenge(String challengeId) async {
+    try {
+      final success = await ChallengeService.optInToChallenge(challengeId);
+      if (success) {
+        // Show popup
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                backgroundColor: const Color(0xFF1C006C),
+                title: const Text(
+                  'Du er tilmeldt!',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+                content: const Text(
+                  'Du er nu tilmeldt udfordringen. God fornøjelse!',
+                  style: TextStyle(color: Colors.white),
+                ),
+                actions: [
+                  TextButton(
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(color: Color(0xFFFFA500)),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        }
+        
+        await _loadUserData(); // Reload data to update UI
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to opt in to the challenge. Please try again.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to opt in to the challenge: ${e.toString()}')),
+      );
+    }
+  }
+
+  Future<void> _submitChallengeResult(String challengeId) async {
+    final TextEditingController resultController = TextEditingController();
+    bool isSubmitting = false;
+    
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Indtast dit resultat'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Indtast dit resultat for denne udfordring:',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: resultController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'f.eks. 42',
+                  labelText: 'Dit resultat',
+                ),
+              ),
+              if (isSubmitting)
+                const Padding(
+                  padding: EdgeInsets.only(top: 16),
+                  child: CircularProgressIndicator(),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('ANNULLER'),
+            ),
+            TextButton(
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      // Validate input
+                      final resultText = resultController.text.trim();
+                      if (resultText.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Indtast venligst et resultat'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      
+                      // Parse to double
+                      double? value;
+                      try {
+                        value = double.parse(resultText);
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Indtast et gyldigt tal'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+                      
+                      setState(() {
+                        isSubmitting = true;
+                      });
+                      
+                      // Submit result to API
+                      try {
+                        final success = await ChallengeService.submitChallengeResult(
+                          challengeId,
+                          value,
+                        );
+                        
+                        Navigator.of(context).pop(); // Close dialog
+                        
+                        if (success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Resultat indsendt!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                          
+                          // Reload user data to reflect the new status
+                          _loadUserData();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Kunne ikke indsende resultat. Prøv igen senere.'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        Navigator.of(context).pop(); // Close dialog on error
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Fejl: ${e.toString()}'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+              child: const Text('INDSEND'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

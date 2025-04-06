@@ -60,6 +60,7 @@ class _ExerciseSelectorPageState extends State<ExerciseSelectorPage> {
       final authService = AuthService(
         authRepository: authRepository,
         secureStorage: const FlutterSecureStorage(),
+        apiService: apiService,
       );
       
       _exercisesFuture = ExerciseService(authService).getExercises();

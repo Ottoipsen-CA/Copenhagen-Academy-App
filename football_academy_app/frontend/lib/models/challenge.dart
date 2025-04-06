@@ -67,6 +67,37 @@ enum ChallengeStatus {
   completed
 }
 
+extension ChallengeStatusExtension on ChallengeStatus {
+  String get apiValue {
+    switch (this) {
+      case ChallengeStatus.locked:
+        return 'LOCKED';
+      case ChallengeStatus.available:
+        return 'AVAILABLE';
+      case ChallengeStatus.inProgress:
+        return 'IN_PROGRESS';
+      case ChallengeStatus.completed:
+        return 'COMPLETED';
+    }
+  }
+  
+  static ChallengeStatus fromApiValue(String? value) {
+    if (value == null) return ChallengeStatus.locked;
+    
+    switch (value.toUpperCase()) {
+      case 'AVAILABLE':
+        return ChallengeStatus.available;
+      case 'COMPLETED':
+        return ChallengeStatus.completed;
+      case 'IN_PROGRESS':
+        return ChallengeStatus.inProgress;
+      case 'LOCKED':
+      default:
+        return ChallengeStatus.locked;
+    }
+  }
+}
+
 @immutable
 class Challenge {
   final String id;
@@ -74,7 +105,7 @@ class Challenge {
   final String description;
   final ChallengeCategory category;
   final int level;
-  final int targetValue;
+  final double targetValue;
   final String unit;
   final DateTime? deadline;
   final bool isWeekly;
@@ -87,6 +118,10 @@ class Challenge {
   final int participantCount;
   final List<ChallengeSubmission> leaderboard;
   final ChallengeSubmission? userSubmission;
+  final ChallengeStatus status;
+  final DateTime? optedInAt;
+  final DateTime? completedAt;
+  final double? userValue;
 
   const Challenge({
     required this.id,
@@ -107,34 +142,73 @@ class Challenge {
     this.participantCount = 0,
     this.leaderboard = const [],
     this.userSubmission,
+    this.status = ChallengeStatus.locked,
+    this.optedInAt,
+    this.completedAt,
+    this.userValue,
   });
   
   factory Challenge.fromJson(Map<String, dynamic> json) {
+    // Handle category conversion
+    ChallengeCategory categoryValue;
+    try {
+      final categoryStr = json['category']?.toString().toLowerCase();
+      switch (categoryStr) {
+        case 'passing': categoryValue = ChallengeCategory.passing; break;
+        case 'shooting': categoryValue = ChallengeCategory.shooting; break;
+        case 'dribbling': categoryValue = ChallengeCategory.dribbling; break;
+        case 'fitness': categoryValue = ChallengeCategory.fitness; break;
+        case 'defense': categoryValue = ChallengeCategory.defense; break;
+        case 'goalkeeping': categoryValue = ChallengeCategory.goalkeeping; break;
+        case 'tactical': categoryValue = ChallengeCategory.tactical; break;
+        case 'weekly': categoryValue = ChallengeCategory.weekly; break;
+        case 'wall_touches': categoryValue = ChallengeCategory.wallTouches; break;
+        default: categoryValue = ChallengeCategory.passing; break;
+      }
+    } catch (e) {
+      categoryValue = ChallengeCategory.passing;
+    }
+    
+    // Parse target value as double (API may send it as int or double)
+    double targetValueDouble;
+    try {
+      targetValueDouble = json['target_value'] is int 
+          ? (json['target_value'] as int).toDouble() 
+          : json['target_value']?.toDouble() ?? 0.0;
+    } catch (e) {
+      targetValueDouble = 0.0;
+    }
+    
+    // Parse status
+    final statusValue = ChallengeStatusExtension.fromApiValue(json['status']);
+    
     return Challenge(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      category: ChallengeCategory.values.firstWhere(
-        (e) => e.toString() == 'ChallengeCategory.${json['category']}',
-      ),
-      level: json['level'],
-      targetValue: json['targetValue'],
-      unit: json['unit'],
-      xpReward: json['xpReward'] ?? 100,
+      id: json['id']?.toString() ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      category: categoryValue,
+      level: json['level'] ?? 1,
+      targetValue: targetValueDouble,
+      unit: json['unit'] ?? 'count',
+      xpReward: json['xp_reward'] ?? 100,
       deadline: json['deadline'] != null ? DateTime.parse(json['deadline']) : null,
-      isWeekly: json['isWeekly'] ?? false,
+      isWeekly: json['is_weekly'] ?? false,
       tips: json['tips'] != null ? List<String>.from(json['tips']) : null,
-      videoUrl: json['videoUrl'],
-      imageUrl: json['imageUrl'],
-      isActive: json['isActive'] ?? true,
-      timeRemaining: json['timeRemaining'] ?? '',
-      participantCount: json['participantCount'] ?? 0,
+      videoUrl: json['video_url'],
+      imageUrl: json['image_url'],
+      isActive: json['is_active'] ?? true,
+      timeRemaining: json['time_remaining'] ?? '',
+      participantCount: json['participant_count'] ?? 0,
       leaderboard: json['leaderboard'] != null 
           ? (json['leaderboard'] as List).map((e) => ChallengeSubmission.fromJson(e)).toList()
-          : [],
-      userSubmission: json['userSubmission'] != null 
-          ? ChallengeSubmission.fromJson(json['userSubmission'])
+          : const [],
+      userSubmission: json['user_submission'] != null 
+          ? ChallengeSubmission.fromJson(json['user_submission'])
           : null,
+      status: statusValue,
+      optedInAt: json['opted_in_at'] != null ? DateTime.parse(json['opted_in_at']) : null,
+      completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']) : null,
+      userValue: json['user_value']?.toDouble(),
     );
   }
   
@@ -145,24 +219,79 @@ class Challenge {
       'description': description,
       'category': category.toString().split('.').last,
       'level': level,
-      'targetValue': targetValue,
+      'target_value': targetValue,
       'unit': unit,
-      'xpReward': xpReward,
+      'xp_reward': xpReward,
       'deadline': deadline?.toIso8601String(),
-      'isWeekly': isWeekly,
+      'is_weekly': isWeekly,
       'tips': tips,
-      'videoUrl': videoUrl,
-      'imageUrl': imageUrl,
-      'isActive': isActive,
-      'timeRemaining': timeRemaining,
-      'participantCount': participantCount,
+      'video_url': videoUrl,
+      'image_url': imageUrl,
+      'is_active': isActive,
+      'time_remaining': timeRemaining,
+      'participant_count': participantCount,
       'leaderboard': leaderboard.map((e) => e.toJson()).toList(),
-      'userSubmission': userSubmission?.toJson(),
+      'user_submission': userSubmission?.toJson(),
+      'status': status.apiValue,
+      'opted_in_at': optedInAt?.toIso8601String(),
+      'completed_at': completedAt?.toIso8601String(),
+      'user_value': userValue,
     };
   }
 
   String formatMetric(double value) {
     return '$value $unit';
+  }
+  
+  // Create a copy of this challenge with updated fields
+  Challenge copyWith({
+    String? id,
+    String? title,
+    String? description,
+    ChallengeCategory? category,
+    int? level,
+    double? targetValue,
+    String? unit,
+    DateTime? deadline,
+    bool? isWeekly,
+    List<String>? tips,
+    String? videoUrl,
+    String? imageUrl,
+    int? xpReward,
+    bool? isActive,
+    String? timeRemaining,
+    int? participantCount,
+    List<ChallengeSubmission>? leaderboard,
+    ChallengeSubmission? userSubmission,
+    ChallengeStatus? status,
+    DateTime? optedInAt,
+    DateTime? completedAt,
+    double? userValue,
+  }) {
+    return Challenge(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      category: category ?? this.category,
+      level: level ?? this.level,
+      targetValue: targetValue ?? this.targetValue,
+      unit: unit ?? this.unit,
+      deadline: deadline ?? this.deadline,
+      isWeekly: isWeekly ?? this.isWeekly,
+      tips: tips ?? this.tips,
+      videoUrl: videoUrl ?? this.videoUrl,
+      imageUrl: imageUrl ?? this.imageUrl,
+      xpReward: xpReward ?? this.xpReward,
+      isActive: isActive ?? this.isActive,
+      timeRemaining: timeRemaining ?? this.timeRemaining,
+      participantCount: participantCount ?? this.participantCount,
+      leaderboard: leaderboard ?? this.leaderboard,
+      userSubmission: userSubmission ?? this.userSubmission,
+      status: status ?? this.status,
+      optedInAt: optedInAt ?? this.optedInAt,
+      completedAt: completedAt ?? this.completedAt,
+      userValue: userValue ?? this.userValue,
+    );
   }
 }
 
@@ -211,35 +340,12 @@ class UserChallenge {
   }
   
   factory UserChallenge.fromJson(Map<String, dynamic> json) {
-    ChallengeStatus statusValue;
-    
-    try {
-      // For backward compatibility - try the old format first
-      statusValue = ChallengeStatus.values.firstWhere(
-        (e) => e.toString() == 'ChallengeStatus.${json['status']}',
-        orElse: () {
-          // Try parsing directly from the lowercase string value
-          final statusString = json['status']?.toString().toLowerCase();
-          switch (statusString) {
-            case 'available': return ChallengeStatus.available;
-            case 'completed': return ChallengeStatus.completed;
-            case 'in_progress': return ChallengeStatus.inProgress;
-            case 'locked': 
-            default: return ChallengeStatus.locked;
-          }
-        }
-      );
-    } catch (e) {
-      print('Error parsing status: ${json['status']} - defaulting to locked');
-      statusValue = ChallengeStatus.locked;
-    }
-    
     return UserChallenge(
-      challengeId: json['challengeId'],
-      status: statusValue,
-      currentValue: json['currentValue'] ?? 0,
-      startedAt: DateTime.parse(json['startedAt']),
-      completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt']) : null,
+      challengeId: json['challenge_id'].toString(),
+      status: ChallengeStatusExtension.fromApiValue(json['status']),
+      currentValue: json['current_value'] ?? 0,
+      startedAt: DateTime.parse(json['started_at'] ?? DateTime.now().toIso8601String()),
+      completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']) : null,
       attempts: json['attempts'] != null
           ? (json['attempts'] as List).map((e) => ChallengeAttempt.fromJson(e)).toList()
           : null,
@@ -249,11 +355,11 @@ class UserChallenge {
   
   Map<String, dynamic> toJson() {
     return {
-      'challengeId': challengeId,
-      'status': status.toString().split('.').last,
-      'currentValue': currentValue,
-      'startedAt': startedAt.toIso8601String(),
-      'completedAt': completedAt?.toIso8601String(),
+      'challenge_id': challengeId,
+      'status': status.apiValue,
+      'current_value': currentValue,
+      'started_at': startedAt.toIso8601String(),
+      'completed_at': completedAt?.toIso8601String(),
       'attempts': attempts?.map((e) => e.toJson()).toList(),
       'rank': rank,
     };
@@ -310,10 +416,12 @@ class ChallengeSubmission {
   factory ChallengeSubmission.fromJson(Map<String, dynamic> json) {
     return ChallengeSubmission(
       userId: json['user_id'].toString(),
-      userName: json['user_name'],
+      userName: json['user_name'] ?? '',
       userImageUrl: json['user_image_url'],
-      value: json['value'].toDouble(),
-      submittedAt: DateTime.parse(json['submitted_at']),
+      value: (json['value'] is int) 
+          ? (json['value'] as int).toDouble() 
+          : (json['value'] ?? 0.0).toDouble(),
+      submittedAt: DateTime.parse(json['submitted_at'] ?? DateTime.now().toIso8601String()),
       rank: json['rank'] ?? 0,
     );
   }

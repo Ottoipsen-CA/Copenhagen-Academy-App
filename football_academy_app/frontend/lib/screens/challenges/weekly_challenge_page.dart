@@ -19,7 +19,6 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> {
   late TextEditingController _valueController;
   bool _isSubmitting = false;
   Challenge? _updatedChallenge;
-  ChallengeService _challengeService = ChallengeService();
   
   Challenge get challenge => _updatedChallenge ?? widget.challenge;
   
@@ -53,14 +52,14 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> {
     final value = double.parse(_valueController.text);
     
     try {
-      final success = await _challengeService.submitChallengeResult(
+      final success = await ChallengeService.submitChallengeResult(
         challenge.id,
         value,
       );
       
       if (success) {
         // Reload challenge to get updated status
-        final updatedChallenge = await _challengeService.getChallengeById(challenge.id);
+        final updatedChallenge = await ChallengeService.getChallengeById(challenge.id);
         
         setState(() {
           if (updatedChallenge != null) {
@@ -87,7 +86,7 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Weekly Challenge'),
+        title: const Text('Active Challenge'),
         backgroundColor: const Color(0xFF0B0057),
         actions: [
           // Leaderboard button
