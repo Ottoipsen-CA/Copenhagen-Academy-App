@@ -556,60 +556,17 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
                     ),
                     const SizedBox(height: 8),
                     
-                    // Show ratings if available
-                    if (test.paceRating != null) ...[
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _buildRating('Pace', test.paceRating!),
-                          _buildRating('Shooting', test.shootingRating ?? 0),
-                          _buildRating('Passing', test.passingRating ?? 0),
-                          _buildRating('Dribbling', test.dribblingRating ?? 0),
-                          _buildRating('Juggles', test.jugglesRating ?? 0),
-                          _buildRating('First Touch', test.firstTouchRating ?? 0),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Divider(color: Colors.white.withOpacity(0.2)),
-                      const SizedBox(height: 8),
-                    ],
-                    
-                    // Test results
+                    // Show ratings as Wrap instead of the duplicate test results
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _buildTestResult(
-                          'Passing', 
-                          test.passingTest?.toString() ?? '-',
-                          isRecord: test.isPassingRecord == true
-                        ),
-                        _buildTestResult(
-                          'Sprint', 
-                          '${test.sprintTest?.toString() ?? '-'}s',
-                          isRecord: test.isSprintRecord == true
-                        ),
-                        _buildTestResult(
-                          'First Touch', 
-                          test.firstTouchTest?.toString() ?? '-',
-                          isRecord: test.isFirstTouchRecord == true
-                        ),
-                        _buildTestResult(
-                          'Shooting', 
-                          test.shootingTest?.toString() ?? '-',
-                          isRecord: test.isShootingRecord == true
-                        ),
-                        _buildTestResult(
-                          'Juggling', 
-                          test.jugglingTest?.toString() ?? '-',
-                          isRecord: test.isJugglingRecord == true
-                        ),
-                        _buildTestResult(
-                          'Dribbling', 
-                          '${test.dribblingTest?.toString() ?? '-'}s',
-                          isRecord: test.isDribblingRecord == true
-                        ),
+                        _buildRating('Pace', test.paceRating ?? 0),
+                        _buildRating('Shooting', test.shootingRating ?? 0),
+                        _buildRating('Passing', test.passingRating ?? 0),
+                        _buildRating('Dribbling', test.dribblingRating ?? 0),
+                        _buildRating('Juggles', test.jugglesRating ?? 0),
+                        _buildRating('First Touch', test.firstTouchRating ?? 0),
                       ],
                     ),
                   ],
@@ -662,58 +619,6 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
               fontSize: 12,
               fontWeight: FontWeight.bold,
               color: ratingColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildTestResult(String label, String value, {bool isRecord = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: 4,
-      ),
-      decoration: BoxDecoration(
-        color: isRecord 
-          ? const Color(0xFF03B0F1).withOpacity(0.2)
-          : Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
-        border: isRecord 
-          ? Border.all(color: const Color(0xFF03B0F1), width: 1)
-          : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: isRecord ? const Color(0xFF03B0F1) : Colors.white70,
-                ),
-              ),
-              if (isRecord) 
-                const SizedBox(
-                  width: 12,
-                  child: Icon(
-                    Icons.star,
-                    size: 8,
-                    color: Color(0xFF03B0F1),
-                  ),
-                ),
-            ],
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: isRecord ? const Color(0xFF03B0F1) : Colors.white,
             ),
           ),
         ],
