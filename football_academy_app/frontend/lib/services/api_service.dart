@@ -9,7 +9,7 @@ class ApiService {
   final FlutterSecureStorage secureStorage;
   
   // Flag to use mock data when server is unavailable
-  bool _useMockData = false; // Set to true for development
+  bool _useMockData = false; // Always keep this false for production
 
   ApiService({
     required this.client,
@@ -22,10 +22,17 @@ class ApiService {
     // baseUrl = 'https://api.footballacademy.dev';
   }
 
+  // For testing - allow enabling mock data temporarily
+  void setUseMockData(bool value) {
+    _useMockData = value;
+    print('ApiService: Mock data mode ${_useMockData ? 'enabled' : 'disabled'}');
+  }
+
   // Reset the API service state (can be called on logout)
   void reset() {
     // Don't close the client as it may be needed for future requests
-    // Instead, log the reset operation
+    // Set mock data to false (ensure real data is used)
+    _useMockData = false;
     print('API Service reset - tokens and state cleared');
   }
 
@@ -64,6 +71,7 @@ class ApiService {
   // Generic GET request
   Future<dynamic> get(String endpoint, {bool withAuth = true}) async {
     if (_useMockData) {
+      print('ApiService: Using mock data for GET: $endpoint');
       return _getMockData(endpoint);
     }
     
@@ -80,7 +88,13 @@ class ApiService {
       print('GET response status: ${response.statusCode}');
       
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        try {
+          return json.decode(response.body);
+        } catch (e) {
+          print('ApiService: Error decoding JSON: $e');
+          print('ApiService: Response body: ${response.body}');
+          throw Exception('Failed to decode response');
+        }
       } else {
         print('GET request failed with status: ${response.statusCode}');
         // Don't fall back to mock data - throw an error instead

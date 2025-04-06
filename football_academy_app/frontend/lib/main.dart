@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/challenge_service.dart';
+import 'services/league_table_service.dart';
 import 'services/navigation_service.dart';
 import 'repositories/auth_repository.dart';
 import 'repositories/api_auth_repository.dart';
@@ -57,6 +58,9 @@ void main() async {
   
   // Initialize challenge service
   ChallengeService.initialize(apiService);
+  
+  // Initialize league table service
+  LeagueTableService.initialize(apiService);
   
   runApp(
     MultiProvider(

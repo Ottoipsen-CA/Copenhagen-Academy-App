@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../models/league_table_entry.dart';
 import '../../models/user.dart';
+import '../../models/challenge.dart';
 import '../../services/league_table_service.dart';
+import '../../services/challenge_service.dart';
 import '../../widgets/navigation_drawer.dart';
 import '../../widgets/fifa_player_card.dart';
 import 'dart:math' as math;
@@ -23,8 +25,13 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
   ViewMode _viewMode = ViewMode.leagueTable;
   String _selectedPosition = 'All';
   List<LeagueTableEntry> _players = [];
+  Challenge? _currentChallenge;
   bool _isLoading = true;
   String? _errorMessage;
+  
+  // Add ScrollControllers
+  final ScrollController _leagueTableScrollController = ScrollController();
+  final ScrollController _playersScrollController = ScrollController();
   
   // Position filter options
   final List<String> _positions = [
@@ -51,6 +58,8 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
   void dispose() {
     _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
+    _leagueTableScrollController.dispose();
+    _playersScrollController.dispose();
     super.dispose();
   }
   
@@ -77,28 +86,56 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
     });
     
     try {
-      List<LeagueTableEntry> players;
+      debugPrint("LeagueTablePage: Loading data from API...");
       
-      switch (_viewMode) {
-        case ViewMode.leagueTable:
-          players = await LeagueTableService.getAllRankings();
-          break;
-        case ViewMode.players:
-          if (_selectedPosition == 'All') {
-            players = await LeagueTableService.getAllRankings();
-          } else {
-            players = await LeagueTableService.getAllRankings();
-            final positionList = _positionMappings[_selectedPosition] ?? [];
-            players = players.where((player) => positionList.contains(player.user.position)).toList();
-          }
-          break;
+      // First try to get the current active challenge
+      Challenge? currentChallenge = await ChallengeService.getWeeklyChallenge();
+      
+      if (currentChallenge != null) {
+        debugPrint("LeagueTablePage: Active challenge found with ID: ${currentChallenge.id}");
+      } else {
+        debugPrint("LeagueTablePage: No active challenge found");
       }
       
-      setState(() {
-        _players = players;
-        _isLoading = false;
-      });
+      // Get league table data
+      List<LeagueTableEntry> players = [];
+      
+      try {
+        if (currentChallenge != null) {
+          debugPrint("LeagueTablePage: Fetching league table for challenge ${currentChallenge.id}");
+          players = await LeagueTableService.getLeagueTableForChallenge(currentChallenge.id);
+          debugPrint("LeagueTablePage: Retrieved ${players.length} entries for challenge");
+        } else {
+          debugPrint("LeagueTablePage: Fetching general league table");
+          players = await LeagueTableService.getAllRankings();
+          debugPrint("LeagueTablePage: Retrieved ${players.length} entries");
+        }
+        
+        // Filter by position if needed
+        if (_viewMode == ViewMode.players && _selectedPosition != 'All') {
+          final positionList = _positionMappings[_selectedPosition] ?? [];
+          players = players.where((player) => positionList.contains(player.user.position)).toList();
+          debugPrint("LeagueTablePage: Filtered to ${players.length} players for position $_selectedPosition");
+        }
+        
+        // Sort players by rank to ensure proper display order
+        players.sort((a, b) => a.rank.compareTo(b.rank));
+        
+        setState(() {
+          _currentChallenge = currentChallenge;
+          _players = players;
+          _isLoading = false;
+        });
+      } catch (e) {
+        debugPrint("LeagueTablePage: Error fetching league table: $e");
+        setState(() {
+          _currentChallenge = currentChallenge; // Still set the challenge
+          _errorMessage = 'Unable to load leaderboard data. Please try again later.';
+          _isLoading = false;
+        });
+      }
     } catch (e) {
+      debugPrint("LeagueTablePage: Error in main data loading process: $e");
       setState(() {
         _errorMessage = 'Failed to load data: ${e.toString()}';
         _isLoading = false;
@@ -110,7 +147,10 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('League Table'),
+        title: const Text(
+          'League Table',
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
         backgroundColor: const Color(0xFF0B0057),
         leading: Builder(
@@ -128,6 +168,7 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
+          labelColor: Colors.white,
           tabs: const [
             Tab(text: 'LEAGUE TABLE'),
             Tab(text: 'PLAYERS'),
@@ -147,12 +188,62 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
             ? Center(
-                child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.white),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.white),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _loadData,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: Colors.black,
+                      ),
+                      child: const Text('Refresh'),
+                    ),
+                  ],
                 ),
               )
-            : _buildContent(),
+            : _players.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'No league table data available',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _currentChallenge != null
+                            ? 'No data for challenge: ${_currentChallenge!.title}'
+                            : 'No active challenge found',
+                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: _loadData,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber,
+                          foregroundColor: Colors.black,
+                        ),
+                        child: const Text('Refresh'),
+                      ),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadData,
+                  child: _buildContent(),
+                ),
       ),
     );
   }
@@ -168,155 +259,250 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
   }
   
   Widget _buildLeagueTableTab() {
-    return Scrollbar(
-      thumbVisibility: true,
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Card(
-                color: Colors.white.withOpacity(0.15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Table(
-                    columnWidths: const {
-                      0: FixedColumnWidth(40),    // Rank
-                      1: FlexColumnWidth(3),      // Player
-                      2: FixedColumnWidth(30),    // MP
-                      3: FixedColumnWidth(30),    // W
-                      4: FixedColumnWidth(30),    // D
-                      5: FixedColumnWidth(30),    // L
-                      6: FixedColumnWidth(50),    // Points
-                      7: FixedColumnWidth(60),    // Rating
-                    },
-                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                    children: [
-                      // Header row
-                      TableRow(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return Scrollbar(
+          controller: _leagueTableScrollController,
+          thumbVisibility: true,
+          child: SingleChildScrollView(
+            controller: _leagueTableScrollController,
+            child: Column(
+              children: [
+                // Current Challenge Header
+                if (_currentChallenge != null)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Card(
+                      color: Colors.amber.withOpacity(0.15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: BorderSide(
+                          color: Colors.amber.withOpacity(0.5),
+                          width: 1,
                         ),
-                        children: [
-                          _tableHeader('#'),
-                          _tableHeader('PLAYER'),
-                          _tableHeader('MP'),
-                          _tableHeader('W'),
-                          _tableHeader('D'),
-                          _tableHeader('L'),
-                          _tableHeader('PTS'),
-                          _tableHeader('RATING'),
-                        ],
                       ),
-                      
-                      // Data rows
-                      for (var entry in _players.take(20))
-                        TableRow(
-                          decoration: BoxDecoration(
-                            color: entry.rank <= 3 
-                                ? Colors.amber.withOpacity(0.1) 
-                                : Colors.transparent,
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Colors.white.withOpacity(0.1),
-                                width: 1,
-                              ),
-                            ),
-                          ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _tableCell(
-                              '${entry.rank}', 
-                              fontWeight: entry.rank <= 3 ? FontWeight.bold : FontWeight.normal,
-                              color: entry.rank <= 3 ? Colors.amber : Colors.white,
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
-                              child: Row(
-                                children: [
-                                  _positionTag(entry.user.position ?? 'ST'),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          entry.user.fullName,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        Text(
-                                          entry.user.currentClub ?? '',
-                                          style: TextStyle(
-                                            color: Colors.white.withOpacity(0.7),
-                                            fontSize: 12,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.star,
+                                  color: Colors.amber,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'CURRENT CHALLENGE',
+                                  style: TextStyle(
+                                    color: Colors.amber,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
                                   ),
-                                ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _currentChallenge!.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
                               ),
                             ),
-                            _tableCell('${entry.matchesPlayed}'),
-                            _tableCell('${entry.wins}'),
-                            _tableCell('${entry.draws}'),
-                            _tableCell('${entry.losses}'),
-                            _tableCell(
-                              '${entry.totalPoints}',
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                            const SizedBox(height: 4),
+                            Text(
+                              _currentChallenge!.description,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 14,
+                              ),
                             ),
-                            _ratingCell(entry.stats.overallRating?.toInt() ?? 0),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Target: ${_currentChallenge!.targetValue} ${_currentChallenge!.unit}',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 13,
+                              ),
+                            ),
                           ],
                         ),
+                      ),
+                    ),
+                  ),
+                
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Card(
+                    color: Colors.white.withOpacity(0.15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Table(
+                        columnWidths: const {
+                          0: FixedColumnWidth(40),    // Rank
+                          1: FlexColumnWidth(3),      // Player
+                          2: FixedColumnWidth(70),    // Score/Result
+                        },
+                        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                        children: [
+                          // Header row
+                          TableRow(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                            ),
+                            children: [
+                              _tableHeader('#'),
+                              _tableHeader('PLAYER'),
+                              _tableHeader('SCORE'),
+                            ],
+                          ),
+                          
+                          // Data rows
+                          for (var entry in _players.take(20))
+                            TableRow(
+                              decoration: BoxDecoration(
+                                color: entry.rank <= 3 
+                                    ? Colors.amber.withOpacity(0.1) 
+                                    : Colors.transparent,
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: Colors.white.withOpacity(0.1),
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                              children: [
+                                _tableCell(
+                                  '${entry.rank}', 
+                                  fontWeight: entry.rank <= 3 ? FontWeight.bold : FontWeight.normal,
+                                  color: entry.rank <= 3 ? Colors.amber : Colors.white,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: Row(
+                                    children: [
+                                      _positionTag(entry.user.position ?? 'ST'),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              entry.user.fullName,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            Text(
+                                              entry.user.currentClub ?? '',
+                                              style: TextStyle(
+                                                color: Colors.white.withOpacity(0.7),
+                                                fontSize: 12,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                _scoreCell(entry.bestResult ?? 0, _currentChallenge?.unit ?? ''),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        color: Colors.white70,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _currentChallenge != null
+                              ? 'League table shows rankings for the current challenge: ${_currentChallenge!.title}'
+                              : 'Table shows best scores from completed challenges',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
-            
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.info_outline,
-                    color: Colors.white70,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Points are calculated from matches and challenges',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
   
   Widget _buildPlayersTab() {
     return Column(
       children: [
+        // Current Challenge Header - more prominent
+        if (_currentChallenge != null)
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.amber.withOpacity(0.5),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    _currentChallenge!.title,
+                    style: const TextStyle(
+                      color: Colors.amber,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _currentChallenge!.description,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        
         // Position filter
         Container(
           height: 50,
@@ -360,33 +546,115 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
                   style: const TextStyle(color: Colors.white),
                 ),
               )
-            : Scrollbar(
-                thickness: 8,
-                radius: const Radius.circular(4),
-                thumbVisibility: true,
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16.0),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
-                    childAspectRatio: 0.55,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: _players.length,
-                  itemBuilder: (context, index) {
-                    final player = _players[index];
-                    return SizedBox(
-                      height: 180, // Smaller height
-                      child: FifaPlayerCard(
-                        playerName: player.user.fullName,
-                        position: player.user.position ?? 'ST',
-                        stats: player.stats,
-                        rating: player.stats.overallRating?.toInt() ?? 0,
-                        cardType: _getCardType(player.stats.overallRating?.toInt() ?? 0),
+            : LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  return Scrollbar(
+                    controller: _playersScrollController,
+                    thickness: 8,
+                    radius: const Radius.circular(4),
+                    thumbVisibility: true,
+                    child: GridView.builder(
+                      controller: _playersScrollController,
+                      padding: const EdgeInsets.all(16.0),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 5,
+                        childAspectRatio: 0.55,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
                       ),
-                    );
-                  },
-                ),
+                      itemCount: _players.length,
+                      itemBuilder: (context, index) {
+                        final player = _players[index];
+                        return Stack(
+                          children: [
+                            // Player card
+                            SizedBox(
+                              height: 180, // Smaller height
+                              child: FifaPlayerCard(
+                                playerName: player.user.fullName,
+                                position: player.user.position ?? 'ST',
+                                stats: player.stats,
+                                rating: player.stats.overallRating?.toInt() ?? 0,
+                                cardType: _getCardType(player.stats.overallRating?.toInt() ?? 0),
+                              ),
+                            ),
+                            
+                            // Challenge result badge - larger and more prominent
+                            if (player.bestResult != null && player.bestResult! > 0)
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber,
+                                    borderRadius: BorderRadius.circular(15),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.5),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.emoji_events,
+                                        color: Colors.black87,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${player.bestResult} ${_currentChallenge?.unit ?? ''}',
+                                        style: const TextStyle(
+                                          color: Colors.black87,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            
+                            // Rank overlay in top left
+                            Positioned(
+                              top: 8,
+                              left: 8,
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _getLeaderColor(index),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.5),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${player.rank}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
         ),
       ],
@@ -535,5 +803,25 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
     else {
       return CardType.normal;
     }
+  }
+
+  // Add a new helper widget for the score cell
+  Widget _scoreCell(int score, String unit) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        '$score ${unit.isNotEmpty ? unit : ''}',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.amber,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
   }
 } 

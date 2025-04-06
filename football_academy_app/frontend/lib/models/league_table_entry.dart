@@ -12,24 +12,55 @@ class LeagueTableEntry {
   final int wins;
   final int draws;
   final int losses;
+  final int? bestResult;
+  final DateTime? submittedAt;
   
   LeagueTableEntry({
     required this.user,
     required this.stats,
     required this.rank,
-    required this.challengePoints,
+    this.challengePoints = 0,
     this.matchesPlayed = 0,
     this.wins = 0,
     this.draws = 0,
     this.losses = 0,
+    this.bestResult,
+    this.submittedAt,
   });
   
   int get totalPoints => challengePoints + (wins * 3) + draws;
   
   factory LeagueTableEntry.fromJson(Map<String, dynamic> json) {
+    // Handle flat structure from API response
+    if (json.containsKey('user_id')) {
+      // Create a simple User object from the flattened data
+      final user = User(
+        id: json['user_id'],
+        email: '',  // Email might not be available in this context
+        fullName: json['full_name'] ?? '',
+        position: json['position'],
+        currentClub: json['current_club'],
+        isActive: true,
+      );
+      
+      // Create default stats 
+      final stats = PlayerStats.empty();
+      
+      return LeagueTableEntry(
+        user: user,
+        stats: stats,
+        rank: json['rank'] ?? 0,
+        challengePoints: 0,
+        bestResult: json['best_result'],
+        submittedAt: json['submitted_at'] != null ? 
+          DateTime.parse(json['submitted_at']) : null,
+      );
+    } 
+    
+    // Handle the original nested structure if present
     return LeagueTableEntry(
-      user: User.fromJson(json['user']),
-      stats: PlayerStats.fromJson(json['stats']),
+      user: json['user'] != null ? User.fromJson(json['user']) : User(email: '', fullName: 'Unknown'),
+      stats: json['stats'] != null ? PlayerStats.fromJson(json['stats']) : PlayerStats.empty(),
       rank: json['rank'] ?? 0,
       challengePoints: json['challenge_points'] ?? 0,
       matchesPlayed: json['matches_played'] ?? 0,
@@ -49,6 +80,8 @@ class LeagueTableEntry {
       'wins': wins,
       'draws': draws,
       'losses': losses,
+      'best_result': bestResult,
+      'submitted_at': submittedAt?.toIso8601String(),
     };
   }
 } 
