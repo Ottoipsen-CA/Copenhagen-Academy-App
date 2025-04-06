@@ -206,7 +206,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Player Tests',
+                  'Skill Tests',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

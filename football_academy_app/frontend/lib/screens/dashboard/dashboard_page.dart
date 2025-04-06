@@ -61,26 +61,17 @@ class _DashboardPageState extends State<DashboardPage> {
       // Load user data
       final user = await authService.getCurrentUser();
       
-      // Load player stats from the service only if the feature is enabled
-      PlayerStats? playerStats;
-      if (FeatureFlags.playerStatsEnabled) {
-        playerStats = await PlayerStatsService.getPlayerStats();
-        if (playerStats == null) {
-          throw Exception("Failed to load player stats");
-        }
-      } else {
-        // Use mock data when feature is disabled
-        playerStats = PlayerStats(
-          pace: 85.0,
-          shooting: 84.0,
-          passing: 78.0,
-          dribbling: 88.0,
-          juggles: 75.0,
-          firstTouch: 82.0,
-          overallRating: 83.0,
-          lastUpdated: DateTime.now(),
-        );
-      }
+      // Use mock data for player stats
+      final playerStats = PlayerStats(
+        pace: 85.0,
+        shooting: 84.0,
+        passing: 78.0,
+        dribbling: 88.0,
+        juggles: 75.0,
+        firstTouch: 82.0,
+        overallRating: 83.0,
+        lastUpdated: DateTime.now(),
+      );
       
       // Initialize challenges
       await ChallengeService.initializeUserChallenges();
@@ -208,21 +199,11 @@ class _DashboardPageState extends State<DashboardPage> {
             
             // Player Card and Welcome Section
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // FIFA Player Card - Left corner
-                FifaPlayerCard(
-                  playerName: _user!.fullName,
-                  position: _user!.position ?? 'ST',
-                  stats: _playerStats!,
-                  rating: _playerStats?.overallRating?.toInt() ?? 0,
-                  nationality: '🇦🇺', // Australian flag as example
-                  playerImageUrl: 'https://raw.githubusercontent.com/ottoipsen/football_academy_assets/main/player_photos/player_photo.jpg',
-                  cardType: _getPlayerCardType(),
-                ),
-                const SizedBox(width: 30),
-                
-                // Welcome text and progress bar
+                // Welcome text (left side)
                 Expanded(
+                  flex: 1,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -242,11 +223,25 @@ class _DashboardPageState extends State<DashboardPage> {
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      // XP Progress bar
-                      _buildXpProgressBar(),
                     ],
                   ),
+                ),
+                
+                // FIFA Player Card - Center
+                FifaPlayerCard(
+                  playerName: _user!.fullName,
+                  position: _user!.position ?? 'ST',
+                  stats: _playerStats!,
+                  rating: _playerStats?.overallRating?.toInt() ?? 0,
+                  nationality: '🇦🇺', // Australian flag as example
+                  playerImageUrl: 'https://raw.githubusercontent.com/ottoipsen/football_academy_assets/main/player_photos/player_photo.jpg',
+                  cardType: _getPlayerCardType(),
+                ),
+                
+                // Empty space on the right for balance
+                Expanded(
+                  flex: 1,
+                  child: Container(),
                 ),
               ],
             ),
@@ -258,37 +253,83 @@ class _DashboardPageState extends State<DashboardPage> {
             if (FeatureFlags.challengesEnabled)
               const SizedBox(height: 24),
             
-            // 30-Day Wall Touches Challenge
-            if (FeatureFlags.challengesEnabled)
-              _buildWallTouchesChallengeCard(),
-            
-            if (FeatureFlags.challengesEnabled)
-              const SizedBox(height: 24),
-            
-            // Stats and badges
-            if (FeatureFlags.playerStatsEnabled || FeatureFlags.badgesEnabled)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Radar chart - left side
-                  if (FeatureFlags.playerStatsEnabled)
-                    Expanded(
-                      flex: 3,
-                      child: _buildStatsCard(),
-                    ),
-                  if (FeatureFlags.playerStatsEnabled && FeatureFlags.badgesEnabled)
-                    const SizedBox(width: 16),
-                  // Badges - right side
-                  if (FeatureFlags.badgesEnabled)
-                    Expanded(
-                      flex: 2,
-                      child: _buildBadgesSection(),
-                    ),
-                ],
+            // Stats section
+            Card(
+              color: Colors.transparent,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: Color(0xFF3D007A), width: 2),
               ),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: const Color(0xFF0B0057).withOpacity(0.6),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Player Performance & Skills',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Two-column layout: Radar Chart and Skill Bars
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Left column - Radar Chart
+                        Expanded(
+                          flex: 5,
+                          child: Column(
+                            children: [
+                              SizedBox(
+                                height: 280,
+                                child: PlayerStatsRadarChart(
+                                  playerStats: _playerStats,
+                                  labelColors: const {
+                                    'PACE': Color(0xFF02D39A),
+                                    'SHOOTING': Color(0xFFFFD700),
+                                    'PASSING': Color(0xFF00ACF3),
+                                    'DRIBBLING': Color(0xFFBE008C),
+                                    'DEFENSE': Color(0xFF3875B9),
+                                    'PHYSICAL': Color(0xFFD48A29),
+                                  },
+                                ),
+                              ),
+                              // Stat Rating explanation
+                              const Center(
+                                child: Text(
+                                  'Your skill ratings by area',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        // Right column - Skill bars
+                        Expanded(
+                          flex: 4,
+                          child: _buildSkillProgressBars(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
             
-            if (FeatureFlags.playerStatsEnabled || FeatureFlags.badgesEnabled)
-              const SizedBox(height: 24),
+            const SizedBox(height: 24),
             
             // Player Tests Widget
             if (FeatureFlags.playerTestsEnabled)
@@ -297,9 +338,12 @@ class _DashboardPageState extends State<DashboardPage> {
             if (FeatureFlags.playerTestsEnabled)
               const SizedBox(height: 24),
             
-            // Performance data
-            if (FeatureFlags.playerStatsEnabled)
-              _buildPerformanceSection(),
+            // Badges section
+            if (FeatureFlags.badgesEnabled)
+              _buildBadgesSection(),
+              
+            if (FeatureFlags.badgesEnabled)
+              const SizedBox(height: 24),
           ],
         ),
       ),
@@ -563,122 +607,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
   
-  Widget _buildWallTouchesChallengeCard() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1E3B70), Color(0xFF29539B)],
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "30-DAY WALL TOUCHES CHALLENGE",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Touch the ball against a wall 100 times daily for 30 days to improve ball control!",
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 16),
-            LinearProgressIndicator(
-              value: 6 / 30, // 6 days out of 30
-              backgroundColor: Colors.white.withOpacity(0.2),
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Day 6 of 30",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Increment the day counter (would normally save to API)
-                  int currentDay = 6;
-                  int newDay = currentDay + 1;
-                  
-                  // Show success dialog
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text("Day $currentDay Completed!"),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                              size: 64,
-                            ),
-                            SizedBox(height: 16),
-                            Text("Great job! You've completed day $currentDay of your wall touches challenge."),
-                            SizedBox(height: 8),
-                            Text("Keep up the good work!", style: TextStyle(fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              
-                              // Show snackbar with update
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("Progress updated to Day $newDay of 30"),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                            },
-                            child: Text("OK"),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: const Text(
-                  "RECORD TODAY'S STREAK",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
   String _getRemainingDays(DateTime deadline) {
     final now = DateTime.now();
     final difference = deadline.difference(now);
@@ -702,8 +630,77 @@ class _DashboardPageState extends State<DashboardPage> {
   }
   
   Widget _buildBadgesSection() {
-    // Filter to only show earned badges and take the first 3
-    final earnedBadges = _badges.where((badge) => badge.isEarned).take(3).toList();
+    // For demo purposes, create some mock badges if the list is empty
+    final List<UserBadge> mockBadges = [
+      UserBadge(
+        id: '1',
+        name: 'Speed Demon',
+        description: 'Completed sprint test with exceptional time',
+        isEarned: true,
+        earnedDate: DateTime.now().subtract(const Duration(days: 3)),
+        badgeIcon: Icons.speed,
+        badgeColor: const Color(0xFF02D39A),
+        category: 'skills',
+        rarity: BadgeRarity.rare,
+        requirement: const BadgeRequirement(
+          type: 'sprint_test',
+          targetValue: 1,
+          currentValue: 1,
+        ),
+      ),
+      UserBadge(
+        id: '2',
+        name: 'Sharpshooter',
+        description: 'Scored 8+ in shooting accuracy test',
+        isEarned: true,
+        earnedDate: DateTime.now().subtract(const Duration(days: 7)),
+        badgeIcon: Icons.sports_soccer,
+        badgeColor: const Color(0xFFFFD700),
+        category: 'skills',
+        rarity: BadgeRarity.uncommon,
+        requirement: const BadgeRequirement(
+          type: 'shooting_test',
+          targetValue: 8,
+          currentValue: 9,
+        ),
+      ),
+      UserBadge(
+        id: '3',
+        name: 'Master Dribbler',
+        description: 'Completed the dribbling course in record time',
+        isEarned: true,
+        earnedDate: DateTime.now().subtract(const Duration(days: 14)),
+        badgeIcon: Icons.directions_run,
+        badgeColor: const Color(0xFFBE008C),
+        category: 'skills',
+        rarity: BadgeRarity.epic,
+        requirement: const BadgeRequirement(
+          type: 'dribbling_test',
+          targetValue: 1,
+          currentValue: 1,
+        ),
+      ),
+      UserBadge(
+        id: '4',
+        name: 'Endurance King',
+        description: 'Completed 30-day training streak',
+        isEarned: true,
+        earnedDate: DateTime.now().subtract(const Duration(days: 21)),
+        badgeIcon: Icons.fitness_center,
+        badgeColor: const Color(0xFF00ACF3),
+        category: 'consistency',
+        rarity: BadgeRarity.legendary,
+        requirement: const BadgeRequirement(
+          type: 'training_streak',
+          targetValue: 30,
+          currentValue: 30,
+        ),
+      ),
+    ];
+    
+    // Use mock badges for display if the actual list is empty
+    final earnedBadges = _badges.where((badge) => badge.isEarned).toList();
+    final displayBadges = earnedBadges.isEmpty ? mockBadges : earnedBadges;
     
     return Card(
       elevation: 3,
@@ -711,390 +708,145 @@ class _DashboardPageState extends State<DashboardPage> {
         borderRadius: BorderRadius.circular(16),
       ),
       color: Colors.black.withOpacity(0.5),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'My Badges',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => BadgesPage(badges: _badges),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'See All',
-                    style: TextStyle(
-                      color: Color(0xFFFFD700),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            earnedBadges.isEmpty
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12.0),
-                      child: Text(
-                        'Complete challenges to earn badges!',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ),
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: earnedBadges.map((badge) {
-                      return Column(
-                        children: [
-                          // Badge icon
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: badge.badgeColor.withOpacity(0.2),
-                              border: Border.all(
-                                color: badge.badgeColor,
-                                width: 2,
-                              ),
-                            ),
-                            child: Icon(
-                              badge.badgeIcon,
-                              color: badge.badgeColor,
-                              size: 30,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          
-                          // Badge name
-                          SizedBox(
-                            width: 80,
-                            child: Text(
-                              badge.name,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildXpProgressBar() {
-    return LinearProgressIndicator(
-      value: _xpProgress / _xpTarget,
-      backgroundColor: Colors.white.withOpacity(0.2),
-      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
-      minHeight: 18,
-      borderRadius: BorderRadius.circular(9),
-    );
-  }
-
-  Widget _buildStatsCard() {
-    return Card(
-      color: Colors.transparent,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFF3D007A), width: 2),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: const Color(0xFF0B0057).withOpacity(0.6),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Player Performance & Skills',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 20),
-            
-            // Three-column layout: Player Info, Radar Chart, Challenges
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left column - Player Progression
-                Expanded(
-                  flex: 3,
-                  child: _buildPlayerProgressionColumn(),
-                ),
-                
-                // Center column - Radar Chart
-                Expanded(
-                  flex: 4,
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        height: 250,
-                        child: PlayerStatsRadarChart(
-                          playerStats: _playerStats,
-                          labelColors: const {
-                            'PACE': Color(0xFF02D39A),
-                            'SHOOTING': Color(0xFFFFD700),
-                            'PASSING': Color(0xFF00ACF3),
-                            'DRIBBLING': Color(0xFFBE008C),
-                            'DEFENSE': Color(0xFF3875B9),
-                            'PHYSICAL': Color(0xFFD48A29),
-                          },
-                        ),
-                      ),
-                      // Stat Rating explanation
-                      const Center(
-                        child: Text(
-                          'Your skill ratings by area',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Right column - Skill bars
-                Expanded(
-                  flex: 3,
-                  child: _buildSkillProgressBars(),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlayerProgressionColumn() {
-    return Padding(
-      padding: const EdgeInsets.only(right: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // Current Rank & Level
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFAAA9AD).withOpacity(0.3), // Silver background
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFAAA9AD), width: 1),
-            ),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.shield,
-                  color: Color(0xFFAAA9AD),
-                  size: 22,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'Silver II',
-                  style: TextStyle(
-                    color: Color(0xFFAAA9AD),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Player position and rating
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Position',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
-              ),
-              SizedBox(height: 4),
-              Row(
-                children: [
-                  Text(
-                    'ST',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Striker',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Active boosts
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF02D39A).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF02D39A).withOpacity(0.3)),
-            ),
+          // Badge content
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Icons.bolt,
-                      color: Color(0xFF02D39A),
-                      size: 16,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      'Active Boosts',
+                    const Text(
+                      'My Badges',
                       style: TextStyle(
-                        color: Color(0xFF02D39A),
+                        fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BadgesPage(badges: _badges.isEmpty ? mockBadges : _badges),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'See All',
+                        style: TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                _buildActiveBoost(
-                  label: 'Dribbling +5',
-                  duration: '22h remaining',
-                  color: const Color(0xFFBE008C),
-                ),
-                const SizedBox(height: 4),
-                _buildActiveBoost(
-                  label: 'Stamina +3',
-                  duration: '2d remaining',
-                  color: const Color(0xFFD48A29),
-                ),
+                const SizedBox(height: 16),
+                displayBadges.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12.0),
+                          child: Text(
+                            'Complete challenges to earn badges!',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ),
+                      )
+                    : GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          childAspectRatio: 1.0,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
+                        itemCount: displayBadges.length > 4 ? 4 : displayBadges.length,
+                        itemBuilder: (context, index) {
+                          final badge = displayBadges[index];
+                          return Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Badge icon with glow
+                              Container(
+                                width: 70,
+                                height: 70,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: badge.badgeColor.withOpacity(0.2),
+                                  border: Border.all(
+                                    color: badge.badgeColor,
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: badge.badgeColor.withOpacity(0.3),
+                                      blurRadius: 10,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  badge.badgeIcon,
+                                  color: badge.badgeColor,
+                                  size: 35,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              
+                              // Badge name
+                              Text(
+                                badge.name,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
               ],
             ),
           ),
           
-          const SizedBox(height: 16),
-          
-          // Next level progress
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Next Level',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF06F0FF).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'Level 6',
-                      style: TextStyle(
-                        color: Color(0xFF06F0FF),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
+          // Coming soon overlay
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(16),
               ),
-              const SizedBox(height: 8),
-              Container(
-                height: 6,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(3),
-                  color: const Color(0xFF173968), // Dark blue
-                ),
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: _xpProgress / _xpTarget,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(3),
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFF02D39A), // Teal
-                          Color(0xFF06F0FF), // Cyan
-                        ],
-                      ),
-                    ),
+              child: Center(
+                child: Text(
+                  'KOMMER SNART!',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black.withOpacity(0.8),
+                    letterSpacing: 2,
                   ),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                '$_xpProgress/$_xpTarget XP',
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
     );
   }
-
+  
   Widget _buildSkillProgressBars() {
     final Map<String, Color> skillColors = {
       'Pace': const Color(0xFF02D39A),
@@ -1147,161 +899,6 @@ class _DashboardPageState extends State<DashboardPage> {
           currentValue: _playerStats!.firstTouch?.toInt() ?? 0,
           progressColor: skillColors['Physical']!,
         ),
-      ],
-    );
-  }
-
-  Widget _buildActiveBoost({
-    required String label,
-    required String duration,
-    required Color color,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-        Text(
-          duration,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
-            fontSize: 10,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPerformanceSection() {
-    return Card(
-      color: Colors.transparent,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFF3D007A), width: 2),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: const Color(0xFF0B0057).withOpacity(0.6),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Recent Activity',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 20),
-            _buildActivityItem(
-              icon: Icons.check_circle,
-              iconColor: const Color(0xFF02D39A),
-              iconBgColor: const Color(0xFF02D39A).withOpacity(0.2),
-              title: 'Finished Training Session',
-              subtitle: 'Ball Control Drills',
-              time: '2 hours ago',
-              showDivider: true,
-            ),
-            _buildActivityItem(
-              icon: Icons.star,
-              iconColor: const Color(0xFFFFD700),
-              iconBgColor: const Color(0xFFFFD700).withOpacity(0.2),
-              title: 'New Badge Earned!',
-              subtitle: 'Speedster',
-              time: '1 day ago',
-              showDivider: false,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActivityItem({
-    required IconData icon,
-    required Color iconColor,
-    required Color iconBgColor,
-    required String title,
-    required String subtitle,
-    required String time,
-    required bool showDivider,
-  }) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12.0),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: iconBgColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                time,
-                style: const TextStyle(
-                  color: Colors.white60,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (showDivider)
-          const Divider(color: Color(0xFF3D007A), thickness: 1),
       ],
     );
   }
