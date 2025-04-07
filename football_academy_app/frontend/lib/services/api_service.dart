@@ -250,41 +250,58 @@ class ApiService {
   }
   
   // Provide mock data for development
-  dynamic _getMockData(String endpoint) {
-    print('Using mock data for GET: $endpoint');
+  Future<dynamic> _getMockData(String endpoint) async {
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 500));
     
-    if (endpoint == '/api/v2/auth/me' || endpoint == '/users/me') {
+    if (endpoint.contains('/auth/me')) {
       return {
-        'id': 123,
-        'email': 'demo@example.com',
-        'full_name': 'Otto',
-        'position': 'Forward',
-        'current_club': 'Copenhagen Academy',
-        'date_of_birth': '2000-01-01T00:00:00Z',
-        'is_active': true,
-        'is_coach': false,
+        'id': 1,
+        'email': 'test@example.com',
+        'name': 'Test User',
+        'role': 'player',
       };
-    }
-    
-    if (endpoint.contains('/challenges')) {
-      return _getMockChallenges();
-    }
-    
-    if (endpoint.contains('/skill-tests/player-stats')) {
-      return {
-        'pace': 85.0,
-        'shooting': 84.0,
-        'passing': 78.0,
-        'dribbling': 88.0,
-        'juggles': 75.0,
-        'first_touch': 82.0,
-        'overall_rating': 83.0,
-        'last_updated': DateTime.now().toIso8601String(),
-      };
-    }
-    
-    if (endpoint.contains('/skill-tests/player-tests')) {
-      return [];
+    } else if (endpoint.contains('/skill-tests/player-tests/player/')) {
+      return [
+        {
+          'id': 1,
+          'player_id': 1,
+          'test_date': '2024-03-20T10:00:00Z',
+          'position': 'ST',
+          'pace': 85,
+          'shooting': 82,
+          'passing': 78,
+          'dribbling': 80,
+          'juggles': 75,
+          'first_touch': 83,
+          'overall_rating': 80,
+        }
+      ];
+    } else if (endpoint.contains('/challenges')) {
+      return [
+        {
+          'id': 1,
+          'title': 'Weekly Sprint Challenge',
+          'description': 'Complete 10 sprints in under 2 minutes each',
+          'target_value': 10,
+          'current_value': 5,
+          'unit': 'sprints',
+          'start_date': '2024-03-18T00:00:00Z',
+          'end_date': '2024-03-24T23:59:59Z',
+          'status': 'in_progress',
+        }
+      ];
+    } else if (endpoint.contains('/league-table/')) {
+      return [
+        {
+          'player_id': 1,
+          'player_name': 'Test Player',
+          'position': 'ST',
+          'overall_rating': 80,
+          'rank': 1,
+          'points': 100,
+        }
+      ];
     }
     
     return {};
@@ -349,4 +366,4 @@ class ApiService {
       },
     ];
   }
-} 
+}
