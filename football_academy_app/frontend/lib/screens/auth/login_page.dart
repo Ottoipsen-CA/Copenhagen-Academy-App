@@ -6,6 +6,11 @@ import '../../theme/colors.dart';
 import '../dashboard/dashboard_page.dart';
 import 'register_page.dart';
 import '../../services/challenge_service.dart';
+import '../info/info_page.dart';
+import 'dart:html' as html;
+import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../services/profile_image_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -21,6 +26,21 @@ class _LoginPageState extends State<LoginPage> {
   
   bool _isLoading = false;
   String? _errorMessage;
+  String? _profileImageUrl;
+  final ProfileImageService _profileImageService = ProfileImageService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    await _profileImageService.initialize();
+    setState(() {
+      _profileImageUrl = _profileImageService.getCurrentProfileImage();
+    });
+  }
 
   @override
   void dispose() {
@@ -60,12 +80,38 @@ class _LoginPageState extends State<LoginPage> {
       );
     } catch (e) {
       setState(() {
-        _errorMessage = 'Invalid email or password. Please try again.';
+        _errorMessage = 'Ugyldig email eller adgangskode. Prøv igen.';
       });
     } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    if (kIsWeb) {
+      // Create a file input element
+      final input = html.FileUploadInputElement()..accept = 'image/*';
+      input.click();
+
+      await input.onChange.first;
+      if (input.files!.isNotEmpty) {
+        final file = input.files![0];
+        final reader = html.FileReader();
+        
+        reader.readAsDataUrl(file);
+        await reader.onLoad.first;
+        
+        final imageData = reader.result as String;
+        
+        // Save the image to the profile service
+        await _profileImageService.saveProfileImage(imageData);
+        
+        setState(() {
+          _profileImageUrl = imageData;
         });
       }
     }
@@ -173,6 +219,30 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 20),
                 _buildSignUpSection(),
                 const SizedBox(height: 20),
+                // Add Learn More button
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/info');
+                  },
+                  icon: const Icon(
+                    Icons.info_outline,
+                    color: Colors.white70,
+                  ),
+                  label: const Text(
+                    'Læa mere om Copenhagen Academy',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    backgroundColor: Colors.white.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -342,22 +412,51 @@ class _LoginPageState extends State<LoginPage> {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0A3BAA),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.amber[300]!,
-                              width: 2,
+                        GestureDetector(
+                          onTap: _pickImage,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0A3BAA),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.amber[300]!,
+                                width: 2,
+                              ),
+                              image: _profileImageUrl != null
+                                  ? DecorationImage(
+                                      image: NetworkImage(_profileImageUrl!),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
                             ),
+                            child: _profileImageUrl == null
+                                ? const ClipOval(
+                                    child: Icon(
+                                      Icons.sports_soccer,
+                                      color: Colors.white,
+                                      size: 50,
+                                    ),
+                                  )
+                                : null,
                           ),
-                          child: const ClipOval(
-                            child: Icon(
-                              Icons.sports_soccer,
+                        ),
+                        // Camera icon overlay
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.amber[700],
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
                               color: Colors.white,
-                              size: 50,
+                              size: 16,
                             ),
                           ),
                         ),
@@ -422,7 +521,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
             child: const Text(
-              "PLAYER",
+              "Christian",
               style: TextStyle(
                 color: Color(0xFF1E22AA),
                 fontSize: 26,
@@ -513,7 +612,7 @@ class _LoginPageState extends State<LoginPage> {
         Row(
           children: [
             const Text(
-              "og bliv spillets legende!",
+              "og bliv stjernen på holdet!",
               style: TextStyle(
                 color: Colors.yellow,
                 fontSize: 46,
@@ -556,10 +655,11 @@ class _LoginPageState extends State<LoginPage> {
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter your email';
+                  return 'Indtast din email';
                 }
                 if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                  return 'Please enter a valid email';
+                  return 'Indtast en gyldig email';
+            
                 }
                 return null;
               },
@@ -583,14 +683,14 @@ class _LoginPageState extends State<LoginPage> {
               obscureText: true,
               style: const TextStyle(color: Colors.black),
               decoration: const InputDecoration(
-                hintText: "Password",
+                hintText: "Adgangskode",
                 hintStyle: TextStyle(color: Colors.grey),
                 contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 border: InputBorder.none,
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Please enter your password';
+                  return 'Indtast din adgangskode';
                 }
                 return null;
               },
@@ -636,7 +736,7 @@ class _LoginPageState extends State<LoginPage> {
               child: _isLoading
                   ? const CircularProgressIndicator(color: Colors.white)
                   : const Text(
-                      'LOG IN',
+                      'LOG IND',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -654,7 +754,7 @@ class _LoginPageState extends State<LoginPage> {
     return Column(
       children: [
         Text(
-          "Don't have an account?",
+          "Har du ikke en bruger?",
           style: TextStyle(
             color: Colors.yellow.shade200,
             fontSize: 16,
@@ -678,15 +778,42 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               );
             },
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
-            ),
             child: const Text(
-              'SIGN UP!',
+              'OPRET BRUGER',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.yellow,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        
+        // About Academy button
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white,
+              width: 2,
+            ),
+          ),
+          child: TextButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const InfoPage(),
+                ),
+              );
+            },
+            child: const Text(
+              'Hvem er vi?',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.yellow,
+                color: Colors.white,
               ),
             ),
           ),

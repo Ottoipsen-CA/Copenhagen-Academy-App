@@ -94,7 +94,7 @@ class _InfoPageState extends State<InfoPage> with SingleTickerProviderStateMixin
                   
                   // App explanation section
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(16),
@@ -103,73 +103,109 @@ class _InfoPageState extends State<InfoPage> with SingleTickerProviderStateMixin
                         width: 2,
                       ),
                     ),
-                    child: const Text(
-                      "This app helps you become a better football player! Track your skills, take fun tests, and complete exciting challenges.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          "Velkommen til Copenhagen Academy Beta!",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 24,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          "Vi er glade for at du er med på vores fodboldudviklingsrejse! I denne beta-version kan du allerede:",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildFeatureBullet("Gennemføre spændende fodboldudfordringer"),
+                        _buildFeatureBullet("Tage færdighedstests for at måle din fremgang"),
+                        _buildFeatureBullet("Følge din udvikling over tid"),
+                        const SizedBox(height: 16),
+                        const Text(
+                          "Vi arbejder hårdt på at bringe flere funktioner snart, herunder avancerede træningsplaner, videotutorials og flere challenges. Hold dig opdateret!",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   
                   const SizedBox(height: 30),
                   
-                  // Colorful features section
-                  _buildColorfulTitle('COOL FEATURES!'),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Feature cards in a grid
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
-                    children: [
-                      _buildFeatureCard(
-                        title: 'Player Cards',
-                        icon: Icons.credit_card,
-                        color: Colors.blue,
-                        isAnimated: true,
+                  // Detailed feature descriptions
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 2,
                       ),
-                      _buildFeatureCard(
-                        title: 'Fun Tests',
-                        icon: Icons.fitness_center,
-                        color: Colors.green,
-                        isAnimated: true,
-                      ),
-                      _buildFeatureCard(
-                        title: 'Challenges',
-                        icon: Icons.emoji_events,
-                        color: Colors.amber,
-                        isAnimated: true,
-                      ),
-                      _buildFeatureCard(
-                        title: 'Track Progress',
-                        icon: Icons.show_chart,
-                        color: Colors.purple,
-                        isAnimated: true,
-                      ),
-                    ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Dine Fodboldfærdigheder",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildFeatureDescription(
+                          "FIFA-Style Spillerkort",
+                          "Dit personlige FIFA-kort opdateres automatisk efter din test. Jo bedre du præsterer, jo højere tal får du. Træn mere end dine venner og kæmp dig til toppen!.",
+                          Icons.credit_card,
+                          Colors.blue,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildFeatureDescription(
+                          "Radar Chart",
+                          "Få et visuelt overblik over dine styrker og svagheder. Radar chartet viser dine resultater på tværs af alle tekniske områder, så du ved præcis, hvor du skal forbedre dig.",
+                          Icons.radar,
+                          Colors.purple,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildFeatureDescription(
+                          "Færdighedstests",
+                          "Gennemfør præcise tests for at måle dine fodboldfærdigheder:",
+                          Icons.fitness_center,
+                          Colors.green,
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildTestBullet("Sprint Test - Mål din hastighed"),
+                              _buildTestBullet("Skud Test - Test din præcision"),
+                              _buildTestBullet("Pasning Test - Test din teknik"),
+                              _buildTestBullet("Dribling Test - Test din boldkontrol"),
+                              _buildTestBullet("Jonglering Test - Test din Jongleringer"),
+                              _buildTestBullet("Første Berøring Test - Test dine førsteberøringer"),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  
-                  const SizedBox(height: 30),
-                  
-                  // Mascot character with speech bubble
-                  _buildMascotSection(),
-                  
-                  const SizedBox(height: 30),
-                  
-                  // Football Field with skills
-                  _buildFootballField(),
-                  
-                  const SizedBox(height: 30),
-                  
-                  // Cool Achievements section
-                  _buildAchievementsSection(),
                   
                   const SizedBox(height: 40),
                   Center(
@@ -197,24 +233,6 @@ class _InfoPageState extends State<InfoPage> with SingleTickerProviderStateMixin
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildColorfulTitle(String title) {
-    // Create a gradient text effect
-    return ShaderMask(
-      shaderCallback: (bounds) => const LinearGradient(
-        colors: [Colors.red, Colors.yellow, Colors.green, Colors.blue, Colors.purple],
-      ).createShader(bounds),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-          letterSpacing: 2,
         ),
       ),
     );
@@ -315,305 +333,67 @@ class _InfoPageState extends State<InfoPage> with SingleTickerProviderStateMixin
     );
   }
   
-  Widget _buildFeatureCard({
-    required String title,
-    required IconData icon,
-    required Color color,
-    bool isAnimated = false,
-  }) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 800),
-      curve: Curves.elasticOut,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: value,
-          child: Card(
-            elevation: 8,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            color: isAnimated 
-                ? color.withOpacity(0.4) 
-                : color.withOpacity(0.2),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TweenAnimationBuilder<double>(
-                    tween: Tween<double>(begin: 0.8, end: isAnimated ? 1.2 : 1.0),
-                    duration: const Duration(milliseconds: 1500),
-                    curve: Curves.elasticOut,
-                    builder: (context, scale, child) {
-                      return Transform.scale(
-                        scale: scale,
-                        child: Icon(
-                          icon,
-                          color: Colors.white,
-                          size: 60,
-                        ),
-                      );
-                    },
-                    onEnd: () {
-                      if (isAnimated && mounted) {
-                        setState(() {});
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          color: color.withOpacity(0.7),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _getFeatureDescription(title),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-  
-  String _getFeatureDescription(String title) {
-    switch (title) {
-      case 'Player Cards':
-        return 'Create your own football player card with your skills and photo';
-      case 'Fun Tests':
-        return 'Take tests to measure your speed, passing, shooting and more';
-      case 'Challenges':
-        return 'Complete fun challenges to improve your skills and earn badges';
-      case 'Track Progress':
-        return 'See how your football skills improve over time';
-      default:
-        return '';
-    }
-  }
-  
-  Widget _buildMascotSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.amber.withOpacity(0.5),
-          width: 3,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.amber.withOpacity(0.2),
-            blurRadius: 15,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
+  Widget _buildFeatureBullet(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          // Animated football character
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0.9, end: 1.1),
-            duration: const Duration(seconds: 1),
-            curve: Curves.easeInOut,
-            builder: (context, value, child) {
-              return Transform.scale(
-                scale: value,
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.amber,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 3,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.amber.withOpacity(0.5),
-                        blurRadius: 10,
-                        spreadRadius: 1,
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.sports_soccer,
-                      size: 70,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              );
-            },
-            onEnd: () => setState(() {}),
+          const Icon(
+            Icons.check_circle_outline,
+            color: Colors.greenAccent,
+            size: 20,
           ),
-          const SizedBox(width: 16),
-          
-          // Speech bubble with animated text
+          const SizedBox(width: 12),
           Expanded(
-            child: TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 0.0, end: 1.0),
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.elasticOut,
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: value,
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.white.withOpacity(0.5),
-                          blurRadius: 20,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Hi! I'm Footy!",
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0B0057),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          "I'll help you improve your football skills with fun tests and challenges!",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF3D007A),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.white,
+              ),
             ),
           ),
         ],
       ),
     );
   }
-  
-  Widget _buildFootballField() {
-    return Column(
+
+  Widget _buildFeatureDescription(String title, String description, IconData icon, Color color) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          margin: const EdgeInsets.only(bottom: 15),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            color: color.withOpacity(0.2),
+            shape: BoxShape.circle,
           ),
-          child: const Text(
-            'Skills You Will Learn',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0B0057),
-            ),
+          child: Icon(
+            icon,
+            color: color,
+            size: 24,
           ),
         ),
-        Container(
-          height: 250,
-          decoration: BoxDecoration(
-            color: Colors.green.shade800,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white,
-              width: 2,
-            ),
-          ),
-          child: Stack(
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Field markings
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: FootballFieldPainter(),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
-              
-              // Skills positions
-              Positioned(
-                left: 40,
-                top: 70,
-                child: _buildSkillBubble('Passing', Colors.blue),
-              ),
-              Positioned(
-                right: 40,
-                top: 70,
-                child: _buildSkillBubble('Shooting', Colors.red),
-              ),
-              Positioned(
-                left: 70,
-                bottom: 70,
-                child: _buildSkillBubble('Control', Colors.orange),
-              ),
-              Positioned(
-                right: 70,
-                bottom: 70,
-                child: _buildSkillBubble('Speed', Colors.purple),
-              ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 50,
-                child: Center(
-                  child: _buildSkillBubble('Dribbling', Colors.teal),
-                ),
-              ),
-              
-              // Animated football
-              AnimatedPositioned(
-                duration: const Duration(seconds: 3),
-                curve: Curves.easeInOut,
-                left: 20 + (math.Random().nextDouble() * 300),
-                top: 50 + (math.Random().nextDouble() * 150),
-                onEnd: () {
-                  if (mounted) setState(() {});
-                },
-                child: Container(
-                  width: 30,
-                  height: 30,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.sports_soccer,
-                    color: Colors.black,
-                    size: 24,
-                  ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.white,
+                  height: 1.4,
                 ),
               ),
             ],
@@ -623,109 +403,28 @@ class _InfoPageState extends State<InfoPage> with SingleTickerProviderStateMixin
     );
   }
   
-  Widget _buildSkillBubble(String skill, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 5,
-            spreadRadius: 1,
+  Widget _buildTestBullet(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.sports_soccer,
+            color: Colors.greenAccent,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.white,
+              ),
+            ),
           ),
         ],
       ),
-      child: Text(
-        skill,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildAchievementsSection() {
-    return Column(
-      children: [
-        _buildColorfulTitle('ACHIEVEMENTS'),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          margin: const EdgeInsets.only(bottom: 15, top: 10),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Text(
-            'Complete challenges to earn these badges!',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildAchievementBadge(
-              icon: Icons.star,
-              color: Colors.amber,
-              title: 'Star Player',
-            ),
-            _buildAchievementBadge(
-              icon: Icons.military_tech,
-              color: Colors.blue,
-              title: 'Top Scorer',
-            ),
-            _buildAchievementBadge(
-              icon: Icons.workspace_premium,
-              color: Colors.purple,
-              title: 'MVP',
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildAchievementBadge({
-    required IconData icon,
-    required Color color,
-    required String title,
-  }) {
-    return Column(
-      children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: color,
-              width: 3,
-            ),
-          ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 50,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-      ],
     );
   }
 }

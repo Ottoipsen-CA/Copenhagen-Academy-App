@@ -59,7 +59,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
       });
       // Show error
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load tests: ${e.toString()}')),
+        SnackBar(content: Text('Fejl ved indlæsning af test: ${e.toString()}')),
       );
     }
   }
@@ -68,7 +68,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
   Future<void> _deleteTest(int? testId) async {
     if (testId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot delete test with unknown ID')),
+        const SnackBar(content: Text('Kan ikke slette test med ukendt ID')),
       );
       return;
     }
@@ -80,7 +80,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
         backgroundColor: Colors.black87,
         title: const Text('Delete Test', style: TextStyle(color: Colors.white)),
         content: const Text(
-          'Are you sure you want to delete this test? This action cannot be undone.',
+          'Er du sikker på, at du vil slette denne test? Denne handling kan ikke gendannes.',
           style: TextStyle(color: Colors.white70),
         ),
         actions: [
@@ -111,13 +111,13 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
         
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Test deleted successfully')),
+          const SnackBar(content: Text('Test slettet succesfuldt')),
         );
       }
     } catch (e) {
       // Show error
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete test: ${e.toString()}')),
+        SnackBar(content: Text('Fejl ved sletning af test: ${e.toString()}')),
       );
     }
   }
@@ -131,7 +131,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
         _jugglingController.text.isEmpty ||
         _dribblingController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
+        const SnackBar(content: Text('Indtast alle felter')),
       );
       return;
     }
@@ -178,12 +178,12 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
       
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Test submitted successfully!')),
+        const SnackBar(content: Text('Test indsendt succesfuldt!')),
       );
     } catch (e) {
       // Show error
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to submit test: ${e.toString()}')),
+        SnackBar(content: Text('Fejl ved indsendelse af test: ${e.toString()}')),
       );
     }
   }
@@ -205,12 +205,13 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Skill Tests',
+                Text(
+                  'Player test',
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
                   ),
                 ),
                 _showForm 
@@ -233,7 +234,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
                         color: Colors.green,
                       ),
                       label: const Text(
-                        'Record Test',
+                        'Gennemfør ny test',
                         style: TextStyle(
                           color: Colors.green,
                           fontWeight: FontWeight.bold,
@@ -261,7 +262,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Enter your test results:',
+          'Indtast dine testresultater:',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
@@ -272,56 +273,56 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
         
         // Form fields
         _buildTestField(
-          label: 'Passing (count)',
+          label: 'Passing (antal)',
           controller: _passingController,
           icon: Icons.swap_horizontal_circle,
           keyboardType: TextInputType.number,
-          helperText: 'Number of successful passes in 1 minute',
+          helperText: 'Antal succesfulde pasninger i 1 minut',
         ),
         const SizedBox(height: 8),
         
         _buildTestField(
-          label: 'Sprint (seconds)',
+          label: 'Sprint (sekunder)',
           controller: _sprintController,
           icon: Icons.speed,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          helperText: 'Time for 15-meter sprint',
+          helperText: 'Tid for 15-meter sprint',
         ),
         const SizedBox(height: 8),
         
         _buildTestField(
-          label: 'First Touch (count)',
+          label: 'First Touch (antal)',
           controller: _firstTouchController,
           icon: Icons.touch_app,
           keyboardType: TextInputType.number,
-          helperText: 'Number of successful first touches in 1 minute',
+          helperText: 'Antal succesfulde førsteberøringer i 1 minut',
         ),
         const SizedBox(height: 8),
         
         _buildTestField(
-          label: 'Shooting (count)',
+          label: 'Shooting (antal)',
           controller: _shootingController,
           icon: Icons.sports_soccer,
           keyboardType: TextInputType.number,
-          helperText: 'Number of successful goals out of 15 shots',
+          helperText: 'Antal succesfulde mål ud af 10 skud',
         ),
         const SizedBox(height: 8),
         
         _buildTestField(
-          label: 'Juggling (count)',
+          label: 'Juggling (antal)',
           controller: _jugglingController,
           icon: Icons.flutter_dash,
           keyboardType: TextInputType.number,
-          helperText: 'Number of juggles in 1 minute',
+          helperText: 'Antal jongleringer i 1 minut',
         ),
         const SizedBox(height: 8),
         
         _buildTestField(
-          label: 'Dribbling (seconds)',
+          label: 'Dribbling (sekunder)',
           controller: _dribblingController,
           icon: Icons.directions_run,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          helperText: 'Time for completing the dribbling course',
+          helperText: 'Tid for at gennemføre driblingen',
         ),
         const SizedBox(height: 16),
         
@@ -339,7 +340,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
               ),
             ),
             child: const Text(
-              'SUBMIT TEST RESULTS',
+              'Indsend testresultater',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
@@ -394,7 +395,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 16.0),
           child: Text(
-            'No test results yet. Take your first test!',
+            'Ingen testresultater endnu. Tag din første test!',
             style: TextStyle(
               fontSize: 14,
               color: Colors.white70,
@@ -410,7 +411,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Previous Tests:',
+          'Tidligere resultater',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
@@ -428,7 +429,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
             final dateFormat = DateFormat.yMMMd();
             final date = test.testDate != null 
                 ? dateFormat.format(test.testDate!) 
-                : 'Unknown date';
+                : 'Ukendt dato';
             
             // Check if this test broke any records
             final bool brokeRecord = test.isPassingRecord == true || 
@@ -477,7 +478,7 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
                                 color: Colors.red,
                                 size: 18,
                               ),
-                              tooltip: 'Delete test',
+                              tooltip: 'Slet test',
                               constraints: const BoxConstraints(),
                               padding: const EdgeInsets.all(4),
                               splashRadius: 20,

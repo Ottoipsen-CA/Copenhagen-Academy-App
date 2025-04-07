@@ -10,6 +10,7 @@ import '../../services/auth_service.dart';
 import '../../services/player_stats_service.dart';
 import '../../services/challenge_service.dart';
 import '../../services/player_tests_service.dart';
+import '../../services/profile_image_service.dart';
 import '../../widgets/navigation_drawer.dart';
 import '../../widgets/player_stats_radar_chart.dart';
 import '../../widgets/fifa_player_card.dart';
@@ -17,6 +18,7 @@ import '../../widgets/skill_progress_bar.dart';
 import '../../widgets/player_test_widget.dart';
 import '../../config/feature_flags.dart';
 import 'dart:math' as math;
+import 'dart:html' as html;
 
 // Import main feature flag
 import '../../main.dart';
@@ -43,11 +45,45 @@ class _DashboardPageState extends State<DashboardPage> {
   int _xpProgress = 440;
   int _xpTarget = 1200;
   bool _hasRecordBreakingScores = false;
+  final ProfileImageService _profileImageService = ProfileImageService();
+  String? _profileImageUrl;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _initializeProfileImage();
+  }
+
+  Future<void> _initializeProfileImage() async {
+    await _profileImageService.initialize();
+    setState(() {
+      _profileImageUrl = _profileImageService.getCurrentProfileImage();
+    });
+  }
+
+  Future<void> _pickImage() async {
+    // Create a file input element
+    final input = html.FileUploadInputElement()..accept = 'image/*';
+    input.click();
+
+    await input.onChange.first;
+    if (input.files!.isNotEmpty) {
+      final file = input.files![0];
+      final reader = html.FileReader();
+      
+      reader.readAsDataUrl(file);
+      await reader.onLoad.first;
+      
+      final imageData = reader.result as String;
+      
+      // Save the image to the profile service
+      await _profileImageService.saveProfileImage(imageData);
+      
+      setState(() {
+        _profileImageUrl = imageData;
+      });
+    }
   }
 
   Future<void> _loadUserData() async {
@@ -277,7 +313,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'WELCOME',
+                        'VELKOMMEN',
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -297,12 +333,38 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 
                 // FIFA Player Card - Center
-                FifaPlayerCard(
-                  playerName: _user!.fullName,
-                  position: _user!.position ?? 'ST',
-                  stats: _playerStats!,
-                  rating: _playerStats?.overallRating?.toInt() ?? 0,
-                  cardType: _getPlayerCardType(),
+                Stack(
+                  children: [
+                    FifaPlayerCard(
+                      playerName: _user!.fullName,
+                      position: _user!.position ?? 'ST',
+                      stats: _playerStats!,
+                      rating: _playerStats?.overallRating?.toInt() ?? 0,
+                      cardType: _getPlayerCardType(),
+                      profileImageUrl: _profileImageUrl,
+                    ),
+                    // Add a button to change profile image
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.amber[700],
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          onPressed: _pickImage,
+                          tooltip: 'Change profile picture',
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 
                 // Empty space on the right for balance
@@ -337,12 +399,13 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Player Performance & Skills',
+                    Text(
+                      'DINE STATISTIKKER',
                       style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -418,7 +481,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               // Stat Rating explanation
                               const Center(
                                 child: Text(
-                                  'Your skill ratings by area',
+                                  'Dine færdigheder',
                                   style: TextStyle(
                                     color: Colors.white70,
                                     fontSize: 14,
@@ -979,7 +1042,7 @@ class _DashboardPageState extends State<DashboardPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Technical Skills',
+          'Tekniske færdigheder',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,

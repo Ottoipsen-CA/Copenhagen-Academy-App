@@ -11,72 +11,76 @@ class CustomNavigationDrawer extends StatelessWidget {
   final String currentPage;
 
   const CustomNavigationDrawer({
-    super.key,
+    Key? key,
     required this.currentPage,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: Column(
-        children: [
-          _buildDrawerHeader(context),
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                _buildNavItem(
-                  context,
-                  'dashboard',
-                  'Dashboard',
-                  Icons.dashboard_outlined,
-                  () => _navigateTo(context, 'dashboard'),
-                ),
-                if (FeatureFlags.trainingPlanEnabled)
+      child: Container(
+        color: const Color(0xFF0B0057),
+        child: Column(
+          children: [
+            _buildDrawerHeader(context),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
                   _buildNavItem(
                     context,
-                    'training',
-                    'Training Plan',
-                    Icons.fitness_center,
-                    () => _navigateTo(context, 'training'),
+                    'dashboard',
+                    'Dashboard',
+                    Icons.dashboard_outlined,
+                    () => _navigateTo(context, 'dashboard'),
                   ),
-                if (FeatureFlags.exercisesEnabled)
+                  if (FeatureFlags.trainingPlanEnabled)
+                    _buildNavItem(
+                      context,
+                      'training',
+                      'Training Plan',
+                      Icons.fitness_center,
+                      () => _navigateTo(context, 'training'),
+                    ),
+                  if (FeatureFlags.exercisesEnabled)
+                    _buildNavItem(
+                      context,
+                      'exercises',
+                      'Exercise Library',
+                      Icons.video_library_outlined,
+                      () => _navigateTo(context, 'exercises'),
+                    ),
                   _buildNavItem(
                     context,
-                    'exercises',
-                    'Exercise Library',
-                    Icons.video_library_outlined,
-                    () => _navigateTo(context, 'exercises'),
+                    'achievements',
+                    'League Table',
+                    Icons.leaderboard,
+                    () => _navigateTo(context, 'leagueTable'),
                   ),
-                _buildNavItem(
-                  context,
-                  'achievements',
-                  'League Table',
-                  Icons.leaderboard,
-                  () => _navigateTo(context, 'leagueTable'),
-                ),
-                const Divider(),
-                _buildNavItem(
-                  context,
-                  'profile',
-                  'My Profile',
-                  Icons.person_outline,
-                  () => _navigateTo(context, 'profile'),
-                ),
-                _buildNavItem(
-                  context,
-                  'info',
-                  'About Academy',
-                  Icons.info_outline,
-                  () => _navigateTo(context, 'info'),
-                ),
-              ],
+                  const Divider(),
+                  _buildNavItem(
+                    context,
+                    'profile',
+                    'Min Profil',
+                    Icons.person_outline,
+                    () => _navigateTo(context, 'profile'),
+                  ),
+                  _buildNavItem(
+                    context,
+                    'info',
+                    'Hvem er vi?',
+                    Icons.info_outline,
+                    () => Navigator.pushNamed(context, '/info'),
+                    requiresAuth: false,
+                  ),
+                ],
+              ),
             ),
-          ),
-          const Divider(),
-          _buildLogoutButton(context),
-          const SizedBox(height: 16),
-        ],
+            const Divider(),
+            _buildLogoutButton(context),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
@@ -109,7 +113,7 @@ class CustomNavigationDrawer extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Football Academy',
+            'Copenhagen Academy',
             style: TextStyle(
               color: Colors.white,
               fontSize: 20,
@@ -118,7 +122,7 @@ class CustomNavigationDrawer extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Develop your football skills',
+            'Udvikle dine færdigheder',
             style: TextStyle(
               color: Colors.white70,
               fontSize: 14,
@@ -132,30 +136,39 @@ class CustomNavigationDrawer extends StatelessWidget {
 
   Widget _buildNavItem(
     BuildContext context,
-    String id,
+    String route,
     String title,
     IconData icon,
-    VoidCallback onTap,
-  ) {
-    final isSelected = currentPage == id;
-    final color = isSelected ? Theme.of(context).primaryColor : Colors.grey.shade700;
+    VoidCallback onTap, {
+    bool requiresAuth = true,
+  }) {
+    final isSelected = currentPage == route;
     
     return ListTile(
+      selected: isSelected,
+      selectedTileColor: Colors.white.withOpacity(0.1),
       leading: Icon(
         icon,
-        color: color,
+        color: isSelected ? Colors.white : Colors.white70,
       ),
       title: Text(
         title,
         style: TextStyle(
-          color: color,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? Colors.white : Colors.white70,
+          fontSize: 16,
         ),
       ),
-      selected: isSelected,
-      selectedTileColor: 
-          Theme.of(context).primaryColor.withOpacity(0.1),
-      onTap: onTap,
+      onTap: () async {
+        if (requiresAuth) {
+          final authService = Provider.of<AuthService>(context, listen: false);
+          final isLoggedIn = await authService.isLoggedIn();
+          if (!isLoggedIn) {
+            Navigator.pushReplacementNamed(context, '/login');
+            return;
+          }
+        }
+        onTap();
+      },
     );
   }
 
@@ -182,16 +195,16 @@ class CustomNavigationDrawer extends StatelessWidget {
         final confirm = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Logout'),
-            content: const Text('Are you sure you want to logout?'),
+            title: const Text('Log ud'),
+            content: const Text('Er du sikker på du vil logge ud?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('CANCEL'),
+                child: const Text('ANNULLER'),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('LOGOUT'),
+                child: const Text('LOG UD'),
               ),
             ],
           ),

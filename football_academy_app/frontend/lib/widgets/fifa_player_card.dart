@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/player_stats.dart';
+import '../services/profile_image_service.dart';
 
 class FifaPlayerCard extends StatelessWidget {
   final String playerName;
@@ -7,6 +8,7 @@ class FifaPlayerCard extends StatelessWidget {
   final PlayerStats stats;
   final int rating;
   final CardType cardType;
+  final String? profileImageUrl;
   
   const FifaPlayerCard({
     super.key,
@@ -15,6 +17,7 @@ class FifaPlayerCard extends StatelessWidget {
     required this.stats,
     required this.rating,
     this.cardType = CardType.normal,
+    this.profileImageUrl,
   });
 
   // Get card color based on rating and type
@@ -59,6 +62,9 @@ class FifaPlayerCard extends StatelessWidget {
     final cardColors = _getCardColors();
     final positionIcon = _getPositionIcon();
     final positionColor = _getPositionColor();
+    
+    // Get profile image from service if not provided
+    final String? imageUrl = profileImageUrl ?? ProfileImageService().getCurrentProfileImage();
     
     // Skill colors matching the performance section
     final Map<String, Color> skillColors = {
@@ -187,7 +193,7 @@ class FifaPlayerCard extends StatelessWidget {
                   ],
                 ),
                 
-                // Position icon instead of player image
+                // Player image or position icon
                 Expanded(
                   child: Center(
                     child: Container(
@@ -200,19 +206,20 @@ class FifaPlayerCard extends StatelessWidget {
                           color: positionColor,
                           width: 2,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: positionColor.withOpacity(0.5),
-                            blurRadius: 10,
-                            spreadRadius: 2,
-                          ),
-                        ],
+                        image: imageUrl != null
+                            ? DecorationImage(
+                                image: NetworkImage(imageUrl),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                       ),
-                      child: Icon(
-                        positionIcon,
-                        size: 60,
-                        color: positionColor,
-                      ),
+                      child: imageUrl == null
+                          ? Icon(
+                              positionIcon,
+                              size: 50,
+                              color: positionColor,
+                            )
+                          : null,
                     ),
                   ),
                 ),

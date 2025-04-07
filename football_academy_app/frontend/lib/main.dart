@@ -19,6 +19,7 @@ import 'screens/league_table/league_table_page.dart';
 import 'screens/player_stats/player_stats_page.dart';
 import 'screens/info/info_page.dart';
 import 'screens/splash_screen.dart';
+import 'screens/auth/landing_page.dart';
 import 'config/feature_flags.dart';
 
 // Conditionally import training plans only if enabled
@@ -103,6 +104,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/splash',
       routes: {
         '/splash': (context) => const SplashScreen(),
+        '/landing': (context) => const LandingPage(),
         '/login': (context) => const LoginPage(),
         '/dashboard': (context) => const DashboardPage(),
         if (FeatureFlags.exercisesEnabled)
@@ -119,6 +121,29 @@ class MyApp extends StatelessWidget {
         // Training plans route is completely disabled via feature flag
         // if (FeatureFlags.trainingPlanEnabled)
         //   '/training-plans': (context) => const TrainingPlanPage(),
+      },
+      onGenerateRoute: (settings) {
+        // Add authentication check for all routes except login and info
+        if (!settings.name!.startsWith('/login') && 
+            !settings.name!.startsWith('/info')) {
+          final authService = Provider.of<AuthService>(navigatorKey.currentContext!, listen: false);
+          // Use synchronous check for now
+          return MaterialPageRoute(
+            builder: (context) => FutureBuilder<bool>(
+              future: authService.isLoggedIn(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData && snapshot.data == true) {
+                  // User is logged in, continue with original route
+                  return const SizedBox(); // This will be replaced by original route
+                } else {
+                  // User is not logged in, redirect to login
+                  return const LoginPage();
+                }
+              },
+            ),
+          );
+        }
+        return null;
       },
     );
   }
@@ -154,7 +179,7 @@ class _SplashScreenState extends State<SplashScreen> {
       );
     } else {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LoginPage()),
+        MaterialPageRoute(builder: (context) => const LandingPage()),
       );
     }
   }
