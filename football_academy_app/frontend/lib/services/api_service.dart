@@ -16,7 +16,7 @@ class ApiService {
     required this.secureStorage,
   }) {
     // Use localhost for development
-    baseUrl = 'http://localhost:8000';
+    baseUrl = 'http://localhost:8080';
     
     // In production, use the actual API URL
     // baseUrl = 'https://api.footballacademy.dev';

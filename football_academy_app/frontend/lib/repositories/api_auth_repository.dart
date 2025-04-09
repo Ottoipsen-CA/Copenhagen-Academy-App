@@ -31,7 +31,7 @@ class ApiAuthRepository implements AuthRepository {
           .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
           .join('&');
 
-      final uri = Uri.parse('${_apiService.baseUrl}${ApiConfig.login}');
+      final uri = Uri.parse('${_apiService.baseUrl}/api/v2/auth/token');
       
       final response = await _apiService.client.post(
         uri,
@@ -53,6 +53,8 @@ class ApiAuthRepository implements AuthRepository {
         return authResponse.accessToken;
       }
       
+      print('Login failed with status: ${response.statusCode}');
+      print('Response body: ${response.body}');
       return null;
     } catch (e) {
       print('Error during login: $e');

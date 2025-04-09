@@ -3,13 +3,17 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/challenge_service.dart';
 import 'services/league_table_service.dart';
 import 'services/navigation_service.dart';
+import 'services/development_plan_service.dart';
+
 import 'repositories/auth_repository.dart';
 import 'repositories/api_auth_repository.dart';
+
 import 'screens/auth/login_page.dart';
 import 'screens/dashboard/dashboard_page.dart';
 import 'screens/exercises/exercises_page.dart';
@@ -19,50 +23,33 @@ import 'screens/league_table/league_table_page.dart';
 import 'screens/player_stats/player_stats_page.dart';
 import 'screens/info/info_page.dart';
 import 'screens/splash_screen.dart';
-import 'screens/auth/landing_page.dart';
+import 'screens/development_plan/development_plan_page.dart';
+import 'screens/profile/profile_page.dart';
+import 'theme/colors.dart';
 import 'config/feature_flags.dart';
-
-// Conditionally import training plans only if enabled
-// This ensures the training plan pages won't be compiled if disabled
-// import 'screens/training_plans/training_plan_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize shared preferences
+
   final prefs = await SharedPreferences.getInstance();
-  
-  // Initialize secure storage
   const secureStorage = FlutterSecureStorage();
-  
-  // Initialize HTTP client
   final httpClient = http.Client();
-  
-  // Initialize API service
+
   final apiService = ApiService(
     client: httpClient,
     secureStorage: secureStorage,
   );
-  
-  // Initialize repositories
-  final authRepository = ApiAuthRepository(
-    apiService,
-    secureStorage,
-  );
-  
-  // Initialize auth service with repository
+
+  final authRepository = ApiAuthRepository(apiService, secureStorage);
   final authService = AuthService(
     authRepository: authRepository,
     secureStorage: secureStorage,
     apiService: apiService,
   );
-  
-  // Initialize challenge service
+
   ChallengeService.initialize(apiService);
-  
-  // Initialize league table service
   LeagueTableService.initialize(apiService);
-  
+
   runApp(
     MultiProvider(
       providers: [
@@ -70,11 +57,7 @@ void main() async {
         Provider<FlutterSecureStorage>.value(value: secureStorage),
         Provider<http.Client>.value(value: httpClient),
         Provider<ApiService>.value(value: apiService),
-        
-        // Provide repositories
         Provider<AuthRepository>.value(value: authRepository),
-        
-        // Provide services
         Provider<AuthService>.value(value: authService),
       ],
       child: const MyApp(),
@@ -104,9 +87,12 @@ class MyApp extends StatelessWidget {
       initialRoute: '/splash',
       routes: {
         '/splash': (context) => const SplashScreen(),
-        '/landing': (context) => const LandingPage(),
         '/login': (context) => const LoginPage(),
         '/dashboard': (context) => const DashboardPage(),
+        '/development-plan': (context) => DevelopmentPlanPage(
+          service: DevelopmentPlanService(),
+        ), 
+        '/profile': (context) => const ProfilePage(),
         if (FeatureFlags.exercisesEnabled)
           '/exercises': (context) => const ExercisesPage(),
         if (FeatureFlags.challengesEnabled)
@@ -117,33 +103,6 @@ class MyApp extends StatelessWidget {
         if (FeatureFlags.playerStatsEnabled)
           '/player-stats': (context) => const PlayerStatsPage(),
         '/info': (context) => const InfoPage(),
-        
-        // Training plans route is completely disabled via feature flag
-        // if (FeatureFlags.trainingPlanEnabled)
-        //   '/training-plans': (context) => const TrainingPlanPage(),
-      },
-      onGenerateRoute: (settings) {
-        // Add authentication check for all routes except login and info
-        if (!settings.name!.startsWith('/login') && 
-            !settings.name!.startsWith('/info')) {
-          final authService = Provider.of<AuthService>(navigatorKey.currentContext!, listen: false);
-          // Use synchronous check for now
-          return MaterialPageRoute(
-            builder: (context) => FutureBuilder<bool>(
-              future: authService.isLoggedIn(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData && snapshot.data == true) {
-                  // User is logged in, continue with original route
-                  return const SizedBox(); // This will be replaced by original route
-                } else {
-                  // User is not logged in, redirect to login
-                  return const LoginPage();
-                }
-              },
-            ),
-          );
-        }
-        return null;
       },
     );
   }
@@ -164,22 +123,22 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(seconds: 2)); // Display splash for 2 seconds
-    
+    await Future.delayed(const Duration(seconds: 2));
+
     if (!mounted) return;
-    
+
     final authService = Provider.of<AuthService>(context, listen: false);
     final isLoggedIn = await authService.isLoggedIn();
-    
+
     if (!mounted) return;
-    
+
     if (isLoggedIn) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const DashboardPage()),
       );
     } else {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LandingPage()),
+        MaterialPageRoute(builder: (context) => const LoginPage()),
       );
     }
   }
@@ -190,12 +149,17 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Color(0xFF0B0057), // Dark purple
-              Color(0xFF3D007A), // Medium purple
+              Color(0xFF0B0033),
+              Color(0xFF2A004D),
+              Color(0xFF5D006C),
+              Color(0xFF9A0079),
+              Color(0xFFC71585),
+              Color(0xFFFF4500),
             ],
+            stops: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
           ),
         ),
         child: const Center(
@@ -235,4 +199,4 @@ class _SplashScreenState extends State<SplashScreen> {
       ),
     );
   }
-} 
+}

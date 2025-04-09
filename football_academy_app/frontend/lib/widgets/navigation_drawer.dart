@@ -3,9 +3,8 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../screens/dashboard/dashboard_page.dart';
 import '../screens/info/info_page.dart';
-import '../screens/auth/landing_page.dart';
 import '../screens/auth/login_page.dart';
-import '../config/feature_flags.dart';  // Import feature flags from config
+import '../config/feature_flags.dart';
 
 class CustomNavigationDrawer extends StatelessWidget {
   final String currentPage;
@@ -56,6 +55,13 @@ class CustomNavigationDrawer extends StatelessWidget {
                     'League Table',
                     Icons.leaderboard,
                     () => _navigateTo(context, 'leagueTable'),
+                  ),
+                  _buildNavItem(
+                    context,
+                    'developmentPlan',
+                    'Udviklingsplan',
+                    Icons.track_changes,
+                    () => _navigateTo(context, 'developmentPlan'),
                   ),
                   const Divider(),
                   _buildNavItem(
@@ -143,7 +149,7 @@ class CustomNavigationDrawer extends StatelessWidget {
     bool requiresAuth = true,
   }) {
     final isSelected = currentPage == route;
-    
+
     return ListTile(
       selected: isSelected,
       selectedTileColor: Colors.white.withOpacity(0.1),
@@ -173,9 +179,8 @@ class CustomNavigationDrawer extends StatelessWidget {
   }
 
   Widget _buildLogoutButton(BuildContext context) {
-    // Get the auth service early, before any navigation happens
     final authService = Provider.of<AuthService>(context, listen: false);
-    
+
     return ListTile(
       leading: const Icon(
         Icons.exit_to_app,
@@ -188,10 +193,7 @@ class CustomNavigationDrawer extends StatelessWidget {
         ),
       ),
       onTap: () async {
-        // Close drawer
         Navigator.pop(context);
-        
-        // Show confirmation dialog
         final confirm = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
@@ -209,47 +211,48 @@ class CustomNavigationDrawer extends StatelessWidget {
             ],
           ),
         );
-        
+
         if (confirm == true) {
-          // Logout - all navigation will be handled by the AuthService
           await authService.logout();
-          // No need for additional navigation here - AuthService will handle it
         }
       },
     );
   }
 
   void _navigateTo(BuildContext context, String page) {
-    Navigator.pop(context); // Close the drawer
-    
-    // Check if we're already on the target page to avoid unnecessary navigation
-    if (currentPage == page) return;
-    
+    Navigator.pop(context);
+    final currentRoute = ModalRoute.of(context)?.settings.name;
+    if (currentRoute == '/$page') return;
+
     switch (page) {
       case 'dashboard':
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        Navigator.pushNamed(context, '/dashboard');
         break;
       case 'training':
         if (FeatureFlags.trainingPlanEnabled) {
-          Navigator.pushReplacementNamed(context, '/training-schedule');
+          Navigator.pushNamed(context, '/training-schedule');
         }
         break;
       case 'exercises':
         if (FeatureFlags.exercisesEnabled) {
-          Navigator.pushReplacementNamed(context, '/exercises');
+          Navigator.pushNamed(context, '/exercises');
         }
         break;
       case 'leagueTable':
-        Navigator.pushReplacementNamed(context, '/league-table');
+        Navigator.pushNamed(context, '/league-table');
+        break;
+      case 'developmentPlan':
+        Navigator.pushNamed(context, '/development-plan');
         break;
       case 'profile':
-        Navigator.pushReplacementNamed(context, '/profile');
+        Navigator.pushNamed(context, '/profile');
         break;
       case 'info':
-        Navigator.pushReplacementNamed(context, '/info');
+        Navigator.pushNamed(context, '/info');
         break;
       default:
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        print('Unknown page route: $page');
+        break;
     }
   }
-} 
+}

@@ -2,7 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiConfig {
   // Base URL for all API requests
-  static const String baseUrl = 'https://api.footballacademy.dev/v1';
+  static const String baseUrl = 'http://localhost:8080';
   
   // API endpoints - updated to match backend v2 paths
   static const String login = '/api/v2/auth/token';

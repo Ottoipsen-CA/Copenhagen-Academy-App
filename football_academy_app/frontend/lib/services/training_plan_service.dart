@@ -5,7 +5,7 @@ import '../models/training_plan.dart';
 import '../models/exercise.dart';
 
 class TrainingPlanService {
-  static const String _apiBaseUrl = 'http://localhost:8000';
+  static const String _apiBaseUrl = 'http://localhost:8001';
   static const String _trainingPlansEndpoint = '/training-plans';
   static const String _localStorageKey = 'training_plan';
 

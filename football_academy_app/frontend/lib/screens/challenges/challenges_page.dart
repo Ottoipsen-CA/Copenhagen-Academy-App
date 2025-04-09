@@ -225,7 +225,12 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
       ),
     );
     
-    final progress = userChallenge.currentValue / weeklyChallenge.targetValue;
+    // Safely calculate progress
+    double progress = 0.0;
+    if (weeklyChallenge.targetValue != null && weeklyChallenge.targetValue != 0) {
+        progress = (userChallenge.currentValue ?? 0) / weeklyChallenge.targetValue!;
+    } 
+
     final isCompleted = userChallenge.status == ChallengeStatus.completed;
     final statusColor = isCompleted ? Colors.green : AppColors.primary;
     
@@ -465,7 +470,10 @@ class _ChallengesPageState extends State<ChallengesPage> with SingleTickerProvid
     // Calculate progress if in progress or completed
     double progress = 0.0;
     if (isInProgress || isCompleted) {
-      progress = userChallenge.currentValue / challenge.targetValue;
+      // Safely calculate progress
+      if (challenge.targetValue != null && challenge.targetValue != 0) {
+        progress = (userChallenge.currentValue ?? 0) / challenge.targetValue!;
+      }
       progress = progress.clamp(0.0, 1.0);
     }
     

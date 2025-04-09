@@ -5,6 +5,7 @@ import '../../services/exercise_service.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/navigation_drawer.dart';
 import 'exercise_detail_page.dart';
+import '../../widgets/gradient_background.dart';
 
 class ExercisesPage extends StatefulWidget {
   const ExercisesPage({super.key});
@@ -212,19 +213,7 @@ class _ExercisesPageState extends State<ExercisesPage> with TickerProviderStateM
         ],
       ),
       drawer: const CustomNavigationDrawer(currentPage: 'exercises'),
-      body: Container(
-        decoration: const BoxDecoration(
-          // Space-themed background with stars
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0B0057), // Dark blue/purple
-              Color(0xFF1C006C), // Mid purple
-              Color(0xFF3D007A), // Lighter purple
-            ],
-          ),
-        ),
+      body: GradientBackground(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(color: Colors.white))
             : _errorMessage != null

@@ -9,6 +9,7 @@ class FifaPlayerCard extends StatelessWidget {
   final int rating;
   final CardType cardType;
   final String? profileImageUrl;
+  final double? width; // Added width parameter for responsiveness
   
   const FifaPlayerCard({
     super.key,
@@ -18,14 +19,17 @@ class FifaPlayerCard extends StatelessWidget {
     required this.rating,
     this.cardType = CardType.normal,
     this.profileImageUrl,
+    this.width,
   });
 
   // Get card color based on rating and type
   List<Color> _getCardColors() {
     // Use a gradient from bright to darker for better text visibility
+    // Changed to a gold gradient for rare gold effect
     return const [
-      Color(0xFF1C54B2), // Brighter blue at top
-      Color(0xFF0B2265), // Darker blue at bottom
+      Color(0xFFFDE047), // Lighter Gold/Yellow
+      Color(0xFFEAB308), // Medium Gold
+      Color(0xFFCA8A04), // Darker Gold
     ];
   }
   
@@ -59,6 +63,20 @@ class FifaPlayerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Make the card responsive
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = width ?? (screenWidth < 400 ? screenWidth * 0.8 : 220.0);
+    final cardHeight = cardWidth * 1.5; // Maintain aspect ratio
+    
+    // Scale elements based on card size
+    final isSmallCard = cardWidth < 200;
+    final fontSize = isSmallCard ? 12.0 : 14.0;
+    final ratingSize = isSmallCard ? 20.0 : 24.0;
+    final positionSize = isSmallCard ? 14.0 : 16.0;
+    final statIconSize = isSmallCard ? 18.0 : 22.0;
+    final statFontSize = isSmallCard ? 14.0 : 16.0;
+    final imageSizeRatio = isSmallCard ? 0.4 : 0.5; // Image size as percentage of card width
+    
     final cardColors = _getCardColors();
     final positionIcon = _getPositionIcon();
     final positionColor = _getPositionColor();
@@ -77,8 +95,8 @@ class FifaPlayerCard extends StatelessWidget {
     };
     
     return Container(
-      width: 220,
-      height: 330,
+      width: cardWidth,
+      height: cardHeight,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
@@ -111,7 +129,7 @@ class FifaPlayerCard extends StatelessWidget {
           
           // Content
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(cardWidth * 0.04), // Scaled padding
             child: Column(
               children: [
                 // Top section with rating and position
@@ -119,8 +137,8 @@ class FifaPlayerCard extends StatelessWidget {
                   children: [
                     // Rating box
                     Container(
-                      width: 50,
-                      height: 50,
+                      width: cardWidth * 0.2, // Scaled rating box
+                      height: cardWidth * 0.2,
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(4),
@@ -139,11 +157,11 @@ class FifaPlayerCard extends StatelessWidget {
                       child: Center(
                         child: Text(
                           rating.toString(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
-                            fontSize: 24,
+                            fontSize: ratingSize,
                             fontWeight: FontWeight.bold,
-                            shadows: [
+                            shadows: const [
                               Shadow(
                                 blurRadius: 3.0,
                                 color: Colors.black,
@@ -154,11 +172,14 @@ class FifaPlayerCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: cardWidth * 0.03), // Scaled spacing
                     
                     // Position
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: cardWidth * 0.04,
+                        vertical: cardWidth * 0.02,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(4),
@@ -176,11 +197,11 @@ class FifaPlayerCard extends StatelessWidget {
                       ),
                       child: Text(
                         position,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: positionSize,
                           fontWeight: FontWeight.bold,
-                          shadows: [
+                          shadows: const [
                             Shadow(
                               blurRadius: 2.0,
                               color: Colors.black,
@@ -197,8 +218,8 @@ class FifaPlayerCard extends StatelessWidget {
                 Expanded(
                   child: Center(
                     child: Container(
-                      width: 110,
-                      height: 110,
+                      width: cardWidth * imageSizeRatio,
+                      height: cardWidth * imageSizeRatio,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: positionColor.withOpacity(0.2),
@@ -216,7 +237,7 @@ class FifaPlayerCard extends StatelessWidget {
                       child: imageUrl == null
                           ? Icon(
                               positionIcon,
-                              size: 50,
+                              size: cardWidth * 0.2,
                               color: positionColor,
                             )
                           : null,
@@ -227,7 +248,7 @@ class FifaPlayerCard extends StatelessWidget {
                 // Player name
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  padding: EdgeInsets.symmetric(vertical: cardWidth * 0.03),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(4),
@@ -239,12 +260,12 @@ class FifaPlayerCard extends StatelessWidget {
                   child: Center(
                     child: Text(
                       playerName.toUpperCase(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 14,
+                        fontSize: fontSize,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
-                        shadows: [
+                        shadows: const [
                           Shadow(
                             blurRadius: 3.0,
                             color: Colors.black,
@@ -257,7 +278,7 @@ class FifaPlayerCard extends StatelessWidget {
                   ),
                 ),
                 
-                const SizedBox(height: 8),
+                SizedBox(height: cardWidth * 0.03), // Scaled spacing
                 
                 // Stats - updated to match performance section names and icons
                 Row(
@@ -268,22 +289,28 @@ class FifaPlayerCard extends StatelessWidget {
                       stats.pace?.toInt() ?? 0,
                       Icons.speed,
                       skillColors['Pace']!,
+                      statIconSize,
+                      statFontSize,
                     ),
                     _buildStatItem(
                       'Shooting',
                       stats.shooting?.toInt() ?? 0,
                       Icons.sports_soccer,
                       skillColors['Shooting']!,
+                      statIconSize,
+                      statFontSize,
                     ),
                     _buildStatItem(
                       'Passing',
                       stats.passing?.toInt() ?? 0,
                       Icons.swap_horizontal_circle,
                       skillColors['Passing']!,
+                      statIconSize,
+                      statFontSize,
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: cardWidth * 0.02), // Scaled spacing
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -292,18 +319,24 @@ class FifaPlayerCard extends StatelessWidget {
                       stats.dribbling?.toInt() ?? 0,
                       Icons.directions_run,
                       skillColors['Dribbling']!,
+                      statIconSize,
+                      statFontSize,
                     ),
                     _buildStatItem(
                       'Juggles',
                       stats.juggles?.toInt() ?? 0,
                       Icons.flutter_dash,
                       skillColors['Juggles']!,
+                      statIconSize,
+                      statFontSize,
                     ),
                     _buildStatItem(
                       'First Touch',
                       stats.firstTouch?.toInt() ?? 0,
                       Icons.touch_app,
                       skillColors['First Touch']!,
+                      statIconSize,
+                      statFontSize,
                     ),
                   ],
                 ),
@@ -314,13 +347,24 @@ class FifaPlayerCard extends StatelessWidget {
           // Special card indicator - kept this for the card types
           if (cardType != CardType.normal)
             Positioned(
-              top: 60,
-              left: 10,
+              top: cardHeight * 0.18,
+              left: cardWidth * 0.05,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                padding: EdgeInsets.symmetric(
+                  horizontal: cardWidth * 0.03,
+                  vertical: cardWidth * 0.015,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(3),
                   color: Colors.black.withOpacity(0.8),
+                ),
+                child: Text(
+                  _getCardTypeLabel(),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: fontSize * 0.8,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -350,12 +394,12 @@ class FifaPlayerCard extends StatelessWidget {
     }
   }
   
-  Widget _buildStatItem(String label, int value, IconData icon, Color color) {
+  Widget _buildStatItem(String label, int value, IconData icon, Color color, double iconSize, double fontSize) {
     return Column(
       children: [
         Icon(
           icon,
-          size: 22,
+          size: iconSize,
           color: color,
           shadows: [
             Shadow(
@@ -371,12 +415,11 @@ class FifaPlayerCard extends StatelessWidget {
           style: TextStyle(
             color: Colors.white,
             backgroundColor: color.withOpacity(0.2),
-            fontSize: 16,
+            fontSize: fontSize,
             fontWeight: FontWeight.bold,
             shadows: [
               Shadow(
-                blurRadius:
-                 3.0,
+                blurRadius: 3.0,
                 color: Colors.black.withOpacity(0.7),
                 offset: const Offset(1, 1),
               ),

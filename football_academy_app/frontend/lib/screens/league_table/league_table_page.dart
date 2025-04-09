@@ -259,6 +259,10 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
   }
   
   Widget _buildLeagueTableTab() {
+    // Get screen width to make responsive decisions
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 400;
+    
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         return Scrollbar(
@@ -335,6 +339,7 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
                     ),
                   ),
                 
+                // League Table
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Card(
@@ -343,90 +348,10 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Table(
-                        columnWidths: const {
-                          0: FixedColumnWidth(40),    // Rank
-                          1: FlexColumnWidth(3),      // Player
-                          2: FixedColumnWidth(70),    // Score/Result
-                        },
-                        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                        children: [
-                          // Header row
-                          TableRow(
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: Colors.white.withOpacity(0.3),
-                                  width: 1,
-                                ),
-                              ),
-                            ),
-                            children: [
-                              _tableHeader('#'),
-                              _tableHeader('PLAYER'),
-                              _tableHeader('SCORE'),
-                            ],
-                          ),
-                          
-                          // Data rows
-                          for (var entry in _players.take(20))
-                            TableRow(
-                              decoration: BoxDecoration(
-                                color: entry.rank <= 3 
-                                    ? Colors.amber.withOpacity(0.1) 
-                                    : Colors.transparent,
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: Colors.white.withOpacity(0.1),
-                                    width: 1,
-                                  ),
-                                ),
-                              ),
-                              children: [
-                                _tableCell(
-                                  '${entry.rank}', 
-                                  fontWeight: entry.rank <= 3 ? FontWeight.bold : FontWeight.normal,
-                                  color: entry.rank <= 3 ? Colors.amber : Colors.white,
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                  child: Row(
-                                    children: [
-                                      _positionTag(entry.user.position ?? 'ST'),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              entry.user.fullName,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            Text(
-                                              entry.user.currentClub ?? '',
-                                              style: TextStyle(
-                                                color: Colors.white.withOpacity(0.7),
-                                                fontSize: 12,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                _scoreCell(entry.bestResult ?? 0, _currentChallenge?.unit ?? ''),
-                              ],
-                            ),
-                        ],
-                      ),
+                      padding: const EdgeInsets.all(12.0),
+                      child: isSmallScreen 
+                          ? _buildMobileLeagueTable() 
+                          : _buildDesktopLeagueTable(),
                     ),
                   ),
                 ),
@@ -463,7 +388,368 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
     );
   }
   
+  // Desktop-oriented table layout using Table widget
+  Widget _buildDesktopLeagueTable() {
+    return Table(
+      columnWidths: const {
+        0: FixedColumnWidth(40),    // Rank
+        1: FlexColumnWidth(3),      // Player
+        2: FixedColumnWidth(70),    // Score/Result
+      },
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      children: [
+        // Header row
+        TableRow(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+          ),
+          children: [
+            _tableHeader('#'),
+            _tableHeader('PLAYER'),
+            _tableHeader('SCORE'),
+          ],
+        ),
+        
+        // Data rows
+        for (var entry in _players.take(20))
+          TableRow(
+            decoration: BoxDecoration(
+              color: entry.rank <= 3 
+                  ? Colors.amber.withOpacity(0.1) 
+                  : Colors.transparent,
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.white.withOpacity(0.1),
+                  width: 1,
+                ),
+              ),
+            ),
+            children: [
+              _tableCell(
+                '${entry.rank}', 
+                fontWeight: entry.rank <= 3 ? FontWeight.bold : FontWeight.normal,
+                color: entry.rank <= 3 ? Colors.amber : Colors.white,
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  children: [
+                    _positionTag(entry.user.position ?? 'ST'),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            entry.user.fullName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            entry.user.currentClub ?? '',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 12,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _scoreCell(entry.bestResult ?? 0, _currentChallenge?.unit ?? ''),
+            ],
+          ),
+      ],
+    );
+  }
+  
+  // Mobile-oriented table layout using ListView for better visibility on small screens
+  Widget _buildMobileLeagueTable() {
+    return Column(
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 40,
+                child: _tableHeader('#', textAlign: TextAlign.center),
+              ),
+              Expanded(
+                child: _tableHeader('PLAYER', textAlign: TextAlign.left),
+              ),
+              SizedBox(
+                width: 70,
+                child: _tableHeader('SCORE', textAlign: TextAlign.center),
+              ),
+            ],
+          ),
+        ),
+        
+        // Players list
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _players.length > 20 ? 20 : _players.length,
+          itemBuilder: (context, index) {
+            final entry = _players[index];
+            final isTopThree = entry.rank <= 3;
+            
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              decoration: BoxDecoration(
+                color: isTopThree ? Colors.amber.withOpacity(0.1) : Colors.transparent,
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withOpacity(0.1),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  // Rank
+                  Container(
+                    width: 40,
+                    alignment: Alignment.center,
+                    child: Text(
+                      '${entry.rank}',
+                      style: TextStyle(
+                        color: isTopThree ? Colors.amber : Colors.white,
+                        fontWeight: isTopThree ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  
+                  // Player info
+                  Expanded(
+                    child: Row(
+                      children: [
+                        _positionTag(entry.user.position ?? 'ST'),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                entry.user.fullName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (entry.user.currentClub != null && entry.user.currentClub!.isNotEmpty)
+                                Text(
+                                  entry.user.currentClub!,
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 12,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Score
+                  Container(
+                    width: 70,
+                    alignment: Alignment.center,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isTopThree 
+                            ? Colors.amber.withOpacity(0.2) 
+                            : Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isTopThree ? Colors.amber : Colors.transparent,
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        '${entry.bestResult ?? 0}',
+                        style: TextStyle(
+                          color: isTopThree ? Colors.amber : Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+  
+  Widget _tableHeader(String text, {TextAlign textAlign = TextAlign.center}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white70,
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+        textAlign: textAlign,
+      ),
+    );
+  }
+  
+  Widget _tableCell(String text, {
+    FontWeight fontWeight = FontWeight.normal,
+    Color color = Colors.white,
+    TextAlign textAlign = TextAlign.center,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontWeight: fontWeight,
+          fontSize: 14,
+        ),
+        textAlign: textAlign,
+      ),
+    );
+  }
+  
+  Widget _ratingCell(int rating) {
+    Color ratingColor = Colors.white;
+    if (rating >= 85) {
+      ratingColor = Colors.green;
+    } else if (rating >= 80) {
+      ratingColor = Colors.lightGreen;
+    } else if (rating >= 75) {
+      ratingColor = Colors.amber;
+    } else if (rating >= 70) {
+      ratingColor = Colors.orange;
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      decoration: BoxDecoration(
+        color: ratingColor.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        '$rating',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: ratingColor,
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+  
+  Widget _positionTag(String position) {
+    Color bgColor;
+    if (position == 'GK') {
+      bgColor = Colors.yellow;
+    } else if (['CB', 'RB', 'LB'].contains(position)) {
+      bgColor = Colors.green;
+    } else if (['CDM', 'CM', 'CAM', 'LW', 'RW'].contains(position)) {
+      bgColor = Colors.lightBlue;
+    } else {
+      bgColor = Colors.red;
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        position,
+        style: const TextStyle(
+          color: Colors.black,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+  
+  Color _getRankColor(int rank) {
+    if (rank == 1) return Colors.amber;
+    if (rank == 2) return Colors.grey.shade400;
+    if (rank == 3) return Colors.brown.shade300;
+    return Colors.purple.shade700;
+  }
+  
+  CardType _getCardType(int rating) {
+    if (rating >= 95) {
+      return CardType.icon;
+    } else if (rating >= 90) {
+      return CardType.toty;
+    } else if (rating >= 87) {
+      return CardType.totw;
+    } else if (rating >= 85) {
+      return CardType.future;
+    } else if (rating >= 83) {
+      return CardType.hero;
+    } else {
+      return CardType.normal;
+    }
+  }
+
+  // Add a new helper widget for the score cell
+  Widget _scoreCell(int score, String unit) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          '$score ${unit.isNotEmpty ? unit : ''}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
   Widget _buildPlayersTab() {
+    // Get screen width to make responsive decisions
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 600;
+    
     return Column(
       children: [
         // Current Challenge Header - more prominent
@@ -548,6 +834,10 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
               )
             : LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
+                  // Adjust grid items based on screen size
+                  final crossAxisCount = isSmallScreen ? 2 : 5;
+                  final childAspectRatio = isSmallScreen ? 0.65 : 0.55;
+                  
                   return Scrollbar(
                     controller: _playersScrollController,
                     thickness: 8,
@@ -556,9 +846,9 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
                     child: GridView.builder(
                       controller: _playersScrollController,
                       padding: const EdgeInsets.all(16.0),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 5,
-                        childAspectRatio: 0.55,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        childAspectRatio: childAspectRatio,
                         crossAxisSpacing: 8,
                         mainAxisSpacing: 8,
                       ),
@@ -568,15 +858,14 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
                         return Stack(
                           children: [
                             // Player card
-                            SizedBox(
-                              height: 180, // Smaller height
-                              child: FifaPlayerCard(
-                                playerName: player.user.fullName,
-                                position: player.user.position ?? 'ST',
-                                stats: player.stats,
-                                rating: player.stats.overallRating?.toInt() ?? 0,
-                                cardType: _getCardType(player.stats.overallRating?.toInt() ?? 0),
-                              ),
+                            FifaPlayerCard(
+                              playerName: player.user.fullName,
+                              position: player.user.position ?? 'ST',
+                              stats: player.stats,
+                              rating: player.stats.overallRating?.toInt() ?? 0,
+                              cardType: _getCardType(player.stats.overallRating?.toInt() ?? 0),
+                              // Make card responsive
+                              width: isSmallScreen ? (constraints.maxWidth / crossAxisCount) - 12 : null,
                             ),
                             
                             // Challenge result badge - larger and more prominent
@@ -628,7 +917,7 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
                                 height: 32,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: _getLeaderColor(index),
+                                  color: _getRankColor(player.rank),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black.withOpacity(0.5),
@@ -658,170 +947,6 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
               ),
         ),
       ],
-    );
-  }
-  
-  // Helper Widgets
-  Widget _tableHeader(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.white.withOpacity(0.7),
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-  
-  Widget _tableCell(String text, {
-    FontWeight fontWeight = FontWeight.normal,
-    Color color = Colors.white,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: color,
-          fontSize: 14,
-          fontWeight: fontWeight,
-        ),
-      ),
-    );
-  }
-  
-  Widget _ratingCell(int rating) {
-    Color ratingColor = Colors.white;
-    if (rating >= 85) {
-      ratingColor = Colors.green;
-    } else if (rating >= 80) {
-      ratingColor = Colors.lightGreen;
-    } else if (rating >= 75) {
-      ratingColor = Colors.amber;
-    } else if (rating >= 70) {
-      ratingColor = Colors.orange;
-    }
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      decoration: BoxDecoration(
-        color: ratingColor.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        '$rating',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: ratingColor,
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-  
-  Widget _positionTag(String position) {
-    // Position colors
-    final Map<String, Color> positionColors = {
-      'GK': Colors.amber,
-      'CB': Colors.lightGreen,
-      'RB': Colors.lightGreen,
-      'LB': Colors.lightGreen,
-      'CDM': Colors.cyanAccent,
-      'CM': Colors.cyanAccent,
-      'CAM': Colors.orangeAccent,
-      'LW': Colors.redAccent,
-      'RW': Colors.redAccent,
-      'ST': Colors.redAccent,
-    };
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: (positionColors[position] ?? Colors.purple).withOpacity(0.3),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        position,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: Colors.black,
-        ),
-      ),
-    );
-  }
-  
-  Color _getLeaderColor(int index) {
-    switch (index) {
-      case 0:
-        return Colors.amber;
-      case 1:
-        return Colors.blueGrey;
-      case 2:
-        return Colors.brown;
-      default:
-        return Colors.purple;
-    }
-  }
-  
-  CardType _getCardType(int rating) {
-    // Icon card for legendary players
-    if (rating >= 95) {
-      return CardType.icon;
-    } 
-    // Team of the Year for very high-rated
-    else if (rating >= 90) {
-      return CardType.toty;
-    } 
-    // Record breaker (let's use a threshold close to but below TOTY)
-    else if (rating >= 88) {
-      return CardType.record_breaker;
-    }
-    // Team of the Week 
-    else if (rating >= 85) {
-      return CardType.totw;
-    } 
-    // Ones to Watch (slightly below TOTW)
-    else if (rating >= 83) {
-      return CardType.ones_to_watch;
-    }
-    // Future Stars
-    else if (rating >= 80) {
-      return CardType.future;
-    } 
-    // Hero cards
-    else if (rating >= 75) {
-      return CardType.hero;
-    } 
-    // Normal card
-    else {
-      return CardType.normal;
-    }
-  }
-
-  // Add a new helper widget for the score cell
-  Widget _scoreCell(int score, String unit) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.amber.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        '$score ${unit.isNotEmpty ? unit : ''}',
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: Colors.amber,
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
     );
   }
 } 

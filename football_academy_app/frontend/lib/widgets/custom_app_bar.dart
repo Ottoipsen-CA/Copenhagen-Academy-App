@@ -4,6 +4,7 @@ import '../theme/colors.dart';
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final List<Widget>? actions;
+  final PreferredSizeWidget? bottom;
   final bool hasBackButton;
   final Color? backgroundColor;
   final VoidCallback? onBackPressed;
@@ -12,6 +13,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     Key? key,
     required this.title,
     this.actions,
+    this.bottom,
     this.hasBackButton = true,
     this.backgroundColor,
     this.onBackPressed,
@@ -50,9 +52,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             ),
       actions: actions,
+      bottom: bottom,
     );
   }
   
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => Size.fromHeight(
+    kToolbarHeight + (bottom?.preferredSize.height ?? 0.0)
+  );
 } 

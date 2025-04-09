@@ -6,6 +6,7 @@ import '../../models/player_stats.dart';
 import '../../models/challenge.dart';
 import '../../models/badge.dart';
 import '../../models/player_test.dart';
+import '../../models/development_plan.dart';
 import '../../services/auth_service.dart';
 import '../../services/player_stats_service.dart';
 import '../../services/challenge_service.dart';
@@ -18,7 +19,7 @@ import '../../widgets/skill_progress_bar.dart';
 import '../../widgets/player_test_widget.dart';
 import '../../config/feature_flags.dart';
 import 'dart:math' as math;
-import 'dart:html' as html;
+import '../../services/development_plan_service.dart';
 
 // Import main feature flag
 import '../../main.dart';
@@ -26,6 +27,8 @@ import '../../main.dart';
 // Import pages
 import '../badges/badges_page.dart';
 import '../challenges/challenges_page.dart';
+import '../../utils/image_picker_helper.dart';
+import '../player_tests/player_tests_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -40,6 +43,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Challenge? _weeklyChallenge;
   UserChallenge? _userWeeklyChallenge;
   List<UserBadge> _badges = [];
+  DevelopmentPlan? _developmentPlan;
   bool _isLoading = true;
   String? _errorMessage;
   int _xpProgress = 440;
@@ -47,10 +51,12 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _hasRecordBreakingScores = false;
   final ProfileImageService _profileImageService = ProfileImageService();
   String? _profileImageUrl;
+  late DevelopmentPlanService _developmentPlanService;
 
   @override
   void initState() {
     super.initState();
+    _developmentPlanService = DevelopmentPlanService();
     _loadUserData();
     _initializeProfileImage();
   }
@@ -63,26 +69,12 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _pickImage() async {
-    // Create a file input element
-    final input = html.FileUploadInputElement()..accept = 'image/*';
-    input.click();
-
-    await input.onChange.first;
-    if (input.files!.isNotEmpty) {
-      final file = input.files![0];
-      final reader = html.FileReader();
-      
-      reader.readAsDataUrl(file);
-      await reader.onLoad.first;
-      
-      final imageData = reader.result as String;
-      
-      // Save the image to the profile service
-      await _profileImageService.saveProfileImage(imageData);
-      
+    final String? imageResult = await ImagePickerHelper.pickImage();
+    if (imageResult != null) {
       setState(() {
-        _profileImageUrl = imageData;
+        _profileImageUrl = imageResult;
       });
+      await _profileImageService.saveProfileImage(imageResult);
     }
   }
 
@@ -152,6 +144,18 @@ class _DashboardPageState extends State<DashboardPage> {
         );
       }
       
+      // Load Development Plan
+      DevelopmentPlan? loadedPlan;
+      try {
+        final plans = await _developmentPlanService.getDevelopmentPlans();
+        if (plans.isNotEmpty) {
+          loadedPlan = plans.first; // Assuming we only care about the first/primary plan
+        }
+      } catch (e) {
+        print('Error loading development plan for dashboard: $e');
+        // Don't necessarily fail the whole dashboard load, maybe show a message in the section
+      }
+      
       // Initialize challenges
       await ChallengeService.initializeUserChallenges();
       
@@ -205,6 +209,7 @@ class _DashboardPageState extends State<DashboardPage> {
         _weeklyChallenge = weeklyChallenge;
         _userWeeklyChallenge = userWeeklyChallenge;
         _badges = badges;
+        _developmentPlan = loadedPlan;
         _isLoading = false;
       });
     } catch (e) {
@@ -241,15 +246,19 @@ class _DashboardPageState extends State<DashboardPage> {
       drawer: const CustomNavigationDrawer(currentPage: 'dashboard'),
       body: Container(
         decoration: const BoxDecoration(
-          // Space-themed background with stars
+          // Space-themed background with stars - UPDATED GRADIENT
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0B0057), // Dark blue/purple
-              Color(0xFF1C006C), // Mid purple
-              Color(0xFF3D007A), // Lighter purple
+            begin: Alignment.topLeft, // Match LoginPage
+            end: Alignment.bottomRight, // Match LoginPage
+            colors: [ // Match LoginPage
+              Color(0xFF0B0033),
+              Color(0xFF2A004D),
+              Color(0xFF5D006C),
+              Color(0xFF9A0079),
+              Color(0xFFC71585),
+              Color(0xFFFF4500),
             ],
+             stops: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0], // Match LoginPage
           ),
         ),
         child: Stack(
@@ -274,6 +283,10 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildDashboardContent() {
+    // Get screen size to make responsive decisions
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 600;
+    
     return RefreshIndicator(
       onRefresh: _loadUserData,
       child: SingleChildScrollView(
@@ -293,7 +306,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Colors.amber,
                       letterSpacing: 2,
                     ),
                   ),
@@ -302,78 +315,211 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
             
-            // Player Card and Welcome Section
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Welcome text (left side)
-                Expanded(
-                  flex: 1,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            // Player Card and Welcome Section - Modified for mobile
+            if (isSmallScreen)
+              // Mobile layout - Stacked vertically
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Welcome text
+                  Center(
+                    child: Column(
+                      children: [
+                        Text(
+                          'VELKOMMEN',
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          _user!.fullName.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // FIFA Player Card - Centered
+                  Center(
+                    child: SizedBox(
+                      width: 280, // Fixed width for small screens
+                      child: Stack(
+                        children: [
+                          FifaPlayerCard(
+                            playerName: _user!.fullName,
+                            position: _user!.position ?? 'ST',
+                            stats: _playerStats!,
+                            rating: _playerStats?.overallRating?.toInt() ?? 0,
+                            cardType: _getPlayerCardType(),
+                            profileImageUrl: _profileImageUrl,
+                          ),
+                          // Add a button to change profile image
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.amber[700],
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.camera_alt,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                onPressed: _pickImage,
+                                tooltip: 'Change profile picture',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else
+              // --- DESKTOP LAYOUT REARRANGEMENT ---
+              Column(
+                children: [
+                  // 1. Welcome Text Moved Above - Now includes Name, Pos, Club
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 24.0, left: 16.0), // Add left padding
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start, // Align text to the left
+                      children: [
+                        // Full Name
+                        Text(
+                          _user!.fullName.toUpperCase(), // Display full name
+                          style: const TextStyle(
+                            fontSize: 28, // Slightly smaller maybe?
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 1.1,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 12),
+                        // Position
+                        Row(
+                          mainAxisSize: MainAxisSize.min, // Keep row compact
+                          children: [
+                            Icon(Icons.person_pin_circle_outlined, color: Colors.white70, size: 18),
+                            const SizedBox(width: 8),
+                            Text(
+                              _user!.position ?? 'N/A', // Display position
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Club
+                        Row(
+                           mainAxisSize: MainAxisSize.min,
+                           children: [
+                             Icon(Icons.shield_outlined, color: Colors.white70, size: 18),
+                             const SizedBox(width: 8),
+                             Text(
+                               _user!.currentClub ?? 'Klubløs', // Display club
+                               style: const TextStyle(
+                                 fontSize: 16,
+                                 color: Colors.white70,
+                               ),
+                             ),
+                           ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // 2. New Row for Card and Side Sections
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start, // Align tops
                     children: [
-                      Text(
-                        'VELKOMMEN',
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      // 1. Left Side: FIFA Player Card
+                      SizedBox(
+                        width: 360, // Increased width from 300
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            FifaPlayerCard(
+                              playerName: _user!.fullName,
+                              position: _user!.position ?? 'ST',
+                              stats: _playerStats!,
+                              rating: _playerStats?.overallRating?.toInt() ?? 0,
+                              cardType: _getPlayerCardType(),
+                              profileImageUrl: _profileImageUrl,
+                            ),
+                            // Add a button to change profile image
+                            Positioned(
+                              top: 10,
+                              right: 10,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.amber[700],
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                  onPressed: _pickImage,
+                                  tooltip: 'Change profile picture',
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        _user!.firstName.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+
+                      const SizedBox(width: 24), // Spacing between card and right column
+
+                      // 2. Right Side: Column with Activities and Focus
+                      Expanded(
+                        flex: 3, // Adjust flex factor as needed
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start, // Align content to top
+                          children: [
+                            if (_developmentPlan != null) 
+                              _buildUpcomingActivitiesSection(),
+                            const SizedBox(height: 24), // Space between the two sections
+                            if (_developmentPlan != null)
+                              _buildDevelopmentFocusSection(),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ),
-                
-                // FIFA Player Card - Center
-                Stack(
-                  children: [
-                    FifaPlayerCard(
-                      playerName: _user!.fullName,
-                      position: _user!.position ?? 'ST',
-                      stats: _playerStats!,
-                      rating: _playerStats?.overallRating?.toInt() ?? 0,
-                      cardType: _getPlayerCardType(),
-                      profileImageUrl: _profileImageUrl,
-                    ),
-                    // Add a button to change profile image
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.amber[700],
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.camera_alt,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          onPressed: _pickImage,
-                          tooltip: 'Change profile picture',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                // Empty space on the right for balance
-                Expanded(
-                  flex: 1,
-                  child: Container(),
-                ),
-              ],
-            ),
+                ],
+              ),
+            // --- END DESKTOP LAYOUT REARRANGEMENT ---
+            
+            const SizedBox(height: 24),
+            
+            // Development Plan Sections (Remove from here as they are moved above in desktop layout)
+            // if (_developmentPlan != null && isSmallScreen) ...[ // Only show here on small screens now
+            //   const SizedBox(height: 24),
+            //   _buildUpcomingActivitiesSection(),
+            //   const SizedBox(height: 24),
+            //   _buildDevelopmentFocusSection(),
+            //   const SizedBox(height: 24),
+            // ],
             
             // Weekly Challenge
             if (FeatureFlags.challengesEnabled)
@@ -382,7 +528,7 @@ class _DashboardPageState extends State<DashboardPage> {
             if (FeatureFlags.challengesEnabled)
               const SizedBox(height: 24),
             
-            // Stats section
+            // Stats section - Modified for better mobile layout
             Card(
               color: Colors.transparent,
               elevation: 0,
@@ -391,7 +537,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 side: const BorderSide(color: Color(0xFF3D007A), width: 2),
               ),
               child: Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
                   color: const Color(0xFF0B0057).withOpacity(0.6),
@@ -399,7 +545,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'DINE STATISTIKKER',
                       style: TextStyle(
                         color: Colors.white,
@@ -410,95 +556,178 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                     const SizedBox(height: 20),
                     
-                    // Two-column layout: Overall Rating + Radar Chart (left) and Skill Bars (right)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Left column - Overall Rating + Radar Chart
-                        Expanded(
-                          flex: 5,
-                          child: Column(
-                            children: [
-                              // Overall rating display
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: const Color(0xFF00F5A0),
-                                    width: 2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF00F5A0).withOpacity(0.2),
-                                      blurRadius: 10,
-                                      spreadRadius: 1,
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.star,
-                                      color: Color(0xFF00F5A0),
-                                      size: 24,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'OVERALL RATING: ${_playerStats?.overallRating?.round() ?? 0}',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                        letterSpacing: 1.0,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                    // Responsive layout for stats
+                    if (isSmallScreen)
+                      // Mobile layout - Column
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          // Overall rating display
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: const Color(0xFF00F5A0),
+                                width: 2,
                               ),
-                              
-                              const SizedBox(height: 20),
-                              
-                              // Radar Chart
-                              SizedBox(
-                                height: 280,
-                                child: PlayerStatsRadarChart(
-                                  playerStats: _playerStats,
-                                  useLatestTest: true,
-                                  labelColors: const {
-                                    'PACE': Color(0xFF02D39A),
-                                    'SHOOTING': Color(0xFFFFD700),
-                                    'PASSING': Color(0xFF00ACF3),
-                                    'DRIBBLING': Color(0xFFBE008C),
-                                    'JUGGLES': Color(0xFF3875B9),
-                                    'FIRST TOUCH': Color(0xFFD48A29),
-                                  },
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF00F5A0).withOpacity(0.2),
+                                  blurRadius: 10,
+                                  spreadRadius: 1,
                                 ),
-                              ),
-                              
-                              // Stat Rating explanation
-                              const Center(
-                                child: Text(
-                                  'Dine færdigheder',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.star,
+                                  color: Color(0xFF00F5A0),
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'OVERALL RATING: ${_playerStats?.overallRating?.round() ?? 0}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 1.0,
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        
-                        // Right column - Skill bars
-                        Expanded(
-                          flex: 4,
-                          child: _buildSkillProgressBars(),
-                        ),
-                      ],
-                    ),
+                          
+                          const SizedBox(height: 20),
+                          
+                          // Skill progress bars in mobile view
+                          _buildSkillProgressBars(),
+                          
+                          const SizedBox(height: 20),
+                          
+                          // Radar chart in mobile view (smaller)
+                          SizedBox(
+                            height: 240,
+                            child: PlayerStatsRadarChart(
+                              playerStats: _playerStats,
+                              useLatestTest: true,
+                              labelColors: const {
+                                'PACE': Color(0xFF02D39A),
+                                'SHOOTING': Color(0xFFFFD700),
+                                'PASSING': Color(0xFF00ACF3),
+                                'DRIBBLING': Color(0xFFBE008C),
+                                'JUGGLES': Color(0xFF3875B9),
+                                'FIRST TOUCH': Color(0xFFD48A29),
+                              },
+                            ),
+                          ),
+                          
+                          // Stat Rating explanation
+                          const Center(
+                            child: Text(
+                              'Dine færdigheder',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      // Desktop layout - Two columns
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Left column - Overall Rating + Radar Chart
+                          Expanded(
+                            flex: 5,
+                            child: Column(
+                              children: [
+                                // Overall rating display
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: const Color(0xFF00F5A0),
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF00F5A0).withOpacity(0.2),
+                                        blurRadius: 10,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.star,
+                                        color: Color(0xFF00F5A0),
+                                        size: 24,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'OVERALL RATING: ${_playerStats?.overallRating?.round() ?? 0}',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                
+                                const SizedBox(height: 20),
+                                
+                                // Radar Chart
+                                SizedBox(
+                                  height: 280,
+                                  child: PlayerStatsRadarChart(
+                                    playerStats: _playerStats,
+                                    useLatestTest: true,
+                                    labelColors: const {
+                                      'PACE': Color(0xFF02D39A),
+                                      'SHOOTING': Color(0xFFFFD700),
+                                      'PASSING': Color(0xFF00ACF3),
+                                      'DRIBBLING': Color(0xFFBE008C),
+                                      'JUGGLES': Color(0xFF3875B9),
+                                      'FIRST TOUCH': Color(0xFFD48A29),
+                                    },
+                                  ),
+                                ),
+                                
+                                // Stat Rating explanation
+                                const Center(
+                                  child: Text(
+                                    'Dine færdigheder',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                          // Right column - Skill bars
+                          Expanded(
+                            flex: 4,
+                            child: _buildSkillProgressBars(),
+                          ),
+                        ],
+                      ),
                     
                     // Last updated timestamp in bottom left corner
                     if (_playerStats?.lastUpdated != null)
@@ -511,11 +740,27 @@ class _DashboardPageState extends State<DashboardPage> {
                             style: const TextStyle(
                               fontSize: 12,
                               color: Colors.white70,
-                              fontStyle: FontStyle.italic,
                             ),
                           ),
                         ),
                       ),
+                      
+                    // Link to tests
+                    Align(
+                      alignment: Alignment.center,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: ElevatedButton.icon(
+                          onPressed: _navigateToPlayerTests,
+                          icon: const Icon(Icons.speed, size: 18),
+                          label: const Text('Se alle tests'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade800,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -523,19 +768,11 @@ class _DashboardPageState extends State<DashboardPage> {
             
             const SizedBox(height: 24),
             
-            // Player Tests Widget
+            // Player Test Widget
             if (FeatureFlags.playerTestsEnabled)
-              const PlayerTestWidget(),
+              _buildPlayerTestSection(),
             
-            if (FeatureFlags.playerTestsEnabled)
-              const SizedBox(height: 24),
-            
-            // Badges section
-            if (FeatureFlags.badgesEnabled)
-              _buildBadgesSection(),
-              
-            if (FeatureFlags.badgesEnabled)
-              const SizedBox(height: 24),
+            // Add more sections as needed
           ],
         ),
       ),
@@ -1084,34 +1321,20 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  // Build the academy logo
-  Widget _buildLogo(double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
+// Build the academy logo
+Widget _buildLogo(double size) {
+  return SizedBox(
+    width: size,
+    height: size,
+    child: ClipOval(
+      child: Image.asset(
+        'assets/images/CA_Logo_JPG.jpg',
+        fit: BoxFit.cover,
       ),
-      child: Center(
-        child: Text(
-          'CA',
-          style: TextStyle(
-            fontSize: size * 0.4,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF0B0057),
-          ),
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
+
 
   // Determine player card type based on various criteria
   CardType _getPlayerCardType() {
@@ -1354,8 +1577,325 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  // Helper to format dates
   String _formatDate(DateTime date) {
     return DateFormat('dd/MM/yyyy').format(date);
+  }
+
+  void _navigateToPlayerTests() {
+    // Navigate to a dedicated player tests page
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PlayerTestsPage(),
+      ),
+    );
+  }
+
+  Widget _buildPlayerTestSection() {
+    return Card(
+      color: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFF3D007A), width: 2),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF0B0057).withOpacity(0.6),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with title and icon
+            const Row(
+              children: [
+                Icon(Icons.speed, color: Colors.white),
+                SizedBox(width: 8),
+                Text(
+                  'DINE TESTS',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Brief summary of the latest test
+            if (_playerStats?.lastUpdated != null) 
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Sidste test: ${_formatDate(_playerStats!.lastUpdated!)}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Show some key stats
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 8,
+                    children: [
+                      _buildStatBadge('Pace', _playerStats!.pace.round()),
+                      _buildStatBadge('Shooting', _playerStats!.shooting.round()),
+                      _buildStatBadge('Passing', _playerStats!.passing.round()),
+                      _buildStatBadge('Dribbling', _playerStats!.dribbling.round()),
+                      _buildStatBadge('Juggles', _playerStats!.juggles.round()),
+                      _buildStatBadge('First Touch', _playerStats!.firstTouch.round()),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              )
+            else
+              const Text(
+                'Du har endnu ikke taget nogen tests. Tag din første test nu!',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+            
+            // Button to access full test history
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: ElevatedButton.icon(
+                  onPressed: _navigateToPlayerTests,
+                  icon: const Icon(Icons.add_chart, size: 18),
+                  label: const Text('Tag en ny test'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildStatBadge(String label, int value) {
+    Color badgeColor;
+    if (value >= 80) {
+      badgeColor = Colors.green;
+    } else if (value >= 60) {
+      badgeColor = Colors.amber;
+    } else {
+      badgeColor = Colors.red.shade400;
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: badgeColor.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: badgeColor),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            value.toString(),
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpcomingActivitiesSection() {
+    if (_developmentPlan == null || _developmentPlan!.trainingSessions.isEmpty) {
+      return const SizedBox.shrink(); // Don't show section if no plan or sessions
+    }
+
+    // Get upcoming sessions (filter out past ones if date is reliable)
+    // For now, let's just sort by weekday and take the first few
+    final upcomingSessions = _developmentPlan!.trainingSessions
+        .where((s) => !s.isCompleted) // Simple filter: only show non-completed
+        .toList()
+      ..sort((a, b) => a.weekday.compareTo(b.weekday)); // Sort by weekday
+      
+    final sessionsToShow = upcomingSessions.take(3).toList(); // Limit to 3 for dashboard
+
+    if (sessionsToShow.isEmpty) {
+        return _buildInfoCard(
+        icon: Icons.event_busy_outlined,
+        title: 'Kommende Aktiviteter',
+        child: const Text('Ingen kommende aktiviteter planlagt.', style: TextStyle(color: Colors.white70)),
+      );
+    }
+
+    return _buildInfoCard(
+      icon: Icons.event_note_outlined,
+      title: 'Kommende Aktiviteter',
+      child: Column(
+        children: sessionsToShow.map((session) => _buildActivityItem(session)).toList(),
+      ),
+      actionButton: TextButton(
+        onPressed: () {
+           // Navigate to the full development plan page
+          Navigator.pushNamed(context, '/development-plan');
+        },
+        child: const Text('Se Hele Planen', style: TextStyle(color: Color(0xFFFFD700))) 
+      )
+    );
+  }
+
+  Widget _buildActivityItem(TrainingSession session) {
+    final List<String> weekdays = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
+    final weekdayStr = session.weekday >= 1 && session.weekday <= 7 ? weekdays[session.weekday - 1] : 'Ukendt';
+    final timeStr = session.startTime ?? '-';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text('$weekdayStr $timeStr', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              session.title,
+              style: const TextStyle(color: Colors.white, fontSize: 15),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDevelopmentFocusSection() {
+    if (_developmentPlan == null || _developmentPlan!.focusAreas.isEmpty) {
+      return const SizedBox.shrink(); // Don't show section if no plan or focus areas
+    }
+    
+    final areasToShow = _developmentPlan!.focusAreas
+      .where((area) => !area.isCompleted) // Only show active focus areas
+      .take(3) // Limit to 3 for dashboard
+      .toList();
+
+    if (areasToShow.isEmpty) {
+        return _buildInfoCard(
+        icon: Icons.center_focus_weak_outlined,
+        title: 'Udviklingsfokus',
+        child: const Text('Ingen aktive fokusområder defineret.', style: TextStyle(color: Colors.white70)),
+      );
+    }
+
+    return _buildInfoCard(
+      icon: Icons.track_changes_outlined,
+      title: 'Udviklingsfokus',
+      child: Column(
+        children: areasToShow.map((area) => _buildFocusAreaItem(area)).toList(),
+      ),
+       actionButton: TextButton(
+        onPressed: () {
+           // Navigate to the full development plan page (focus tab)
+          // TODO: Add logic to navigate directly to the focus tab if possible
+          Navigator.pushNamed(context, '/development-plan');
+        },
+        child: const Text('Se Alle Områder', style: TextStyle(color: Color(0xFFFFD700))) 
+      )
+    );
+  }
+
+  Widget _buildFocusAreaItem(FocusArea area) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle_outline, color: Colors.white.withOpacity(0.6), size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              area.title,
+              style: const TextStyle(color: Colors.white, fontSize: 15),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper to build consistent card sections
+  Widget _buildInfoCard({required IconData icon, required String title, required Widget child, Widget? actionButton}) {
+    return Card(
+      color: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFF3D007A), width: 2),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF0B0057).withOpacity(0.6),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                 Row(
+                   children: [
+                     Icon(icon, color: Colors.white),
+                     const SizedBox(width: 8),
+                     Text(
+                       title,
+                       style: const TextStyle(
+                         color: Colors.white,
+                         fontSize: 18, // Smaller title for these cards
+                         fontWeight: FontWeight.bold,
+                         letterSpacing: 1.2,
+                       ),
+                     ),
+                   ],
+                 ),
+                 if (actionButton != null) actionButton,
+              ],
+            ),
+            const Divider(color: Colors.white24, height: 24),
+            child,
+          ],
+        ),
+      ),
+    );
   }
 }
 

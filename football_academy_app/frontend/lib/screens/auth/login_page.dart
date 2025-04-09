@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:math' as math;
+import 'dart:math';
 import '../../models/auth.dart';
 import '../../services/auth_service.dart';
 import '../../theme/colors.dart';
@@ -7,10 +9,18 @@ import '../dashboard/dashboard_page.dart';
 import 'register_page.dart';
 import '../../services/challenge_service.dart';
 import '../info/info_page.dart';
-import 'dart:html' as html;
-import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../services/profile_image_service.dart';
+import '../../widgets/fifa_player_card.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as path;
+import '../../../utils/image_picker_helper.dart';
+import '../../widgets/decorative_backgrounds.dart';
+
+// Platform-specific imports
+import 'package:universal_html/html.dart' if (dart.library.io) 'dart:io';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,7 +29,7 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -29,10 +39,16 @@ class _LoginPageState extends State<LoginPage> {
   String? _profileImageUrl;
   final ProfileImageService _profileImageService = ProfileImageService();
 
+  // Animation state
+  late AnimationController _starController;
+  List<_FallingStar> _stars = [];
+  final Random _random = Random();
+
   @override
   void initState() {
     super.initState();
     _loadProfileImage();
+    _initializeStars();
   }
 
   Future<void> _loadProfileImage() async {
@@ -46,6 +62,7 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _starController.dispose();
     super.dispose();
   }
 
@@ -92,30 +109,59 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _pickImage() async {
-    if (kIsWeb) {
-      // Create a file input element
-      final input = html.FileUploadInputElement()..accept = 'image/*';
-      input.click();
-
-      await input.onChange.first;
-      if (input.files!.isNotEmpty) {
-        final file = input.files![0];
-        final reader = html.FileReader();
-        
-        reader.readAsDataUrl(file);
-        await reader.onLoad.first;
-        
-        final imageData = reader.result as String;
-        
-        // Save the image to the profile service
-        await _profileImageService.saveProfileImage(imageData);
-        
-        setState(() {
-          _profileImageUrl = imageData;
-        });
-      }
+    final String? imageResult = await ImagePickerHelper.pickImage();
+    if (imageResult != null) {
+      setState(() {
+        _profileImageUrl = imageResult;
+      });
+      await _profileImageService.saveProfileImage(imageResult);
     }
   }
+
+  // --- STAR ANIMATION LOGIC ---
+  void _initializeStars() {
+    _starController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 16 * 500),
+    )..addListener(_updateStars)..repeat();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) { 
+      if (!mounted) return;
+      final screenHeight = MediaQuery.of(context).size.height;
+      final screenWidth = MediaQuery.of(context).size.width;
+      const int starCount = 70;
+
+      _stars = List.generate(starCount, (index) {
+        return _FallingStar(
+          x: _random.nextDouble() * screenWidth,
+          y: _random.nextDouble() * screenHeight,
+          size: _random.nextDouble() * 2.5 + 1.5,
+          speed: _random.nextDouble() * 1.5 + 0.5,
+          opacity: _random.nextDouble() * 0.5 + 0.3,
+        );
+      });
+    });
+  }
+
+  void _updateStars() {
+    if (!mounted) return;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    setState(() {
+      for (var star in _stars) {
+        star.y += star.speed;
+        if (star.y > screenHeight + star.size) {
+          star.y = -star.size;
+          star.x = _random.nextDouble() * screenWidth;
+          star.size = _random.nextDouble() * 2.5 + 1.5;
+          star.speed = _random.nextDouble() * 1.5 + 0.5;
+          star.opacity = _random.nextDouble() * 0.5 + 0.3;
+        }
+      }
+    });
+  }
+  // --- END STAR ANIMATION LOGIC ---
 
   @override
   Widget build(BuildContext context) {
@@ -125,26 +171,66 @@ class _LoginPageState extends State<LoginPage> {
         height: MediaQuery.of(context).size.height,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              Color(0xFF280070), // Dark purple
-              Color(0xFF3D0099), // Mid purple
-              Color(0xFF8800BB), // Pink/purple
-              Color(0xFFFF3399), // Pink
+              Color(0xFF0B0033),
+              Color(0xFF2A004D),
+              Color(0xFF5D006C),
+              Color(0xFF9A0079),
+              Color(0xFFC71585),
+              Color(0xFFFF4500),
             ],
+            stops: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
           ),
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isLandscape = constraints.maxWidth > 600;
-            
-            if (isLandscape) {
-              return _buildLandscapeLayout();
-            } else {
-              return _buildPortraitLayout();
-            }
-          },
+        child: SafeArea(
+          child: Stack(
+            children: [
+              // --- STAR ANIMATION LAYER ---
+              AnimatedBuilder(
+                animation: _starController,
+                builder: (context, child) {
+                  return CustomPaint(
+                    painter: FallingStarsPainter(stars: _stars),
+                    child: Container(), // Needs a child to render
+                  );
+                },
+              ),
+              // --- END STAR ANIMATION LAYER ---
+              const BackgroundRadarGraphic(),
+              const BottomPitchGraphic(),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isLandscape = constraints.maxWidth > 600;
+                  final isSmallScreen = constraints.maxWidth < 360;
+                  
+                  if (isLandscape) {
+                    return _buildLandscapeLayout();
+                  } else {
+                    return _buildPortraitLayout(isSmallScreen);
+                  }
+                },
+              ),
+              // --- ADD FOOTER TEXT HERE ---
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0), // Space from bottom
+                  child: Text(
+                    "BY COPENHAGEN ACADEMY",
+                    style: TextStyle(
+                      color: Colors.amber[300], // Gold color
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                ),
+              )
+              // --- END FOOTER TEXT ---
+            ],
+          ),
         ),
       ),
     );
@@ -180,11 +266,43 @@ class _LoginPageState extends State<LoginPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 10),
-                      _buildMissionText(),
+                      _buildMissionText(isSmallScreen: false),
                       const SizedBox(height: 30),
                       _buildLoginForm(),
                       const SizedBox(height: 20),
                       _buildSignUpSection(),
+                      const SizedBox(height: 20),
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const InfoPage(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.info_outline,
+                            color: Colors.white70,
+                            size: 20,
+                          ),
+                          label: const Text(
+                            'Læs mere om Copenhagen Academy',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            backgroundColor: Colors.white.withOpacity(0.1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -196,50 +314,76 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
   
-  Widget _buildPortraitLayout() {
+  Widget _buildPortraitLayout(bool isSmallScreen) {
     return SingleChildScrollView(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           _buildAppHeader(),
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 10),
-                Center(
-                  child: SizedBox(
-                    width: 220,
-                    child: _buildPlayerCard(),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _buildMissionText(),
-                const SizedBox(height: 20),
-                _buildLoginForm(),
-                const SizedBox(height: 20),
-                _buildSignUpSection(),
-                const SizedBox(height: 20),
-                // Add Learn More button
-                TextButton.icon(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/info');
-                  },
-                  icon: const Icon(
-                    Icons.info_outline,
-                    color: Colors.white70,
-                  ),
-                  label: const Text(
-                    'Læa mere om Copenhagen Academy',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
+                // Player card
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.35,
+                  child: Center(
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.8,
+                      child: _buildPlayerCard(),
                     ),
                   ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    backgroundColor: Colors.white.withOpacity(0.1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Mission text
+                _buildMissionText(isSmallScreen: isSmallScreen),
+                
+                const SizedBox(height: 32),
+                
+                // Login form
+                _buildLoginForm(),
+                
+                const SizedBox(height: 24),
+                
+                // Sign up section
+                _buildSignUpSection(),
+                
+                const SizedBox(height: 16),
+                
+                // Info button
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: TextButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const InfoPage(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.info_outline,
+                      color: Colors.white70,
+                      size: 20,
+                    ),
+                    label: const Text(
+                      'Læs mere om Copenhagen Academy',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      backgroundColor: Colors.white.withOpacity(0.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                     ),
                   ),
                 ),
@@ -271,19 +415,19 @@ class _LoginPageState extends State<LoginPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.emoji_events, color: Colors.amber[300], size: 24),
-              const SizedBox(width: 10),
+              Icon(Icons.emoji_events, color: Colors.amber[300], size: 22),
+              const SizedBox(width: 8),
               Text(
                 "COPENHAGEN ACADEMY",
                 style: TextStyle(
                   color: Colors.amber[300],
-                  fontSize: 24,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.5,
                 ),
               ),
-              const SizedBox(width: 10),
-              Icon(Icons.emoji_events, color: Colors.amber[300], size: 24),
+              const SizedBox(width: 8),
+              Icon(Icons.emoji_events, color: Colors.amber[300], size: 22),
             ],
           ),
           const SizedBox(height: 5),
@@ -310,16 +454,25 @@ class _LoginPageState extends State<LoginPage> {
   }
   
   Widget _buildPlayerCard() {
+    double cardWidth = MediaQuery.of(context).size.width * 0.6;
+    double cardHeight = cardWidth * 1.6;
+
     return Container(
+      width: cardWidth,
+      height: cardHeight,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.5,
+        maxWidth: 300,
+      ),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFD700), // Gold color
+        color: const Color(0xFFFFD700),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: Colors.black.withOpacity(0.4),
+            spreadRadius: 2,
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
         border: Border.all(
@@ -327,300 +480,176 @@ class _LoginPageState extends State<LoginPage> {
           width: 2,
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Top part of card with player rating and picture
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFD700), // Gold color
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.amber.withOpacity(0.3),
-                  spreadRadius: 1,
-                  blurRadius: 2,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // Left side: Rating number and position
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 55,
-                      height: 55,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E22AA), // Dark blue
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: Colors.amber[300]!,
-                          width: 1,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 45, height: 45,
+                        alignment: Alignment.center,
+                        child: const Text(
+                          "94",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        "94",
+                      const SizedBox(height: 4),
+                      const Text(
+                        "PAC",
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
+                          color: Color(0xFF1E22AA),
+                          fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    const Text(
-                      "PAC",
-                      style: TextStyle(
-                        color: Color(0xFF1E22AA),
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E22AA),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                          color: Colors.amber[300]!,
-                          width: 1,
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        child: const Text(
+                          "ST",
+                          style: TextStyle(
+                            color: Color(0xFF1E22AA),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      child: const Text(
-                        "ST",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                // Player icon/avatar
-                Expanded(
-                  child: Container(
-                    height: 140,
-                    alignment: Alignment.center,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        GestureDetector(
-                          onTap: _pickImage,
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0A3BAA),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.amber[300]!,
-                                width: 2,
-                              ),
-                              image: _profileImageUrl != null
-                                  ? DecorationImage(
-                                      image: NetworkImage(_profileImageUrl!),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
-                            child: _profileImageUrl == null
-                                ? const ClipOval(
-                                    child: Icon(
-                                      Icons.sports_soccer,
-                                      color: Colors.white,
-                                      size: 50,
-                                    ),
+                    ],
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: AspectRatio(
+                      aspectRatio: 1.0,
+                      child: GestureDetector(
+                        onTap: _pickImage,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0A3BAA).withOpacity(0.5),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.amber[300]!, width: 2),
+                            image: _profileImageUrl != null
+                                ? DecorationImage(
+                                    image: NetworkImage(_profileImageUrl!),
+                                    fit: BoxFit.cover,
                                   )
                                 : null,
                           ),
+                          child: _profileImageUrl == null
+                              ? const Center(child: Icon(Icons.sports_soccer, color: Colors.white, size: 40))
+                              : null,
                         ),
-                        // Camera icon overlay
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.amber[700],
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                        // Badge positioned at the bottom right
-                        Positioned(
-                          bottom: 5,
-                          right: 25,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.local_fire_department,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ),
-                        ),
-                        // Trophy badge at top left
-                        Positioned(
-                          top: 5,
-                          left: 25,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Colors.amber[700],
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.emoji_events,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          
-          // PLAYER text
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.amber[700]!,
-                  Colors.amber[300]!,
-                  Colors.amber[700]!,
                 ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
               ),
             ),
-            child: const Text(
-              "Christian",
-              style: TextStyle(
-                color: Color(0xFF1E22AA),
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.amber[700]!,
+                    Colors.amber[300]!,
+                    Colors.amber[700]!,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: const Text(
+                "Christian",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF1E22AA),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
-          
-          // Player stats
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildStat("97", "PAC"),
-                    _buildStat("92", "DRI"),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildStat("90", "SHO"),
-                    _buildStat("39", "DEF"),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildStat("80", "PAS"),
-                    _buildStat("78", "PHY"),
-                  ],
-                ),
-              ],
+            Padding(
+              padding: const EdgeInsets.only(left: 12, right: 12, bottom: 12, top: 4),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [_buildStat("97", "PAC"), _buildStat("92", "DRI"), _buildStat("90", "SHO"), ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [_buildStat("80", "PAS"), _buildStat("78", "PHY"), _buildStat("39", "DEF"), ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-        ],
+          ],
+        ),
       ),
     );
   }
   
   Widget _buildStat(String value, String label) {
-    return Row(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: Color(0xFF1E22AA),
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF1E22AA),
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
+    return Column(
+       mainAxisSize: MainAxisSize.min,
+       children: [
+          Text(value, style: const TextStyle(color: Color(0xFF1E22AA), fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(label, style: const TextStyle(color: Color(0xFF1E22AA), fontSize: 12, fontWeight: FontWeight.bold)),
+       ],
     );
   }
   
-  Widget _buildMissionText() {
+  Widget _buildMissionText({required bool isSmallScreen}) {
+    final fontSize = isSmallScreen ? 28.0 : 32.0;
+    final iconSize = isSmallScreen ? 24.0 : 28.0;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               "Træn",
               style: TextStyle(
                 color: Colors.yellow,
-                fontSize: 46,
+                fontSize: fontSize,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(width: 10),
-            Icon(Icons.sports_soccer, color: Colors.amber[300], size: 30),
+            const SizedBox(width: 8),
+            Icon(Icons.sports_soccer, color: Colors.amber[300], size: iconSize),
           ],
         ),
+        const SizedBox(height: 8),
         Row(
           children: [
-            const Text(
-              "og bliv stjernen på holdet!",
-              style: TextStyle(
-                color: Colors.yellow,
-                fontSize: 46,
-                fontWeight: FontWeight.bold,
+            Flexible(
+              child: Text(
+                "og bliv stjernen på holdet!",
+                style: TextStyle(
+                  color: Colors.yellow,
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            const SizedBox(width: 10),
-            Icon(Icons.emoji_events, color: Colors.amber[300], size: 30),
+            const SizedBox(width: 8),
+            Icon(Icons.emoji_events, color: Colors.amber[300], size: iconSize),
           ],
         ),
       ],
@@ -659,7 +688,6 @@ class _LoginPageState extends State<LoginPage> {
                 }
                 if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                   return 'Indtast en gyldig email';
-            
                 }
                 return null;
               },
@@ -697,7 +725,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           
-          // Error message
           if (_errorMessage != null)
             Padding(
               padding: const EdgeInsets.only(top: 16.0),
@@ -714,7 +741,7 @@ class _LoginPageState extends State<LoginPage> {
           
           // Login button
           Container(
-            height: 60,
+            height: 56,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               gradient: const LinearGradient(
@@ -738,7 +765,7 @@ class _LoginPageState extends State<LoginPage> {
                   : const Text(
                       'LOG IND',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -762,6 +789,8 @@ class _LoginPageState extends State<LoginPage> {
         ),
         const SizedBox(height: 16),
         Container(
+          width: double.infinity,
+          height: 56,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
@@ -781,39 +810,9 @@ class _LoginPageState extends State<LoginPage> {
             child: const Text(
               'OPRET BRUGER',
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.yellow,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        
-        // About Academy button
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white,
-              width: 2,
-            ),
-          ),
-          child: TextButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const InfoPage(),
-                ),
-              );
-            },
-            child: const Text(
-              'Hvem er vi?',
-              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: Colors.yellow,
               ),
             ),
           ),
@@ -821,4 +820,56 @@ class _LoginPageState extends State<LoginPage> {
       ],
     );
   }
-} 
+}
+
+// Simple class to hold star properties
+class _FallingStar {
+  double x;
+  double y;
+  double size;
+  double speed;
+  double opacity;
+
+  _FallingStar({
+    required this.x,
+    required this.y,
+    required this.size,
+    required this.speed,
+    required this.opacity,
+  });
+}
+
+// --- CUSTOM PAINTER FOR FALLING STARS ---
+class FallingStarsPainter extends CustomPainter {
+  final List<_FallingStar> stars;
+
+  FallingStarsPainter({required this.stars});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final goldPaint = Paint();
+
+    for (var star in stars) {
+      // Create a gradient for a shimmer effect
+      final rect = Rect.fromCircle(center: Offset(star.x, star.y), radius: star.size);
+      goldPaint.shader = RadialGradient(
+        colors: [
+          Colors.yellow[200]!.withOpacity(star.opacity),
+          Colors.amber[600]!.withOpacity(star.opacity * 0.8),
+          Colors.amber[900]!.withOpacity(star.opacity * 0.5),
+        ],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(rect);
+      
+      // Draw star (simple circle for performance)
+      canvas.drawCircle(Offset(star.x, star.y), star.size, goldPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant FallingStarsPainter oldDelegate) {
+    return true; 
+  }
+}
+
+// --- END CUSTOM PAINTER --- 

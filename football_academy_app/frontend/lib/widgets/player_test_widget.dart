@@ -195,62 +195,56 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      color: Colors.black.withOpacity(0.5),
+      color: Colors.black.withOpacity(0.7),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+            // Header with title and add button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Player test',
+                const Text(
+                  'Spillertest',
                   style: TextStyle(
-                    color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
+                    color: Colors.white,
                   ),
                 ),
-                _showForm 
-                  ? IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () {
-                        setState(() {
-                          _showForm = false;
-                        });
-                      },
-                    )
-                  : TextButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          _showForm = true;
-                        });
-                      },
-                      icon: const Icon(
-                        Icons.add,
-                        color: Colors.green,
-                      ),
-                      label: const Text(
-                        'Gennemfør ny test',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _showForm = !_showForm;
+                    });
+                  },
+                  icon: Icon(
+                    _showForm ? Icons.close : Icons.add,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  label: Text(
+                    _showForm ? 'Annuller' : 'Ny test',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
                     ),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                ),
               ],
             ),
-            
             const SizedBox(height: 16),
             
-            // Test form
-            if (_showForm) _buildTestForm(),
-            
-            // Test history
-            if (!_showForm) _buildTestHistory(),
+            // Show form or test history
+            Expanded(
+              child: _showForm
+                  ? _buildTestForm()
+                  : _buildTestHistory(),
+            ),
           ],
         ),
       ),
@@ -258,94 +252,123 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
   }
   
   Widget _buildTestForm() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Indtast dine testresultater:',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // --- Passing Test ---
+          const Text(
+            'Afleveringer: Spil bolden mod en mur i 1 minut. Indtast hvor mange succesfulde afleveringer du har.',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
-        ),
-        const SizedBox(height: 12),
-        
-        // Form fields
-        _buildTestField(
-          label: 'Passing (antal)',
-          controller: _passingController,
-          icon: Icons.swap_horizontal_circle,
-          keyboardType: TextInputType.number,
-          helperText: 'Antal succesfulde pasninger i 1 minut',
-        ),
-        const SizedBox(height: 8),
-        
-        _buildTestField(
-          label: 'Sprint (sekunder)',
-          controller: _sprintController,
-          icon: Icons.speed,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          helperText: 'Tid for 15-meter sprint',
-        ),
-        const SizedBox(height: 8),
-        
-        _buildTestField(
-          label: 'First Touch (antal)',
-          controller: _firstTouchController,
-          icon: Icons.touch_app,
-          keyboardType: TextInputType.number,
-          helperText: 'Antal succesfulde førsteberøringer i 1 minut',
-        ),
-        const SizedBox(height: 8),
-        
-        _buildTestField(
-          label: 'Shooting (antal)',
-          controller: _shootingController,
-          icon: Icons.sports_soccer,
-          keyboardType: TextInputType.number,
-          helperText: 'Antal succesfulde mål ud af 10 skud',
-        ),
-        const SizedBox(height: 8),
-        
-        _buildTestField(
-          label: 'Juggling (antal)',
-          controller: _jugglingController,
-          icon: Icons.flutter_dash,
-          keyboardType: TextInputType.number,
-          helperText: 'Antal jongleringer i 1 minut',
-        ),
-        const SizedBox(height: 8),
-        
-        _buildTestField(
-          label: 'Dribbling (sekunder)',
-          controller: _dribblingController,
-          icon: Icons.directions_run,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          helperText: 'Tid for at gennemføre driblingen',
-        ),
-        const SizedBox(height: 16),
-        
-        // Submit button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _submitTest,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          const SizedBox(height: 8),
+          _buildTestField(
+            label: 'Afleveringer',
+            controller: _passingController,
+            icon: Icons.sports_soccer,
+            keyboardType: TextInputType.number,
+            helperText: 'Antal på 1 min',
+          ),
+          const SizedBox(height: 16),
+          
+          // --- Sprint Test ---
+          const Text(
+            'Sprint: Løb 15 meter så hurtigt du kan. Indtast tiden i sekunder (f.eks. 2.5).',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          _buildTestField(
+            label: 'Sprint',
+            controller: _sprintController,
+            icon: Icons.timer,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            helperText: '15m tid i sek',
+          ),
+          const SizedBox(height: 16),
+          
+          // --- First Touch Test ---
+          const Text(
+            'Første berøring: spark bolden ind i en mur, tæm den og spark den tilbage i muren. Tæl antal succesfulde førsteberøringerpå 1 minut.',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          _buildTestField(
+            label: 'Første berøring',
+            controller: _firstTouchController,
+            icon: Icons.sports_soccer,
+            keyboardType: TextInputType.number,
+            helperText: 'Antal på 1 min',
+          ),
+          const SizedBox(height: 16),
+          
+          // --- Shooting Test ---
+          const Text(
+            'Skud: Forsøg at score så mange mål ud af 10 forsøg.',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          _buildTestField(
+            label: 'Skud',
+            controller: _shootingController,
+            icon: Icons.sports_soccer,
+            keyboardType: TextInputType.number,
+            helperText: 'Point (1-100)',
+          ),
+          const SizedBox(height: 16),
+          
+          // --- Juggling Test ---
+          const Text(
+            'Jonglering: Hold bolden i luften så længe som muligt. Indtast dit højeste antal jongleringer i træk.',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          _buildTestField(
+            label: 'Jonglering',
+            controller: _jugglingController,
+            icon: Icons.flutter_dash,
+            keyboardType: TextInputType.number,
+            helperText: 'Antal',
+          ),
+          const SizedBox(height: 16),
+          
+          // --- Dribbling Test ---
+          const Text(
+            'Dribling: Dribl gennem en keglebane. Indtast tiden i sekunder.',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          _buildTestField(
+            label: 'Dribling',
+            controller: _dribblingController,
+            icon: Icons.directions_run,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            helperText: 'Tid i sek',
+          ),
+          const SizedBox(height: 24),
+          
+          // Submit button
+          SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              onPressed: _submitTest,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Gem resultater',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            child: const Text(
-              'Indsend testresultater',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
   
@@ -356,26 +379,58 @@ class _PlayerTestWidgetState extends State<PlayerTestWidget> {
     required TextInputType keyboardType,
     String? helperText,
   }) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
-        helperText: helperText,
-        helperStyle: const TextStyle(color: Colors.white54, fontSize: 10),
-        helperMaxLines: 2,
-        prefixIcon: Icon(icon, color: Colors.white70),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.white30),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.white24,
+          width: 1,
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.green),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Label row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Row(
+              children: [
+                Icon(icon, color: Colors.white70, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Input field
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: TextField(
+              controller: controller,
+              keyboardType: keyboardType,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                helperText: helperText,
+                helperStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
