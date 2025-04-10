@@ -2,8 +2,12 @@ from pydantic import BaseSettings
 from typing import Optional
 import os
 from dotenv import load_dotenv
+from pathlib import Path
 
 load_dotenv()
+
+# Get the directory where this config file is located
+BACKEND_DIR = Path(__file__).resolve().parent
 
 class Settings(BaseSettings):
     # API Settings
@@ -17,7 +21,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./football_academy.db")
+    # Construct the default path relative to the backend directory
+    DEFAULT_DB_PATH = BACKEND_DIR / "football_academy.db"
+    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
     
     # CORS
     BACKEND_CORS_ORIGINS: list = ["*"]

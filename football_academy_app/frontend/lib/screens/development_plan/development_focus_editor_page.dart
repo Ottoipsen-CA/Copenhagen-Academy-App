@@ -3,6 +3,7 @@ import '../../models/development_plan.dart';
 import '../../theme/colors.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/gradient_background.dart';
+import '../../widgets/navigation_drawer.dart';
 
 class DevelopmentFocusEditorPage extends StatefulWidget {
   final DevelopmentPlan plan;
@@ -91,93 +92,93 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: CustomNavigationDrawer(currentPage: 'developmentPlan'),
       appBar: CustomAppBar(
-        title: 'Edit Development Focus',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _savePlan,
-          ),
-        ],
+        title: 'Rediger Udviklingsfokus',
+        hasBackButton: true,
       ),
       body: GradientBackground(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _buildSection(
-                title: 'Long-Term Goals',
-                child: TextFormField(
-                  controller: _longTermGoalsController,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter your long-term goals',
-                    filled: true,
-                    fillColor: Colors.white10,
-                  ),
-                  style: const TextStyle(color: Colors.white),
-                  maxLines: 3,
-                ),
+        child: _buildBody(),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildSection(
+            title: 'Long-Term Goals',
+            child: TextFormField(
+              controller: _longTermGoalsController,
+              decoration: const InputDecoration(
+                hintText: 'Enter your long-term goals',
+                filled: true,
+                fillColor: Colors.white10,
               ),
-              const SizedBox(height: 24),
-              _buildSection(
-                title: 'Focus Areas',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (_focusAreas.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Text(
-                          'No focus areas defined',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      )
-                    else
-                      ...List.generate(
-                        _focusAreas.length,
-                        (index) => _buildFocusAreaItem(index),
-                      ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: _addFocusArea,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Focus Area'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildSection(
-                title: 'Notes',
-                child: TextFormField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(
-                    hintText: 'Enter any additional notes',
-                    filled: true,
-                    fillColor: Colors.white10,
-                  ),
-                  style: const TextStyle(color: Colors.white),
-                  maxLines: 3,
-                ),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: _savePlan,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text('Save Changes'),
-              ),
-            ],
+              style: const TextStyle(color: Colors.white),
+              maxLines: 3,
+            ),
           ),
-        ),
+          const SizedBox(height: 24),
+          _buildSection(
+            title: 'Focus Areas',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_focusAreas.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      'No focus areas defined',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                else
+                  ...List.generate(
+                    _focusAreas.length,
+                    (index) => _buildFocusAreaItem(index),
+                  ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _addFocusArea,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Focus Area'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildSection(
+            title: 'Notes',
+            child: TextFormField(
+              controller: _notesController,
+              decoration: const InputDecoration(
+                hintText: 'Enter any additional notes',
+                filled: true,
+                fillColor: Colors.white10,
+              ),
+              style: const TextStyle(color: Colors.white),
+              maxLines: 3,
+            ),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: _savePlan,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            child: const Text('Save Changes'),
+          ),
+        ],
       ),
     );
   }

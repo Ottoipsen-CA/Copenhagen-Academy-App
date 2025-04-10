@@ -6,7 +6,15 @@ import os
 from database import engine, Base
 
 # Import routers
-from routers import auth, skill_tests, challenges, league_table
+from routers import (
+    auth, 
+    skill_tests, 
+    challenges, 
+    league_table,
+    development_plan,
+    training_session,
+    focus_area
+)
 
 # Configure logging
 logging.basicConfig(
@@ -52,6 +60,9 @@ app.include_router(auth.router, prefix="/api/v2")
 app.include_router(skill_tests.router, prefix="/api/v2")
 app.include_router(challenges.router, prefix="/api/v2")
 app.include_router(league_table.router, prefix="/api/v2")
+app.include_router(development_plan.router, prefix="/api/v2")
+app.include_router(training_session.router, prefix="/api/v2")
+app.include_router(focus_area.router, prefix="/api/v2")
 
 @app.get("/")
 async def root():

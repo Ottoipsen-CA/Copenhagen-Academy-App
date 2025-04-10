@@ -4,6 +4,7 @@ import '../../services/development_plan_service.dart';
 import '../../theme/colors.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/gradient_background.dart';
+import '../../widgets/navigation_drawer.dart';
 
 class DevelopmentPlanEditorPage extends StatefulWidget {
   final DevelopmentPlan? plan;
@@ -87,63 +88,63 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: CustomNavigationDrawer(currentPage: 'developmentPlan'),
       appBar: CustomAppBar(
-        title: widget.plan == null ? 'New Training Plan' : 'Edit Training Plan',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _savePlan,
-          ),
-        ],
+        title: widget.plan == null ? 'Ny Udviklingsplan' : 'Rediger Udviklingsplan',
+        hasBackButton: true,
       ),
       body: GradientBackground(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(16),
+        child: _buildBody(),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          TextFormField(
+            controller: _titleController,
+            decoration: const InputDecoration(
+              labelText: 'Plan Title',
+              filled: true,
+              fillColor: Colors.white10,
+            ),
+            style: const TextStyle(color: Colors.white),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a title';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Plan Title',
-                  filled: true,
-                  fillColor: Colors.white10,
+              const Text(
+                'Training Sessions',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                style: const TextStyle(color: Colors.white),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a title';
-                  }
-                  return null;
-                },
               ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Training Sessions',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: _addTrainingSession,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Session'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.primary,
-                    ),
-                  ),
-                ],
+              TextButton.icon(
+                onPressed: _addTrainingSession,
+                icon: const Icon(Icons.add),
+                label: const Text('Add Session'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                ),
               ),
-              const SizedBox(height: 16),
-              ..._trainingSessions.map((session) => _buildSessionCard(session)),
             ],
           ),
-        ),
+          const SizedBox(height: 16),
+          ..._trainingSessions.map((session) => _buildSessionCard(session)),
+        ],
       ),
     );
   }

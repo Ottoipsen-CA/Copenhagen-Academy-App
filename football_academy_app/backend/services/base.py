@@ -30,9 +30,28 @@ class BaseService(Generic[ModelType, CreateSchemaType, UpdateSchemaType, Respons
         obj_data = obj_in.dict()
         db_obj = self.model(**obj_data)
         self.db.add(db_obj)
-        self.db.commit()
-        self.db.refresh(db_obj)
-        return db_obj
+        try:
+            self.db.flush() # Flush to get the ID assigned
+            new_id = db_obj.id
+            if new_id is None:
+                 # This should not happen if flush worked for an autoincrement ID
+                 raise RuntimeError(f"Flush did not populate ID for {self.model.__name__}")
+                 
+            self.db.commit() # Commit the transaction
+            
+            # Immediately fetch the object using the ID obtained after flush
+            # Use self.get_by_id which queries the DB
+            fetched_obj = self.get_by_id(new_id)
+            if fetched_obj is None:
+                 # If commit worked, this should find the object
+                 raise RuntimeError(f"Failed to fetch {self.model.__name__} with ID {new_id} immediately after commit")
+            
+            return fetched_obj
+            
+        except Exception as e:
+            print(f"ERROR during create/commit/fetch for {self.model.__name__}: {e}") # Log error
+            self.db.rollback() # Rollback on any error during the process
+            raise e # Re-raise the exception
 
     def update(self, id: int, obj_in: Union[UpdateSchemaType, Dict[str, Any]]) -> ModelType:
         db_obj = self.get_by_id(id)

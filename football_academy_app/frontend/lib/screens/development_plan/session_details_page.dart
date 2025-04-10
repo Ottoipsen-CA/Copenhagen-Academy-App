@@ -3,6 +3,7 @@ import '../../models/development_plan.dart';
 import '../../theme/colors.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/gradient_background.dart';
+import '../../widgets/navigation_drawer.dart';
 
 class SessionDetailsPage extends StatefulWidget {
   final TrainingSession session;
@@ -21,11 +22,13 @@ class SessionDetailsPage extends StatefulWidget {
 class _SessionDetailsPageState extends State<SessionDetailsPage> {
   late TextEditingController _notesController;
   bool _isEditing = false;
+  bool _isMatch = false;
 
   @override
   void initState() {
     super.initState();
     _notesController = TextEditingController(text: widget.session.description);
+    _isMatch = widget.session.title.toLowerCase().contains('match');
   }
 
   @override
@@ -36,11 +39,11 @@ class _SessionDetailsPageState extends State<SessionDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isMatch = widget.session.title.toLowerCase().contains('match');
-
     return Scaffold(
+      drawer: CustomNavigationDrawer(currentPage: 'developmentPlan'),
       appBar: CustomAppBar(
         title: widget.session.title,
+        hasBackButton: true,
         actions: [
           IconButton(
             icon: Icon(_isEditing ? Icons.save : Icons.edit),
@@ -69,124 +72,128 @@ class _SessionDetailsPageState extends State<SessionDetailsPage> {
         ],
       ),
       body: GradientBackground(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Session Info Card
-              Card(
-                color: AppColors.cardBackground,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        child: _buildBody(),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Session Info Card
+          Card(
+            color: AppColors.cardBackground,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            isMatch ? Icons.sports_soccer : Icons.fitness_center,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            isMatch ? 'Match Details' : 'Training Details',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      Icon(
+                        _isMatch ? Icons.sports_soccer : Icons.fitness_center,
+                        color: Colors.white,
+                        size: 24,
                       ),
-                      const SizedBox(height: 16),
-                      _buildInfoRow('Time', widget.session.startTime),
-                      _buildInfoRow(
-                        'Duration',
-                        '${widget.session.durationMinutes} minutes',
-                      ),
-                      _buildInfoRow(
-                        'Status',
-                        widget.session.isCompleted ? 'Completed' : 'Upcoming',
+                      const SizedBox(width: 8),
+                      Text(
+                        _isMatch ? 'Match Details' : 'Training Details',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Notes Section
-              const Text(
-                'Notes',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Card(
-                color: AppColors.cardBackground,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: _isEditing
-                      ? TextFormField(
-                          controller: _notesController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
-                            hintText: 'Add your notes here...',
-                            hintStyle: TextStyle(color: Colors.white54),
-                            border: OutlineInputBorder(),
-                            enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.white24),
-                            ),
-                          ),
-                          maxLines: 5,
-                        )
-                      : Text(
-                          widget.session.description ?? 'No notes added yet',
-                          style: TextStyle(
-                            color:
-                                widget.session.description != null ? Colors.white : Colors.white54,
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Evaluations Section
-              const Text(
-                'Evaluations',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildEvaluationCard(
-                      'Pre-Training',
-                      widget.session.preEvaluation,
-                      () => _addEvaluation(true),
-                    ),
+                  const SizedBox(height: 16),
+                  _buildInfoRow('Time', widget.session.startTime),
+                  _buildInfoRow(
+                    'Duration',
+                    '${widget.session.durationMinutes} minutes',
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildEvaluationCard(
-                      'Post-Training',
-                      widget.session.postEvaluation,
-                      () => _addEvaluation(false),
-                    ),
+                  _buildInfoRow(
+                    'Status',
+                    widget.session.isCompleted ? 'Completed' : 'Upcoming',
                   ),
                 ],
               ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Notes Section
+          const Text(
+            'Notes',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            color: AppColors.cardBackground,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: _isEditing
+                  ? TextFormField(
+                      controller: _notesController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        hintText: 'Add your notes here...',
+                        hintStyle: TextStyle(color: Colors.white54),
+                        border: OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white24),
+                        ),
+                      ),
+                      maxLines: 5,
+                    )
+                  : Text(
+                      widget.session.description ?? 'No notes added yet',
+                      style: TextStyle(
+                        color:
+                            widget.session.description != null ? Colors.white : Colors.white54,
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Evaluations Section
+          const Text(
+            'Evaluations',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _buildEvaluationCard(
+                  'Pre-Training',
+                  widget.session.preEvaluation,
+                  () => _addEvaluation(true),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildEvaluationCard(
+                  'Post-Training',
+                  widget.session.postEvaluation,
+                  () => _addEvaluation(false),
+                ),
+              ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

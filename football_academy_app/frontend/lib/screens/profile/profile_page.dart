@@ -8,6 +8,7 @@ import '../../services/api_service.dart'; // Assuming ApiService is needed for r
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Assuming storage is needed for repo
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/gradient_background.dart';
+import '../../widgets/navigation_drawer.dart';
 import '../../theme/colors.dart';
 import 'package:http/http.dart' as http; // Added for http.Client
 import 'package:intl/intl.dart'; // Import for date formatting
@@ -193,6 +194,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: CustomNavigationDrawer(currentPage: 'profile'),
       appBar: CustomAppBar(title: 'Min Profil'),
       body: GradientBackground(
         child: _buildBody(),

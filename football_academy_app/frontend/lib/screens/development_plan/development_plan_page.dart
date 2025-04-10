@@ -5,6 +5,7 @@ import '../../services/development_plan_service.dart';
 import '../../theme/colors.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/gradient_background.dart';
+import '../../widgets/navigation_drawer.dart';
 import 'development_plan_editor_page.dart';
 import 'session_details_page.dart';
 import 'development_focus_editor_page.dart';
@@ -88,15 +89,17 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: CustomNavigationDrawer(currentPage: 'developmentPlan'),
       appBar: CustomAppBar(
-        title: 'Development Plan',
+        title: 'Udviklingsplan',
+        hasBackButton: false,
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           tabs: const [
-            Tab(text: 'Weekly Schedule'),
-            Tab(text: 'Development Focus'),
+            Tab(text: 'Ugentlig Plan'),
+            Tab(text: 'Udviklingsfokus'),
           ],
         ),
       ),
@@ -104,7 +107,7 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(color: Colors.white))
             : _plan == null
-                ? const Center(child: Text('No development plan found', style: TextStyle(color: Colors.white)))
+                ? const Center(child: Text('Ingen udviklingsplan fundet', style: TextStyle(color: Colors.white)))
                 : TabBarView(
                     controller: _tabController,
                     children: [

@@ -1,11 +1,12 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime, date
+from constants.position_weights import Position
 
 class UserBase(BaseModel):
     email: EmailStr
     full_name: str
-    position: Optional[str] = None
+    position: Optional[Position] = None
     current_club: Optional[str] = None
     date_of_birth: Optional[date] = None
     is_active: bool = True
@@ -19,7 +20,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     password: Optional[str] = None
     full_name: Optional[str] = None
-    position: Optional[str] = None
+    position: Optional[Position] = None
     current_club: Optional[str] = None
     date_of_birth: Optional[date] = None
     is_active: Optional[bool] = None
