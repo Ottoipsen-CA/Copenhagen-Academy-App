@@ -22,13 +22,11 @@ router = APIRouter(
 
 @router.get("/", response_model=List[LeagueTableEntryResponse])
 async def get_league_table(
-    season: Optional[str] = "current",
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_dependency)
 ):
     # Get all league table entries
     league_entries = db.query(LeagueTableEntry).filter(
-        LeagueTableEntry.season == season
     ).all()
     
     # If there are no entries, return empty list
@@ -49,14 +47,12 @@ async def get_league_table(
 @router.get("/user/{user_id}", response_model=LeagueTableEntryResponse)
 async def get_user_league_entry(
     user_id: int,
-    season: Optional[str] = "current",
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_dependency)
 ):
     # Get user's league table entry
     league_entry = db.query(LeagueTableEntry).filter(
         LeagueTableEntry.user_id == user_id,
-        LeagueTableEntry.season == season
     ).first()
     
     if not league_entry:
@@ -69,7 +65,6 @@ async def get_user_league_entry(
 
 @router.post("/recalculate", response_model=List[LeagueTableEntryResponse])
 async def recalculate_league_table(
-    season: Optional[str] = "current",
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_dependency)
 ):
@@ -108,13 +103,11 @@ async def recalculate_league_table(
         # Get or create league table entry
         league_entry = db.query(LeagueTableEntry).filter(
             LeagueTableEntry.user_id == player.id,
-            LeagueTableEntry.season == season
         ).first()
         
         if not league_entry:
             league_entry = LeagueTableEntry(
                 user_id=player.id,
-                season=season,
                 challenge_points=total_challenge_points,
                 test_points=total_test_points,
                 total_points=total_challenge_points + total_test_points,
@@ -131,7 +124,6 @@ async def recalculate_league_table(
     
     # Get all entries and sort by total points
     league_entries = db.query(LeagueTableEntry).filter(
-        LeagueTableEntry.season == season
     ).all()
     
     league_entries.sort(key=lambda x: x.total_points, reverse=True)
@@ -144,61 +136,12 @@ async def recalculate_league_table(
     
     return league_entries
 
-@router.post("/seasons/{season_name}", status_code=status.HTTP_201_CREATED)
-async def create_new_season(
-    season_name: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_dependency)
-):
-    # Check if user is a coach
-    if not current_user.is_coach:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only coaches can create new seasons"
-        )
-    
-    # Check if season already exists
-    existing_entries = db.query(LeagueTableEntry).filter(
-        LeagueTableEntry.season == season_name
-    ).count()
-    
-    if existing_entries > 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Season '{season_name}' already exists"
-        )
-    
     # Get all active players
     players = db.query(User).filter(
         User.is_active == True,
         User.is_coach == False
     ).all()
     
-    # Create new season entries for all players
-    for player in players:
-        new_entry = LeagueTableEntry(
-            user_id=player.id,
-            season=season_name,
-            challenge_points=0,
-            test_points=0,
-            total_points=0,
-            rank=0,
-            last_calculated=datetime.utcnow()
-        )
-        db.add(new_entry)
-    
-    db.commit()
-    
-    return {"message": f"Season '{season_name}' created successfully"}
-
-@router.get("/seasons", response_model=List[str])
-async def get_seasons(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_dependency)
-):
-    # Get distinct season values
-    seasons = db.query(LeagueTableEntry.season).distinct().all()
-    return [season[0] for season in seasons]
 
 @router.get("/challenge/{challenge_id}", response_model=ChallengeLeagueTableResponse)
 async def get_challenge_league_table(

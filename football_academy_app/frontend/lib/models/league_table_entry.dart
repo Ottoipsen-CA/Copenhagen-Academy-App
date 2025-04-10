@@ -12,7 +12,7 @@ class LeagueTableEntry {
   final int wins;
   final int draws;
   final int losses;
-  final int? bestResult;
+  final double? bestResult;
   final DateTime? submittedAt;
   
   LeagueTableEntry({
@@ -46,12 +46,20 @@ class LeagueTableEntry {
       // Create default stats 
       final stats = PlayerStats.empty();
       
+      // Handle best_result as double
+      double? bestResult;
+      if (json['best_result'] != null) {
+        bestResult = json['best_result'] is int 
+            ? json['best_result'].toDouble() 
+            : json['best_result'];
+      }
+      
       return LeagueTableEntry(
         user: user,
         stats: stats,
         rank: json['rank'] ?? 0,
         challengePoints: 0,
-        bestResult: json['best_result'],
+        bestResult: bestResult,
         submittedAt: json['submitted_at'] != null ? 
           DateTime.parse(json['submitted_at']) : null,
       );

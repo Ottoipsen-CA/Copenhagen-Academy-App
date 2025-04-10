@@ -723,7 +723,7 @@ class _LeagueTablePageState extends State<LeagueTablePage> with SingleTickerProv
   }
 
   // Add a new helper widget for the score cell
-  Widget _scoreCell(int score, String unit) {
+  Widget _scoreCell(num score, String unit) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Container(
