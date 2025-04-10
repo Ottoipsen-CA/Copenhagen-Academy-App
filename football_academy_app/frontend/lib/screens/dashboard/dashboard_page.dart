@@ -299,7 +299,10 @@ class _DashboardPageState extends State<DashboardPage> {
             Center(
               child: Column(
                 children: [
-                  _buildLogo(80),
+                  Image.asset(
+                    'assets/images/copenhagen_academy_logo.png',
+                    height: 80,
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'COPENHAGEN ACADEMY',
@@ -1328,7 +1331,7 @@ Widget _buildLogo(double size) {
     height: size,
     child: ClipOval(
       child: Image.asset(
-        'assets/images/CA_Logo_JPG.jpg',
+        'assets/images/copenhagen_academy_logo.png',
         fit: BoxFit.cover,
       ),
     ),

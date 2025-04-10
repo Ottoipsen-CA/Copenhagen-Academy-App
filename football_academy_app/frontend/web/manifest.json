@@ -1,6 +1,6 @@
 {
-    "name": "Copenhagen Academy",
-    "short_name": "Copenhagen Academy",
+    "name": "football_academy",
+    "short_name": "football_academy",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

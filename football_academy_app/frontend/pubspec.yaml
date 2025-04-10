@@ -1,4 +1,4 @@
-name: football_academy
+name: Copenhagen_academy
 description: A football academy application for player development and training.
 publish_to: 'none'
 version: 1.0.0+1
@@ -41,6 +41,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
-  assets:
-    - assets/images/
+assets:
+  - assets/images/copenhagen_academy_logo.png
+
+

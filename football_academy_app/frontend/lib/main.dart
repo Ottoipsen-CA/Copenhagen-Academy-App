@@ -22,7 +22,6 @@ import 'screens/challenges/challenges_page.dart';
 import 'screens/league_table/league_table_page.dart';
 import 'screens/player_stats/player_stats_page.dart';
 import 'screens/info/info_page.dart';
-import 'screens/splash_screen.dart';
 import 'screens/development_plan/development_plan_page.dart';
 import 'screens/profile/profile_page.dart';
 import 'theme/colors.dart';
@@ -91,7 +90,7 @@ class MyApp extends StatelessWidget {
         '/dashboard': (context) => const DashboardPage(),
         '/development-plan': (context) => DevelopmentPlanPage(
           service: DevelopmentPlanService(),
-        ), 
+        ),
         '/profile': (context) => const ProfilePage(),
         if (FeatureFlags.exercisesEnabled)
           '/exercises': (context) => const ExercisesPage(),
@@ -133,13 +132,9 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     if (isLoggedIn) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const DashboardPage()),
-      );
+      Navigator.of(context).pushReplacementNamed('/dashboard');
     } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
+      Navigator.of(context).pushReplacementNamed('/login');
     }
   }
 
@@ -166,18 +161,18 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.sports_soccer,
-                size: 80,
-                color: Colors.white,
+              Image(
+                image: AssetImage('assets/images/copenhagen_academy_logo.png'),
+                height: 180,
               ),
-              SizedBox(height: 16),
+              SizedBox(height: 24),
               Text(
                 'Copenhagen Academy',
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 26,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
+                  letterSpacing: 1.2,
                 ),
               ),
               SizedBox(height: 8),

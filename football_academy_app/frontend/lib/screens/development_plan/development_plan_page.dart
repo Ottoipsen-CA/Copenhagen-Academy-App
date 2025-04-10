@@ -26,6 +26,8 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
   bool _isLoading = false;
   late TabController _tabController;
   DevelopmentPlan? _plan;
+  int _currentPageIndex = 0; // 0=Monday, 6=Sunday
+  late PageController _pageController; // Controller for PageView
 
   final List<String> _weekdays = [
     'Mandag', // Full names for indicator
@@ -41,12 +43,14 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _pageController = PageController(initialPage: _currentPageIndex); // Initialize PageController
     _loadPlans();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _pageController.dispose(); // Dispose PageController
     super.dispose();
   }
 
@@ -86,7 +90,6 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Development Plan',
-        backgroundColor: const Color(0xFF0B0057),
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,
@@ -105,61 +108,132 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
                 : TabBarView(
                     controller: _tabController,
                     children: [
-                      _buildWeeklyScheduleListView(),
+                      _buildWeeklySchedulePageView(),
                       _buildDevelopmentFocus(),
                     ],
                   ),
       ),
+      floatingActionButton: _tabController.index == 0 && _plan != null // Only show on schedule tab
+       ? FloatingActionButton(
+          onPressed: () => _addSession(_currentPageIndex + 1), // Pass current weekday
+          backgroundColor: AppColors.primary,
+          child: const Icon(Icons.add, color: Colors.white),
+          tooltip: 'Tilføj Træning',
+        )
+      : null,
     );
   }
 
-  Widget _buildWeeklyScheduleListView() {
-    if (_plan == null) return const Center(child: CircularProgressIndicator(color: Colors.white));
+  Widget _buildWeeklySchedulePageView() {
+    return Column(
+      children: [
+        _buildDayIndicator(),
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: 7,
+            itemBuilder: (context, index) {
+              return _buildDayPage(index);
+            },
+            onPageChanged: (index) {
+              setState(() {
+                _currentPageIndex = index;
+              });
+            },
+          ),
+        ),
+      ],
+    );
+  }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _weekdays.length,
-      itemBuilder: (context, index) {
-        final dayName = _weekdays[index];
-        final weekday = index + 1;
-
-        final sessions = _plan!.trainingSessions
-            .where((session) => session.weekday == weekday)
-            .toList();
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
-              child: Text(
-                dayName,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+  Widget _buildDayIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      color: AppColors.cardBackground.withOpacity(0.5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: List.generate(7, (index) {
+          final isSelected = _currentPageIndex == index;
+          return TextButton(
+            style: TextButton.styleFrom(
+              backgroundColor: isSelected ? AppColors.primary.withOpacity(0.3) : Colors.transparent,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              _pageController.animateToPage(
+                index,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            },
+            child: Text(
+              _weekdays[index].substring(0, 3),
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.white70,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 13,
               ),
             ),
-            if (sessions.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Center(
-                  child: Text(
-                    'Ingen træninger planlagt for $dayName',
-                    style: const TextStyle(color: Colors.white70, fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              )
-            else
-              Column(
-                children: sessions.map((session) => _buildSessionCard(session)).toList(),
-              ),
-            if (index < _weekdays.length - 1)
-             Divider(color: Colors.white24, height: 32), 
-          ],
-        );
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildDayPage(int index) {
+    if (_plan == null) return const Center(child: CircularProgressIndicator(color: Colors.white));
+
+    final weekday = index + 1;
+    final sessions = _plan!.trainingSessions
+        .where((session) => session.weekday == weekday)
+        .toList();
+
+    if (sessions.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32.0),
+          child: Text(
+            'Ingen træninger planlagt for ${_weekdays[index]}', 
+            style: const TextStyle(color: Colors.white70, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      key: PageStorageKey('weekday_$weekday'),
+      padding: const EdgeInsets.all(16),
+      itemCount: sessions.length,
+      itemBuilder: (context, sessionIndex) {
+        return _buildSessionCard(sessions[sessionIndex]);
       },
+    );
+  }
+
+  Widget _buildSessionCard(TrainingSession session) {
+    final timeStr = session.startTime ?? '-';
+    final durationStr = session.durationMinutes != null ? '${session.durationMinutes} min' : '-';
+    final isMatch = session.title.toLowerCase().contains('match');
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      color: AppColors.cardBackground.withOpacity(0.8), 
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: ListTile(
+        leading: Icon(
+          isMatch ? Icons.sports_soccer : Icons.fitness_center,
+          color: AppColors.primary, 
+        ),
+        title: Text(session.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        subtitle: Text('$timeStr ($durationStr)', style: const TextStyle(color: Colors.white70)),
+        trailing: IconButton(
+          icon: const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
+          onPressed: () => _viewSessionDetails(session),
+        ),
+        onTap: () => _viewSessionDetails(session),
+      ),
     );
   }
 
@@ -239,51 +313,43 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
   Widget _buildFocusAreaCard(FocusArea area) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: Colors.transparent,
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF0B0057).withOpacity(0.6),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      area.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+      color: AppColors.cardBackground.withOpacity(0.7),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    area.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (area.isCompleted)
-                    const Chip(
-                      label: Text('Completed'),
-                      backgroundColor: Colors.green,
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                area.description,
-                style: const TextStyle(color: Colors.white),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Target: ${_formatDate(area.targetDate)}',
-                style: const TextStyle(color: Colors.white, fontSize: 12),
-              ),
-            ],
-          ),
+                ),
+                if (area.isCompleted)
+                  const Chip(
+                    label: Text('Completed'),
+                    backgroundColor: Colors.green,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              area.description,
+              style: const TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Target: ${_formatDate(area.targetDate)}',
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+            ),
+          ],
         ),
       ),
     );
@@ -343,30 +409,5 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
-  }
-
-  Widget _buildSessionCard(TrainingSession session) {
-    final timeStr = session.startTime ?? '-';
-    final durationStr = session.durationMinutes != null ? '${session.durationMinutes} min' : '-';
-    final isMatch = session.title.toLowerCase().contains('match');
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      color: const Color(0xFF0B0057).withOpacity(0.6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: ListTile(
-        leading: Icon(
-          isMatch ? Icons.sports_soccer : Icons.fitness_center,
-          color: AppColors.primary, 
-        ),
-        title: Text(session.title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        subtitle: Text('$timeStr ($durationStr)', style: const TextStyle(color: Colors.white70)),
-        trailing: IconButton(
-          icon: const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
-          onPressed: () => _viewSessionDetails(session),
-        ),
-        onTap: () => _viewSessionDetails(session),
-      ),
-    );
   }
 }
