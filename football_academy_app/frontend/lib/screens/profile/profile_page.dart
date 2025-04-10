@@ -38,6 +38,15 @@ class _ProfilePageState extends State<ProfilePage> {
   final _clubController = TextEditingController();
   final _positionController = TextEditingController();
 
+  // Add position enum values
+  final List<String> _positions = [
+    'goalkeeper',
+    'defender',
+    'midfielder',
+    'striker'
+  ];
+  String? _selectedPosition;
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +57,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _authRepository = ApiAuthRepository(apiService, storage);
     _initializeProfileImage(); // Initialize image service
     _loadUserData();
+    _selectedPosition = _positionController.text.isNotEmpty ? _positionController.text : null;
   }
 
   @override
@@ -92,6 +102,7 @@ class _ProfilePageState extends State<ProfilePage> {
           _clubController.text = user.currentClub ?? ''; // Use currentClub
           _positionController.text = user.position ?? ''; // Assuming 'position' field exists
           _isLoading = false;
+          _selectedPosition = user.position;
         });
       } else if (mounted) {
         setState(() {
@@ -128,7 +139,7 @@ class _ProfilePageState extends State<ProfilePage> {
       email: _emailController.text,
       fullName: _nameController.text,
       currentClub: _clubController.text.isNotEmpty ? _clubController.text : null, // Use currentClub
-      position: _positionController.text.isNotEmpty ? _positionController.text : null,
+      position: _selectedPosition,
       // Include other necessary fields from _currentUser, ensuring they are not null
       isActive: _currentUser!.isActive,
       isCoach: _currentUser!.isCoach, // Add isCoach
@@ -352,7 +363,52 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 16),
               _buildTextField(_clubController, 'Klub (Valgfrit)'), // Updated label
               const SizedBox(height: 16),
-              _buildTextField(_positionController, 'Position (Valgfrit)'), // Updated label
+              // Replace position text field with dropdown
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: DropdownButtonFormField<String>(
+                  value: _selectedPosition,
+                  decoration: InputDecoration(
+                    labelText: 'Position (Valgfrit)',
+                    labelStyle: TextStyle(color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.1),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                      borderSide: BorderSide(color: AppColors.primary),
+                    ),
+                  ),
+                  dropdownColor: AppColors.cardBackground.withOpacity(0.7),
+                  style: const TextStyle(color: Colors.white),
+                  items: _positions.map((String position) {
+                    return DropdownMenuItem<String>(
+                      value: position,
+                      child: Text(
+                        position[0].toUpperCase() + position.substring(1),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedPosition = newValue;
+                      _positionController.text = newValue ?? '';
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
             ],
           ),
         ),

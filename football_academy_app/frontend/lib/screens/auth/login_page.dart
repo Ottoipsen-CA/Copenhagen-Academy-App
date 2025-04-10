@@ -316,81 +316,86 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   
   Widget _buildPortraitLayout(bool isSmallScreen) {
     return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildAppHeader(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Player card
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.35,
-                  child: Center(
-                    child: SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.8,
-                      child: _buildPlayerCard(),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: MediaQuery.of(context).size.height,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildAppHeader(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Player card
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.3,
+                    child: Center(
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.7,
+                        child: _buildPlayerCard(),
+                      ),
                     ),
                   ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Mission text
-                _buildMissionText(isSmallScreen: isSmallScreen),
-                
-                const SizedBox(height: 32),
-                
-                // Login form
-                _buildLoginForm(),
-                
-                const SizedBox(height: 24),
-                
-                // Sign up section
-                _buildSignUpSection(),
-                
-                const SizedBox(height: 16),
-                
-                // Info button
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: TextButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const InfoPage(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(
-                      Icons.info_outline,
-                      color: Colors.white70,
-                      size: 20,
-                    ),
-                    label: const Text(
-                      'Læs mere om Copenhagen Academy',
-                      style: TextStyle(
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Mission text
+                  _buildMissionText(isSmallScreen: isSmallScreen),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Login form
+                  _buildLoginForm(),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Sign up section
+                  _buildSignUpSection(),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Info button
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: TextButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const InfoPage(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(
+                        Icons.info_outline,
                         color: Colors.white70,
-                        fontSize: 14,
+                        size: 20,
                       ),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      backgroundColor: Colors.white.withOpacity(0.1),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                      label: const Text(
+                        'Læs mere om Copenhagen Academy',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        backgroundColor: Colors.white.withOpacity(0.1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -454,14 +459,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   }
   
   Widget _buildPlayerCard() {
-    double cardWidth = MediaQuery.of(context).size.width * 0.6;
-    double cardHeight = cardWidth * 1.6;
-
     return Container(
-      width: cardWidth,
-      height: cardHeight,
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.5,
+        maxHeight: MediaQuery.of(context).size.height * 0.4,
         maxWidth: 300,
       ),
       decoration: BoxDecoration(

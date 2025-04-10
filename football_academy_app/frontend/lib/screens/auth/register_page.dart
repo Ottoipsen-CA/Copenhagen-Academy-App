@@ -25,6 +25,15 @@ class _RegisterPageState extends State<RegisterPage> {
   final _positionController = TextEditingController();
   final _clubController = TextEditingController();
   
+  // Add position enum values
+  final List<String> _positions = [
+    'goalkeeper',
+    'defender',
+    'midfielder',
+    'striker'
+  ];
+  String? _selectedPosition;
+  
   DateTime? _selectedDate;
   bool _isLoading = false;
   String? _errorMessage;
@@ -79,7 +88,7 @@ class _RegisterPageState extends State<RegisterPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
         fullName: _fullNameController.text.trim(),
-        position: _positionController.text.isEmpty ? null : _positionController.text.trim(),
+        position: _selectedPosition,
         currentClub: _clubController.text.isEmpty ? null : _clubController.text.trim(),
         dateOfBirth: _selectedDate,
       );
@@ -122,17 +131,14 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Remove AppBar
-      // appBar: AppBar(...),
-      // Add Gradient Background Container
       body: Container(
-        width: double.infinity, // Use double.infinity for full width
-        height: double.infinity, // Use double.infinity for full height
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [ // Same gradient as LoginPage
+            colors: [
               Color(0xFF0B0033),
               Color(0xFF2A004D),
               Color(0xFF5D006C),
@@ -144,213 +150,254 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
         child: SafeArea(
-          // Add Stack for background graphics and content
           child: Stack(
             children: [
-              // Add background graphics (ensure these widgets are accessible)
-              // Assuming BackgroundRadarGraphic and BottomPitchGraphic are defined in login_page.dart
-              // We might need to move them to a shared location or redefine them here.
-              // For now, let's assume they can be imported or copied.
-              const BackgroundRadarGraphic(), // Placeholder - needs definition/import
-              const BottomPitchGraphic(),   // Placeholder - needs definition/import
-              
-              // Main Content Area
+              const BackgroundRadarGraphic(),
+              const BottomPitchGraphic(),
               SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center, // Center align content
-                    children: [
-                      // Add App Header similar to LoginPage
-                      _buildAppHeader(),
-                      const SizedBox(height: 30),
-                      
-                      const Text(
-                        'Opret Bruger', // Updated Title
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white, // White text
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Bliv en del af Copenhagen Academy', // Updated Subtitle
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white70, // Light white text
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      
-                      // --- Styled Form Fields ---
-                      _buildTextField(
-                        controller: _fullNameController,
-                        hintText: 'Fulde Navn',
-                        icon: Icons.person_outline,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Indtast venligst dit fulde navn';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: _emailController,
-                        hintText: 'Email',
-                        icon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                           if (value == null || value.isEmpty) {
-                              return 'Indtast din email';
-                            }
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                              return 'Indtast en gyldig email';
-                            }
-                            return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: _passwordController,
-                        hintText: 'Adgangskode',
-                        icon: Icons.lock_outline,
-                        obscureText: true,
-                         validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Indtast din adgangskode';
-                            }
-                             if (value.length < 6) {
-                              return 'Adgangskode skal være mindst 6 tegn';
-                            }
-                            return null;
-                          },
-                      ),
-                      const SizedBox(height: 16),
-                       _buildTextField(
-                        controller: _confirmPasswordController,
-                        hintText: 'Bekræft Adgangskode',
-                        icon: Icons.lock_outline,
-                        obscureText: true,
-                         validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Bekræft venligst din adgangskode';
-                            }
-                            if (value != _passwordController.text) {
-                              return 'Adgangskoderne matcher ikke';
-                            }
-                            return null;
-                          },
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: _positionController,
-                        hintText: 'Position (valgfrit)',
-                        icon: Icons.sports_soccer_outlined,
-                      ),
-                       const SizedBox(height: 16),
-                      _buildTextField(
-                        controller: _clubController,
-                        hintText: 'Nuværende Klub (valgfrit)',
-                        icon: Icons.group_outlined,
-                      ),
-                      const SizedBox(height: 16),
-                      // Date Picker remains similar but needs styling
-                       GestureDetector(
-                        onTap: () => _selectDate(context),
-                        child: AbsorbPointer(
-                          child: _buildTextField(
-                            controller: TextEditingController(
-                              text: _selectedDate == null
-                                  ? ''
-                                  : DateFormat('dd/MM/yyyy').format(_selectedDate!),
-                            ),
-                            hintText: 'Fødselsdato (valgfrit)',
-                            icon: Icons.calendar_today_outlined,
-                            readOnly: true, // Prevent keyboard popup
-                          ), 
-                        ),
-                      ),
-                      // --- End Styled Form Fields ---
-                      
-                      if (_errorMessage != null)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16.0),
-                          child: Text(
-                            _errorMessage!,
-                            style: const TextStyle(color: Colors.red, fontSize: 14),
-                          ),
-                        ),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // Styled Register Button
-                      Container(
-                        height: 56,
-                        width: double.infinity, // Make button wide
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF1E22AA), Color(0xFF3F25BB)], // Match login button
-                          ),
-                        ),
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _register,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
-                              : const Text(
-                                  'OPRET BRUGER', // Updated text
-                                  style: TextStyle(
-                                    fontSize: 18, // Slightly smaller than login?
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 30),
-                      
-                      // Styled Login option
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                           Text(
-                            'Har du allerede en bruger? ',
-                            style: TextStyle(color: Colors.white.withOpacity(0.8)), // Lighter text
+                          _buildAppHeader(),
+                          const SizedBox(height: 30),
+                          
+                          const Text(
+                            'Opret Bruger',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (context) => const LoginPage()),
-                              );
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Bliv en del af Copenhagen Academy',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+                          
+                          // --- Styled Form Fields ---
+                          _buildTextField(
+                            controller: _fullNameController,
+                            hintText: 'Fulde Navn',
+                            icon: Icons.person_outline,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Indtast venligst dit fulde navn';
+                              }
+                              return null;
                             },
-                            child: Text(
-                              'Log ind',
-                              style: TextStyle(
-                                color: Colors.yellow[300], // Gold color like footer
-                                fontWeight: FontWeight.bold,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            controller: _emailController,
+                            hintText: 'Email',
+                            icon: Icons.email_outlined,
+                            keyboardType: TextInputType.emailAddress,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Indtast din email';
+                              }
+                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                return 'Indtast en gyldig email';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            controller: _passwordController,
+                            hintText: 'Adgangskode',
+                            icon: Icons.lock_outline,
+                            obscureText: true,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Indtast din adgangskode';
+                              }
+                              if (value.length < 6) {
+                                return 'Adgangskode skal være mindst 6 tegn';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            controller: _confirmPasswordController,
+                            hintText: 'Bekræft Adgangskode',
+                            icon: Icons.lock_outline,
+                            obscureText: true,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Bekræft venligst din adgangskode';
+                              }
+                              if (value != _passwordController.text) {
+                                return 'Adgangskoderne matcher ikke';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          // Replace position text field with dropdown
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedPosition,
+                              decoration: InputDecoration(
+                                hintText: 'Position (valgfrit)',
+                                hintStyle: TextStyle(
+                                  color: Colors.white.withOpacity(0.5),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.normal,
+                                ),
+                                prefixIcon: Icon(Icons.sports_soccer_outlined, color: Colors.white.withOpacity(0.7)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                border: InputBorder.none,
+                              ),
+                              dropdownColor: const Color(0xFF0B0033),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.normal,
+                              ),
+                              items: _positions.map((String position) {
+                                return DropdownMenuItem<String>(
+                                  value: position,
+                                  child: Text(
+                                    position[0].toUpperCase() + position.substring(1),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _selectedPosition = newValue;
+                                  _positionController.text = newValue ?? '';
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            controller: _clubController,
+                            hintText: 'Nuværende Klub (valgfrit)',
+                            icon: Icons.group_outlined,
+                          ),
+                          const SizedBox(height: 16),
+                          GestureDetector(
+                            onTap: () => _selectDate(context),
+                            child: AbsorbPointer(
+                              child: _buildTextField(
+                                controller: TextEditingController(
+                                  text: _selectedDate == null
+                                      ? ''
+                                      : DateFormat('dd/MM/yyyy').format(_selectedDate!),
+                                ),
+                                hintText: 'Fødselsdato (valgfrit)',
+                                icon: Icons.calendar_today_outlined,
+                                readOnly: true,
                               ),
                             ),
                           ),
+                          
+                          if (_errorMessage != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16.0),
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(color: Colors.red, fontSize: 14),
+                              ),
+                            ),
+                          
+                          const SizedBox(height: 24),
+                          
+                          // Styled Register Button
+                          Container(
+                            height: 56,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF1E22AA), Color(0xFF3F25BB)],
+                              ),
+                            ),
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _register,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Text(
+                                      'OPRET BRUGER',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 30),
+                          
+                          // Styled Login option
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Har du allerede en bruger? ',
+                                style: TextStyle(color: Colors.white.withOpacity(0.8)),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                                  );
+                                },
+                                child: Text(
+                                  'Log ind',
+                                  style: TextStyle(
+                                    color: Colors.yellow[300],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 40),
                         ],
                       ),
-                      const SizedBox(height: 40), // Space before potential footer
-                    ],
+                    ),
                   ),
                 ),
               ),
-               // Add Footer Text (assuming definition is accessible)
               const Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
@@ -358,13 +405,13 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: Text(
                     "BY COPENHAGEN ACADEMY",
                     style: TextStyle(
-                      color: Colors.amber, // Match login footer
+                      color: Colors.amber,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-              ) 
+              ),
             ],
           ),
         ),
