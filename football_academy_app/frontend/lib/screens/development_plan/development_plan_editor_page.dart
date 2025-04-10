@@ -87,11 +87,29 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isEditing = widget.plan != null;
     return Scaffold(
       drawer: CustomNavigationDrawer(currentPage: 'developmentPlan'),
-      appBar: CustomAppBar(
-        title: widget.plan == null ? 'Ny Udviklingsplan' : 'Rediger Udviklingsplan',
-        hasBackButton: true,
+      appBar: AppBar(
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+            tooltip: 'Menu',
+          ),
+        ),
+        backgroundColor: AppColors.primary,
+        title: Text(
+          isEditing ? 'Edit Development Plan' : 'Add Development Plan',
+          style: TextStyle(color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+            tooltip: 'Back',
+          ),
+        ],
       ),
       body: GradientBackground(
         child: _buildBody(),

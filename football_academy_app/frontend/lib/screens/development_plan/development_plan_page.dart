@@ -3,7 +3,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../models/development_plan.dart';
 import '../../services/development_plan_service.dart';
 import '../../theme/colors.dart';
-import '../../widgets/custom_app_bar.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/navigation_drawer.dart';
 import 'development_plan_editor_page.dart';
@@ -90,18 +89,33 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: CustomNavigationDrawer(currentPage: 'developmentPlan'),
-      appBar: CustomAppBar(
-        title: 'Udviklingsplan',
-        hasBackButton: false,
+      appBar: AppBar(
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+            tooltip: 'Menu',
+          ),
+        ),
+        backgroundColor: AppColors.primary,
+        title: Text('Udviklingsplan', style: TextStyle(color: Colors.white)),
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.white,
           tabs: const [
             Tab(text: 'Ugentlig Plan'),
             Tab(text: 'Udviklingsfokus'),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+            tooltip: 'Back',
+          ),
+        ],
       ),
       body: GradientBackground(
         child: _isLoading

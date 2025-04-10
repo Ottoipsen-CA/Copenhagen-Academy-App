@@ -41,10 +41,22 @@ class _SessionDetailsPageState extends State<SessionDetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: CustomNavigationDrawer(currentPage: 'developmentPlan'),
-      appBar: CustomAppBar(
-        title: widget.session.title,
-        hasBackButton: true,
+      appBar: AppBar(
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu, color: Colors.white),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+            tooltip: 'Menu',
+          ),
+        ),
+        backgroundColor: AppColors.primary,
+        title: Text('Session Details', style: TextStyle(color: Colors.white)),
         actions: [
+          IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+            tooltip: 'Back',
+          ),
           IconButton(
             icon: Icon(_isEditing ? Icons.save : Icons.edit),
             onPressed: () {
