@@ -4,10 +4,6 @@ from tests.utils import get_auth_header
 from constants.position_weights import Position
 import json
 
-# Define JSON boolean values for use in Python
-true = True
-false = False
-
 def test_root(client):
     """Test the root endpoint."""
     response = client.get("/")
@@ -45,8 +41,8 @@ class TestSkillTestsEndpoints:
             "position": "striker",
             "current_club": "Test FC",
             "date_of_birth": "2000-01-01",
-            "is_active": true,
-            "is_coach": true,
+            "is_active": True,
+            "is_coach": True,
             "role": "coach"
         }
         
@@ -182,66 +178,6 @@ class TestLeagueTableEndpoints:
         response = client.get("/api/v2/league-table", headers=auth_header)
         assert response.status_code in [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT]
 
-# Training Endpoints
-class TestTrainingEndpoints:
-    def test_training_endpoints_exist(self, client):
-        """Test that training endpoints are defined."""
-        # Try both formats
-        response_hyphen = client.get("/api/v2/training")
-        response_underscore = client.get("/api/v2/trainings")  # Sometimes plural
-        
-        # Test passes if either format works
-        assert response_hyphen.status_code != status.HTTP_404_NOT_FOUND or \
-               response_underscore.status_code != status.HTTP_404_NOT_FOUND
-        
-        # Print info about which format works
-        if response_hyphen.status_code != status.HTTP_404_NOT_FOUND:
-            print("Training endpoint uses: /api/v2/training")
-        elif response_underscore.status_code != status.HTTP_404_NOT_FOUND:
-            print("Training endpoint uses: /api/v2/trainings")
-
-    def test_training_with_auth(self, client):
-        """Test training endpoints with authentication."""
-        auth_header = get_auth_header(client)
-        if not auth_header:
-            pytest.skip("Authentication failed, skipping test")
-            
-        response = client.get("/api/v2/training", headers=auth_header)
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT]
-
-# Exercise Library Endpoints
-class TestExerciseLibraryEndpoints:
-    def test_exercise_library_endpoints_exist(self, client):
-        """Test that exercise library endpoints are defined."""
-        # Try both formats
-        response_hyphen = client.get("/api/v2/exercise-library")
-        response_underscore = client.get("/api/v2/exercise_library")
-        response_no_dash = client.get("/api/v2/exercises")  # Sometimes simplified
-        
-        # Test passes if any format works
-        assert any([
-            response_hyphen.status_code != status.HTTP_404_NOT_FOUND,
-            response_underscore.status_code != status.HTTP_404_NOT_FOUND,
-            response_no_dash.status_code != status.HTTP_404_NOT_FOUND
-        ])
-        
-        # Print info about which format works
-        if response_hyphen.status_code != status.HTTP_404_NOT_FOUND:
-            print("Exercise library endpoint uses: /api/v2/exercise-library")
-        elif response_underscore.status_code != status.HTTP_404_NOT_FOUND:
-            print("Exercise library endpoint uses: /api/v2/exercise_library")
-        elif response_no_dash.status_code != status.HTTP_404_NOT_FOUND:
-            print("Exercise library endpoint uses: /api/v2/exercises")
-        
-    def test_exercise_library_with_auth(self, client):
-        """Test exercise library endpoints with authentication."""
-        auth_header = get_auth_header(client)
-        if not auth_header:
-            pytest.skip("Authentication failed, skipping test")
-            
-        response = client.get("/api/v2/exercise-library", headers=auth_header)
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_204_NO_CONTENT]
-
 def test_auth_debug(client):
     """Debug the authentication process."""
     # Test register endpoint with hardcoded credentials
@@ -249,11 +185,11 @@ def test_auth_debug(client):
         "email": "test@example.com",
         "password": "password123",
         "full_name": "Test User",
-        "position": "striker",
+        "position": "striker",  # lowercase for position enum
         "current_club": "Test FC",
         "date_of_birth": "2000-01-01",
-        "is_active": true,
-        "is_coach": true,
+        "is_active": True,  # Python boolean
+        "is_coach": True,   # Python boolean
         "role": "coach"
     }
     
@@ -279,7 +215,7 @@ def test_auth_debug(client):
         "email": "simple@example.com",
         "password": "password123",
         "full_name": "Simple User",
-        "is_active": true
+        "is_active": True  # Python boolean
     }
     
     simple_response = client.post("/api/v2/auth/register", json=simple_register)

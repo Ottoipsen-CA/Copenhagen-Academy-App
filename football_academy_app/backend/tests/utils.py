@@ -5,10 +5,6 @@ import json
 from typing import Dict, Any, Optional
 from datetime import date
 
-# Define JSON boolean values for use in Python
-true = True
-false = False
-
 # Import the Position enum from constants
 from constants.position_weights import Position
 
@@ -37,8 +33,8 @@ def get_auth_header(client, email: str = "test@example.com", password: str = "pa
             "position": "striker",  # Use lowercase "striker" from enum
             "current_club": "Test FC",
             "date_of_birth": "2000-01-01",  # ISO format YYYY-MM-DD
-            "is_active": true,
-            "is_coach": true,
+            "is_active": True,
+            "is_coach": True,
             "role": "coach"
         }
         response = client.post("/api/v2/auth/register", json=register_data)

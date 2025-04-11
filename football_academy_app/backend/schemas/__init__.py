@@ -18,14 +18,6 @@ from .league_table import (
     ChallengeEntryBase, ChallengeEntryCreate, ChallengeEntryUpdate, ChallengeEntryResponse,
     ChallengeLeagueTableEntry, ChallengeLeagueTableResponse
 )
-from .training import (
-    TrainingPlanBase, TrainingPlanCreate, TrainingPlanUpdate, TrainingPlanResponse,
-    TrainingDayBase, TrainingDayCreate, TrainingDayUpdate, TrainingDayResponse,
-    TrainingDayEntryBase, TrainingDayEntryCreate, TrainingDayEntryUpdate, TrainingDayEntryResponse
-)
-from .exercise_library import (
-    ExerciseLibraryBase, ExerciseLibraryCreate, ExerciseLibraryUpdate, ExerciseLibraryResponse
-)
 
 __all__ = [
     # Auth schemas
@@ -49,13 +41,5 @@ __all__ = [
     # League table schemas
     "LeagueTableEntryBase", "LeagueTableEntryCreate", "LeagueTableEntryUpdate", "LeagueTableEntryResponse",
     "ChallengeEntryBase", "ChallengeEntryCreate", "ChallengeEntryUpdate", "ChallengeEntryResponse",
-    "ChallengeLeagueTableEntry", "ChallengeLeagueTableResponse",
-    
-    # Training schemas
-    "TrainingPlanBase", "TrainingPlanCreate", "TrainingPlanUpdate", "TrainingPlanResponse",
-    "TrainingDayBase", "TrainingDayCreate", "TrainingDayUpdate", "TrainingDayResponse",
-    "TrainingDayEntryBase", "TrainingDayEntryCreate", "TrainingDayEntryUpdate", "TrainingDayEntryResponse",
-    
-    # Exercise library schemas
-    "ExerciseLibraryBase", "ExerciseLibraryCreate", "ExerciseLibraryUpdate", "ExerciseLibraryResponse"
+    "ChallengeLeagueTableEntry", "ChallengeLeagueTableResponse"
 ] 
