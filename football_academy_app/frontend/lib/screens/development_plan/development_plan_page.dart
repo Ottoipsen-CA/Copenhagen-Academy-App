@@ -7,7 +7,7 @@ import '../../theme/colors.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/navigation_drawer.dart';
 import 'development_plan_editor_page.dart';
-import 'session_details_page.dart';
+import 'weekly_training_schedule_page.dart';
 import 'development_focus_editor_page.dart';
 
 class DevelopmentPlanPage extends StatefulWidget {
@@ -314,36 +314,37 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
             : _plans.isEmpty
                 ? const Center(child: Text('Ingen udviklingsplaner fundet. Klik på + for at oprette en ny plan.', 
                     style: TextStyle(color: Colors.white, fontSize: 16), textAlign: TextAlign.center))
-                : Column(
+                : TabBarView(
+                    controller: _tabController,
                     children: [
-                      // Plan selector row with action buttons
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                        color: AppColors.primary.withOpacity(0.8),
-                        child: Row(
-                          children: [
-                            // Plan selector
-                            Expanded(child: _buildPlanSelector()),
-                            
-                            // Action buttons
-                            IconButton(
-                              icon: const Icon(Icons.add, color: Colors.white),
-                              onPressed: _createNewPlan,
-                              tooltip: 'Opret ny plan',
+                      // Weekly Training Schedule View
+                      const WeeklyTrainingSchedulePage(),
+                      
+                      // Development Focus View
+                      Column(
+                        children: [
+                          // Plan selector for the Development Focus tab
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                            color: AppColors.primary.withOpacity(0.8),
+                            child: Row(
+                              children: [
+                                // Plan selector
+                                Expanded(child: _buildPlanSelector()),
+                                
+                                // Action buttons
+                                IconButton(
+                                  icon: const Icon(Icons.add, color: Colors.white),
+                                  onPressed: _createNewPlan,
+                                  tooltip: 'Opret ny plan',
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                      // Tab content
-                      Expanded(
-                        child: TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _buildWeeklyScheduleTab(),
-                            _buildDevelopmentFocus(),
-                          ],
-                        ),
+                          ),
+                          // Development focus content
+                          Expanded(child: _buildDevelopmentFocus()),
+                        ],
                       ),
                     ],
                   ),
@@ -386,16 +387,6 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
             }
           },
         ),
-      ),
-    );
-  }
-
-  Widget _buildWeeklyScheduleTab() {
-    return const Center(
-      child: Text(
-        'Weekly training schedule\ncoming soon!',
-        style: TextStyle(color: Colors.white, fontSize: 16),
-        textAlign: TextAlign.center,
       ),
     );
   }
