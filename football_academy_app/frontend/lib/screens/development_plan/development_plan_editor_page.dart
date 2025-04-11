@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/development_plan.dart';
-import '../../services/development_plan_service.dart';
+import '../../repositories/development_plan_repository.dart';
+import '../../services/auth_service.dart';
 import '../../theme/colors.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/gradient_background.dart';
@@ -8,12 +9,14 @@ import '../../widgets/navigation_drawer.dart';
 
 class DevelopmentPlanEditorPage extends StatefulWidget {
   final DevelopmentPlan? plan;
-  final DevelopmentPlanService service;
+  final DevelopmentPlanRepository repository;
+  final bool isCreating;
 
   const DevelopmentPlanEditorPage({
     Key? key,
     this.plan,
-    required this.service,
+    required this.repository,
+    required this.isCreating,
   }) : super(key: key);
 
   @override
@@ -21,73 +24,99 @@ class DevelopmentPlanEditorPage extends StatefulWidget {
 }
 
 class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final List<TrainingSession> _trainingSessions = [];
+  late TextEditingController _titleController;
+  late TextEditingController _goalsController;
+  late TextEditingController _notesController;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _titleController.text = widget.plan?.title ?? '';
-    if (widget.plan != null) {
-      _trainingSessions.addAll(widget.plan!.trainingSessions);
-    }
+    _titleController = TextEditingController(text: widget.plan?.title ?? '');
+    _goalsController = TextEditingController(text: widget.plan?.longTermGoals ?? '');
+    _notesController = TextEditingController(text: widget.plan?.notes ?? '');
   }
 
   @override
   void dispose() {
     _titleController.dispose();
+    _goalsController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
   Future<void> _savePlan() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_validateInputs()) return;
+
+    setState(() => _isLoading = true);
 
     try {
-      final plan = DevelopmentPlan(
-        id: widget.plan?.id,
-        playerId: widget.plan?.playerId ?? 1, // TODO: Get actual player ID
-        title: _titleController.text,
-        trainingSessions: _trainingSessions,
-      );
+      if (widget.isCreating) {
+        // Get current user ID
+        final userId = await AuthService.getCurrentUserId();
+        
+        // Create new plan
+        final newPlan = DevelopmentPlan(
+          userId: int.parse(userId), // Convert from String to int
+          title: _titleController.text,
+          longTermGoals: _goalsController.text,
+          notes: _notesController.text,
+        );
 
-      if (widget.plan == null) {
-        await widget.service.createDevelopmentPlan(plan);
+        await widget.repository.create(newPlan);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Development plan created successfully')),
+          );
+          Navigator.pop(context, true);
+        }
       } else {
-        await widget.service.updateDevelopmentPlan(plan);
-      }
+        // Update existing plan
+        final updatedPlan = widget.plan!.copyWith(
+          title: _titleController.text,
+          longTermGoals: _goalsController.text,
+          notes: _notesController.text,
+        );
 
-      if (mounted) {
-        Navigator.pop(context, plan);
+        await widget.repository.update(updatedPlan);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Development plan updated successfully')),
+          );
+          Navigator.pop(context, true);
+        }
       }
     } catch (e) {
+      print('Error saving plan: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving plan: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: ${e.toString()}')),
         );
+        setState(() => _isLoading = false);
       }
     }
   }
 
-  Future<void> _addTrainingSession() async {
-    final result = await showDialog<TrainingSession>(
-      context: context,
-      builder: (context) => _TrainingSessionDialog(),
-    );
-
-    if (result != null) {
-      setState(() {
-        _trainingSessions.add(result);
-      });
+  bool _validateInputs() {
+    if (_titleController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a title')),
+      );
+      return false;
     }
+    
+    if (_goalsController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter long-term goals')),
+      );
+      return false;
+    }
+    
+    return true;
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isEditing = widget.plan != null;
     return Scaffold(
       drawer: CustomNavigationDrawer(currentPage: 'developmentPlan'),
       appBar: AppBar(
@@ -100,283 +129,94 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
         ),
         backgroundColor: AppColors.primary,
         title: Text(
-          isEditing ? 'Edit Development Plan' : 'Add Development Plan',
-          style: TextStyle(color: Colors.white),
+          widget.isCreating ? 'Create Development Plan' : 'Edit Development Plan',
+          style: const TextStyle(color: Colors.white),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-            tooltip: 'Back',
-          ),
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: CircularProgressIndicator(color: Colors.white),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.save, color: Colors.white),
+              onPressed: _savePlan,
+              tooltip: 'Save Plan',
+            ),
         ],
       ),
       body: GradientBackground(
-        child: _buildBody(),
-      ),
-    );
-  }
-
-  Widget _buildBody() {
-    return Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          TextFormField(
-            controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: 'Plan Title',
-              filled: true,
-              fillColor: Colors.white10,
-            ),
-            style: const TextStyle(color: Colors.white),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter a title';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Training Sessions',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextButton.icon(
-                onPressed: _addTrainingSession,
-                icon: const Icon(Icons.add),
-                label: const Text('Add Session'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ..._trainingSessions.map((session) => _buildSessionCard(session)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSessionCard(TrainingSession session) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      color: Colors.black26,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    session.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
-                    setState(() {
-                      _trainingSessions.remove(session);
-                    });
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${_getWeekdayName(session.weekday)} at ${session.startTime} (${session.durationMinutes} min)',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            if (session.description != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                session.description!,
-                style: const TextStyle(color: Colors.white70),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _getWeekdayName(int weekday) {
-    const weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    return weekdays[weekday - 1];
-  }
-}
-
-class _TrainingSessionDialog extends StatefulWidget {
-  @override
-  _TrainingSessionDialogState createState() => _TrainingSessionDialogState();
-}
-
-class _TrainingSessionDialogState extends State<_TrainingSessionDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _startTimeController = TextEditingController();
-  final _durationController = TextEditingController();
-  int _selectedWeekday = 1;
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _startTimeController.dispose();
-    _durationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Add Training Session'),
-      content: Form(
-        key: _formKey,
         child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextFormField(
+              _buildTextField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a title';
-                  }
-                  return null;
-                },
+                label: 'Title',
+                hint: 'Enter a title for this development plan',
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description (optional)',
-                ),
+              const SizedBox(height: 24),
+              _buildTextField(
+                controller: _goalsController,
+                label: 'Long-Term Goals',
+                hint: 'Describe your long-term development goals',
+                maxLines: 5,
+              ),
+              const SizedBox(height: 24),
+              _buildTextField(
+                controller: _notesController,
+                label: 'Notes',
+                hint: 'Any additional notes',
                 maxLines: 3,
               ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<int>(
-                value: _selectedWeekday,
-                decoration: const InputDecoration(
-                  labelText: 'Day of Week',
-                ),
-                items: [
-                  for (var i = 1; i <= 7; i++)
-                    DropdownMenuItem(
-                      value: i,
-                      child: Text(_getWeekdayName(i)),
-                    ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedWeekday = value;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _startTimeController,
-                decoration: const InputDecoration(
-                  labelText: 'Start Time (HH:MM)',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a start time';
-                  }
-                  // TODO: Add time format validation
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _durationController,
-                decoration: const InputDecoration(
-                  labelText: 'Duration (minutes)',
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a duration';
-                  }
-                  final duration = int.tryParse(value);
-                  if (duration == null || duration <= 0) {
-                    return 'Please enter a valid duration';
-                  }
-                  return null;
-                },
-              ),
             ],
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              final session = TrainingSession(
-                planId: 1, // TODO: Get actual plan ID
-                title: _titleController.text,
-                description: _descriptionController.text.isEmpty
-                    ? null
-                    : _descriptionController.text,
-                date: DateTime.now(), // TODO: Calculate actual date based on weekday
-                weekday: _selectedWeekday,
-                startTime: _startTimeController.text,
-                durationMinutes: int.parse(_durationController.text),
-              );
-              Navigator.pop(context, session);
-            }
-          },
-          child: const Text('Add'),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: TextField(
+            controller: controller,
+            maxLines: maxLines,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.all(16),
+            ),
+          ),
         ),
       ],
     );
-  }
-
-  String _getWeekdayName(int weekday) {
-    const weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    return weekdays[weekday - 1];
   }
 } 

@@ -13,6 +13,9 @@ class ApiConfig {
   // Challenge endpoints
   static const String challenges = '/api/v2/challenges';
   
+  // Development Plan endpoints
+  static const String developmentPlans = '/api/v2/development-plans/';
+  
   // Other endpoints
   static const String badges = '/api/v2/users/me/badges';
   static const String playerStats = '/api/v2/skill-tests/player-stats'; // Append /{userId}

@@ -30,6 +30,21 @@ import '../challenges/challenges_page.dart';
 import '../../utils/image_picker_helper.dart';
 import '../player_tests/player_tests_page.dart';
 
+// Temporary class for dashboard display until backend integration
+class TrainingSession {
+  final int weekday;
+  final String? startTime;
+  final String title;
+  final bool isCompleted;
+
+  TrainingSession({
+    required this.weekday,
+    this.startTime,
+    required this.title,
+    this.isCompleted = false,
+  });
+}
+
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
@@ -51,12 +66,11 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _hasRecordBreakingScores = false;
   final ProfileImageService _profileImageService = ProfileImageService();
   String? _profileImageUrl;
-  late DevelopmentPlanService _developmentPlanService;
+  DevelopmentPlanService _developmentPlanService = DevelopmentPlanService();
 
   @override
   void initState() {
     super.initState();
-    _developmentPlanService = DevelopmentPlanService();
     _loadUserData();
     _initializeProfileImage();
   }
@@ -1733,43 +1747,25 @@ Widget _buildLogo(double size) {
   }
 
   Widget _buildUpcomingActivitiesSection() {
-    if (_developmentPlan == null || _developmentPlan!.trainingSessions.isEmpty) {
-      return const SizedBox.shrink(); // Don't show section if no plan or sessions
-    }
-
-    // Get upcoming sessions (filter out past ones if date is reliable)
-    // For now, let's just sort by weekday and take the first few
-    final upcomingSessions = _developmentPlan!.trainingSessions
-        .where((s) => !s.isCompleted) // Simple filter: only show non-completed
-        .toList()
-      ..sort((a, b) => a.weekday.compareTo(b.weekday)); // Sort by weekday
-      
-    final sessionsToShow = upcomingSessions.take(3).toList(); // Limit to 3 for dashboard
-
-    if (sessionsToShow.isEmpty) {
-        return _buildInfoCard(
-        icon: Icons.event_busy_outlined,
-        title: 'Kommende Aktiviteter',
-        child: const Text('Ingen kommende aktiviteter planlagt.', style: TextStyle(color: Colors.white70)),
-      );
-    }
-
+    // For now, we'll show a "Coming Soon" message since trainingSessions aren't supported yet
     return _buildInfoCard(
       icon: Icons.event_note_outlined,
       title: 'Kommende Aktiviteter',
-      child: Column(
-        children: sessionsToShow.map((session) => _buildActivityItem(session)).toList(),
+      child: const Text(
+        'Træningsplan integration kommer snart!', 
+        style: TextStyle(color: Colors.white70)
       ),
       actionButton: TextButton(
         onPressed: () {
-           // Navigate to the full development plan page
+          // Navigate to the full development plan page
           Navigator.pushNamed(context, '/development-plan');
         },
-        child: const Text('Se Hele Planen', style: TextStyle(color: Color(0xFFFFD700))) 
+        child: const Text('Se Udviklingsfokus', style: TextStyle(color: Color(0xFFFFD700))) 
       )
     );
   }
 
+  // Placeholder method for future implementation
   Widget _buildActivityItem(TrainingSession session) {
     final List<String> weekdays = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
     final weekdayStr = session.weekday >= 1 && session.weekday <= 7 ? weekdays[session.weekday - 1] : 'Ukendt';

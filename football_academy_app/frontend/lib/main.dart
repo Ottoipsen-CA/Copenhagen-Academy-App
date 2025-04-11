@@ -9,7 +9,7 @@ import 'services/auth_service.dart';
 import 'services/challenge_service.dart';
 import 'services/league_table_service.dart';
 import 'services/navigation_service.dart';
-import 'services/development_plan_service.dart';
+// import 'services/development_plan_service.dart'; // Will be added back later
 
 import 'repositories/auth_repository.dart';
 import 'repositories/api_auth_repository.dart';
@@ -85,9 +85,7 @@ class MyApp extends StatelessWidget {
         '/splash': (context) => const SplashScreen(),
         '/login': (context) => const LoginPage(),
         '/dashboard': (context) => const DashboardPage(),
-        '/development-plan': (context) => DevelopmentPlanPage(
-          service: DevelopmentPlanService(),
-        ),
+        '/development-plan': (context) => const DevelopmentPlanPage(),
         '/profile': (context) => const ProfilePage(),
         if (FeatureFlags.leagueTableEnabled)
           '/league-table': (context) => const LeagueTablePage(),

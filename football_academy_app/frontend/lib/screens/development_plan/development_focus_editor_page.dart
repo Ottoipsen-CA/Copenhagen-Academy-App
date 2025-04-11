@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../models/development_plan.dart';
+import '../../repositories/development_plan_repository.dart';
 import '../../theme/colors.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/navigation_drawer.dart';
 
 class DevelopmentFocusEditorPage extends StatefulWidget {
-  final DevelopmentPlan plan;
-  final Function(DevelopmentPlan) onSave;
+  final FocusArea? focusArea;
+  final int planId;
+  final DevelopmentPlanRepository repository;
+  final bool isCreating;
 
   const DevelopmentFocusEditorPage({
     Key? key,
-    required this.plan,
-    required this.onSave,
+    this.focusArea,
+    required this.planId,
+    required this.repository,
+    required this.isCreating,
   }) : super(key: key);
 
   @override
@@ -20,287 +26,21 @@ class DevelopmentFocusEditorPage extends StatefulWidget {
 }
 
 class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _longTermGoalsController = TextEditingController();
-  final _notesController = TextEditingController();
-  late List<FocusArea> _focusAreas;
-
-  @override
-  void initState() {
-    super.initState();
-    _longTermGoalsController.text = widget.plan.longTermGoals ?? '';
-    _notesController.text = widget.plan.notes ?? '';
-    _focusAreas = List.from(widget.plan.focusAreas);
-  }
-
-  @override
-  void dispose() {
-    _longTermGoalsController.dispose();
-    _notesController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _savePlan() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final updatedPlan = DevelopmentPlan(
-      id: widget.plan.id,
-      playerId: widget.plan.playerId,
-      title: widget.plan.title,
-      trainingSessions: widget.plan.trainingSessions,
-      focusAreas: _focusAreas,
-      longTermGoals: _longTermGoalsController.text.isEmpty ? null : _longTermGoalsController.text,
-      notes: _notesController.text.isEmpty ? null : _notesController.text,
-    );
-
-    widget.onSave(updatedPlan);
-    Navigator.pop(context);
-  }
-
-  void _addFocusArea() {
-    showDialog<FocusArea>(
-      context: context,
-      builder: (context) => _FocusAreaDialog(),
-    ).then((area) {
-      if (area != null) {
-        setState(() {
-          _focusAreas.add(area);
-        });
-      }
-    });
-  }
-
-  void _editFocusArea(int index) {
-    showDialog<FocusArea>(
-      context: context,
-      builder: (context) => _FocusAreaDialog(focusArea: _focusAreas[index]),
-    ).then((area) {
-      if (area != null) {
-        setState(() {
-          _focusAreas[index] = area;
-        });
-      }
-    });
-  }
-
-  void _removeFocusArea(int index) {
-    setState(() {
-      _focusAreas.removeAt(index);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isEditing = widget.plan != null;
-    return Scaffold(
-      drawer: CustomNavigationDrawer(currentPage: 'developmentPlan'),
-      appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Menu',
-          ),
-        ),
-        backgroundColor: AppColors.primary,
-        title: Text(
-          isEditing ? 'Edit Development Focus' : 'Add Development Focus',
-          style: TextStyle(color: Colors.white),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-            tooltip: 'Back',
-          ),
-        ],
-      ),
-      body: GradientBackground(
-        child: _buildBody(),
-      ),
-    );
-  }
-
-  Widget _buildBody() {
-    return Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildSection(
-            title: 'Long-Term Goals',
-            child: TextFormField(
-              controller: _longTermGoalsController,
-              decoration: const InputDecoration(
-                hintText: 'Enter your long-term goals',
-                filled: true,
-                fillColor: Colors.white10,
-              ),
-              style: const TextStyle(color: Colors.white),
-              maxLines: 3,
-            ),
-          ),
-          const SizedBox(height: 24),
-          _buildSection(
-            title: 'Focus Areas',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_focusAreas.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Text(
-                      'No focus areas defined',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                else
-                  ...List.generate(
-                    _focusAreas.length,
-                    (index) => _buildFocusAreaItem(index),
-                  ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: _addFocusArea,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Focus Area'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          _buildSection(
-            title: 'Notes',
-            child: TextFormField(
-              controller: _notesController,
-              decoration: const InputDecoration(
-                hintText: 'Enter any additional notes',
-                filled: true,
-                fillColor: Colors.white10,
-              ),
-              style: const TextStyle(color: Colors.white),
-              maxLines: 3,
-            ),
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: _savePlan,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            child: const Text('Save Changes'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSection({
-    required String title,
-    required Widget child,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        child,
-      ],
-    );
-  }
-
-  Widget _buildFocusAreaItem(int index) {
-    final area = _focusAreas[index];
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      color: AppColors.cardBackground.withOpacity(0.7),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    area.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.white70),
-                      onPressed: () => _editFocusArea(index),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _removeFocusArea(index),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              area.description,
-              style: const TextStyle(color: Colors.white),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Target: ${_formatDate(area.targetDate)}',
-              style: const TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
-}
-
-class _FocusAreaDialog extends StatefulWidget {
-  final FocusArea? focusArea;
-
-  const _FocusAreaDialog({Key? key, this.focusArea}) : super(key: key);
-
-  @override
-  _FocusAreaDialogState createState() => _FocusAreaDialogState();
-}
-
-class _FocusAreaDialogState extends State<_FocusAreaDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  late TextEditingController _titleController;
+  late TextEditingController _descriptionController;
   late DateTime _targetDate;
+  int _priority = 3;
+  String _status = 'in_progress';
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _titleController.text = widget.focusArea?.title ?? '';
-    _descriptionController.text = widget.focusArea?.description ?? '';
+    _titleController = TextEditingController(text: widget.focusArea?.title ?? '');
+    _descriptionController = TextEditingController(text: widget.focusArea?.description ?? '');
     _targetDate = widget.focusArea?.targetDate ?? DateTime.now().add(const Duration(days: 30));
+    _priority = widget.focusArea?.priority ?? 3;
+    _status = widget.focusArea?.status ?? 'in_progress';
   }
 
   @override
@@ -310,12 +50,98 @@ class _FocusAreaDialogState extends State<_FocusAreaDialog> {
     super.dispose();
   }
 
-  Future<void> _selectDate() async {
+  Future<void> _saveFocusArea() async {
+    if (!_validateInputs()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      if (widget.isCreating) {
+        // Create new focus area
+        final newFocusArea = FocusArea(
+          developmentPlanId: widget.planId,
+          title: _titleController.text,
+          description: _descriptionController.text,
+          priority: _priority,
+          targetDate: _targetDate,
+          status: _status,
+        );
+
+        await widget.repository.createFocusArea(newFocusArea);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Focus area created successfully')),
+          );
+          Navigator.pop(context, true);
+        }
+      } else {
+        // Update existing focus area
+        final updatedFocusArea = FocusArea(
+          focusAreaId: widget.focusArea!.focusAreaId,
+          developmentPlanId: widget.planId,
+          title: _titleController.text,
+          description: _descriptionController.text,
+          priority: _priority,
+          targetDate: _targetDate,
+          isCompleted: _status == 'completed',
+          status: _status,
+        );
+
+        await widget.repository.updateFocusArea(updatedFocusArea);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Focus area updated successfully')),
+          );
+          Navigator.pop(context, true);
+        }
+      }
+    } catch (e) {
+      print('Error saving focus area: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  bool _validateInputs() {
+    if (_titleController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a title')),
+      );
+      return false;
+    }
+    if (_descriptionController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a description')),
+      );
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _targetDate,
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              surface: AppColors.cardBackground,
+              onSurface: Colors.white,
+            ),
+            dialogBackgroundColor: AppColors.cardBackground,
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != _targetDate) {
       setState(() {
@@ -326,79 +152,243 @@ class _FocusAreaDialogState extends State<_FocusAreaDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.focusArea == null ? 'Add Focus Area' : 'Edit Focus Area'),
-      content: Form(
-        key: _formKey,
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        title: Text(
+          widget.isCreating ? 'Add Focus Area' : 'Edit Focus Area',
+          style: const TextStyle(color: Colors.white),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: CircularProgressIndicator(color: Colors.white),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.save, color: Colors.white),
+              onPressed: _saveFocusArea,
+              tooltip: 'Save Focus Area',
+            ),
+        ],
+      ),
+      body: GradientBackground(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextFormField(
+              _buildTextField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a title';
-                  }
-                  return null;
-                },
+                label: 'Title',
+                hint: 'Enter a title for this focus area',
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              const SizedBox(height: 24),
+              _buildTextField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                ),
+                label: 'Description',
+                hint: 'Describe what you want to achieve in this area',
                 maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a description';
-                  }
-                  return null;
-                },
               ),
-              const SizedBox(height: 16),
-              ListTile(
-                title: const Text('Target Date'),
-                subtitle: Text(_formatDate(_targetDate)),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: _selectDate,
-              ),
+              const SizedBox(height: 24),
+              _buildPrioritySelector(),
+              const SizedBox(height: 24),
+              _buildDateSelector(),
+              const SizedBox(height: 24),
+              _buildStatusSelector(),
             ],
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              final area = FocusArea(
-                id: widget.focusArea?.id,
-                title: _titleController.text,
-                description: _descriptionController.text,
-                priority: widget.focusArea?.priority ?? 3,
-                targetDate: _targetDate,
-                isCompleted: widget.focusArea?.isCompleted ?? false,
-              );
-              Navigator.pop(context, area);
-            }
-          },
-          child: const Text('Save'),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: TextField(
+            controller: controller,
+            maxLines: maxLines,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.all(16),
+            ),
+          ),
         ),
       ],
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+  Widget _buildPrioritySelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Priority',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              const Text('Low', style: TextStyle(color: Colors.white)),
+              Expanded(
+                child: Slider(
+                  value: _priority.toDouble(),
+                  min: 1,
+                  max: 5,
+                  divisions: 4,
+                  activeColor: AppColors.primary,
+                  inactiveColor: Colors.white24,
+                  onChanged: (value) {
+                    setState(() {
+                      _priority = value.round();
+                    });
+                  },
+                ),
+              ),
+              const Text('High', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateSelector() {
+    final dateFormat = DateFormat('dd/MM/yyyy');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Target Date',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () => _selectDate(context),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.all(16),
+            width: double.infinity,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  dateFormat.format(_targetDate),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const Icon(
+                  Icons.calendar_today,
+                  color: Colors.white70,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatusSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Status',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _status,
+              isExpanded: true,
+              dropdownColor: AppColors.cardBackground,
+              style: const TextStyle(color: Colors.white),
+              iconEnabledColor: Colors.white,
+              items: const [
+                DropdownMenuItem(
+                  value: 'not_started',
+                  child: Text('Not Started'),
+                ),
+                DropdownMenuItem(
+                  value: 'in_progress',
+                  child: Text('In Progress'),
+                ),
+                DropdownMenuItem(
+                  value: 'completed',
+                  child: Text('Completed'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _status = value;
+                  });
+                }
+              },
+            ),
+          ),
+        ),
+      ],
+    );
   }
 } 
