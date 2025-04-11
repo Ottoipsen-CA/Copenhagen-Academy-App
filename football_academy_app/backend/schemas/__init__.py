@@ -26,9 +26,6 @@ from .training import (
 from .exercise_library import (
     ExerciseLibraryBase, ExerciseLibraryCreate, ExerciseLibraryUpdate, ExerciseLibraryResponse
 )
-from .development_plan import DevelopmentPlanBase, DevelopmentPlanCreate, DevelopmentPlanUpdate, DevelopmentPlan
-from .focus_area import FocusAreaBase, FocusAreaCreate, FocusAreaUpdate, FocusAreaResponse
-from .training_session import TrainingSessionBase, TrainingSessionCreate, TrainingSessionUpdate, TrainingSessionResponse
 
 __all__ = [
     # Auth schemas
@@ -60,10 +57,5 @@ __all__ = [
     "TrainingDayEntryBase", "TrainingDayEntryCreate", "TrainingDayEntryUpdate", "TrainingDayEntryResponse",
     
     # Exercise library schemas
-    "ExerciseLibraryBase", "ExerciseLibraryCreate", "ExerciseLibraryUpdate", "ExerciseLibraryResponse",
-    
-    # Development Plan schemas
-    "DevelopmentPlanBase", "DevelopmentPlanCreate", "DevelopmentPlanUpdate", "DevelopmentPlan",
-    "FocusAreaBase", "FocusAreaCreate", "FocusAreaUpdate", "FocusAreaResponse",
-    "TrainingSessionBase", "TrainingSessionCreate", "TrainingSessionUpdate", "TrainingSessionResponse",
+    "ExerciseLibraryBase", "ExerciseLibraryCreate", "ExerciseLibraryUpdate", "ExerciseLibraryResponse"
 ] 
