@@ -70,4 +70,16 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"} 
+    return {"status": "healthy"}
+
+@app.get("/debug/routes")
+async def list_routes():
+    routes = []
+    for route in app.routes:
+        if hasattr(route, "path"):
+            routes.append({
+                "path": route.path,
+                "name": route.name,
+                "methods": route.methods if hasattr(route, "methods") else None
+            })
+    return routes 

@@ -21,6 +21,9 @@ from .league_table import (
 from .development_plans import (
     DevelopmentPlanBase, DevelopmentPlanCreate, DevelopmentPlanUpdate, DevelopmentPlan
 )
+from .focus_areas import (
+    FocusAreaBase, FocusAreaCreate, FocusAreaUpdate, FocusArea
+)
 
 __all__ = [
     # Auth schemas
@@ -47,5 +50,8 @@ __all__ = [
     "ChallengeLeagueTableEntry", "ChallengeLeagueTableResponse",
 
     # Development plans schemas
-    "DevelopmentPlanBase", "DevelopmentPlanCreate", "DevelopmentPlanUpdate", "DevelopmentPlan"
+    "DevelopmentPlanBase", "DevelopmentPlanCreate", "DevelopmentPlanUpdate", "DevelopmentPlan",
+
+    # Focus areas schemas
+    "FocusAreaBase", "FocusAreaCreate", "FocusAreaUpdate", "FocusArea"
 ] 

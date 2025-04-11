@@ -17,4 +17,5 @@ class DevelopmentPlan(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
     # Relationships
-    user = relationship("User", back_populates="development_plans") 
+    user = relationship("User", back_populates="development_plans")
+    focus_areas = relationship("FocusArea", back_populates="development_plan", cascade="all, delete-orphan") 

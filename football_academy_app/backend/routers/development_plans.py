@@ -5,11 +5,15 @@ from typing import List
 from database import get_db
 from schemas.development_plans import DevelopmentPlan, DevelopmentPlanCreate, DevelopmentPlanUpdate
 from services.development_plans import DevelopmentPlansService
+from . import focus_areas
 
 router = APIRouter(
     prefix="/development-plans",
     tags=["development-plans"]
 )
+
+# Include focus areas router
+router.include_router(focus_areas.router)
 
 @router.get("/", response_model=List[DevelopmentPlan])
 def get_all_plans(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
