@@ -18,6 +18,9 @@ from .league_table import (
     ChallengeEntryBase, ChallengeEntryCreate, ChallengeEntryUpdate, ChallengeEntryResponse,
     ChallengeLeagueTableEntry, ChallengeLeagueTableResponse
 )
+from .development_plans import (
+    DevelopmentPlanBase, DevelopmentPlanCreate, DevelopmentPlanUpdate, DevelopmentPlan
+)
 
 __all__ = [
     # Auth schemas
@@ -41,5 +44,8 @@ __all__ = [
     # League table schemas
     "LeagueTableEntryBase", "LeagueTableEntryCreate", "LeagueTableEntryUpdate", "LeagueTableEntryResponse",
     "ChallengeEntryBase", "ChallengeEntryCreate", "ChallengeEntryUpdate", "ChallengeEntryResponse",
-    "ChallengeLeagueTableEntry", "ChallengeLeagueTableResponse"
+    "ChallengeLeagueTableEntry", "ChallengeLeagueTableResponse",
+
+    # Development plans schemas
+    "DevelopmentPlanBase", "DevelopmentPlanCreate", "DevelopmentPlanUpdate", "DevelopmentPlan"
 ] 
