@@ -56,7 +56,7 @@ Map<String, dynamic> _$FocusAreaToJson(FocusArea instance) => <String, dynamic>{
       'title': instance.title,
       'description': instance.description,
       'priority': instance.priority,
-      'target_date': instance.targetDate.toIso8601String(),
+      'target_date': '${instance.targetDate.year}-${instance.targetDate.month.toString().padLeft(2, '0')}-${instance.targetDate.day.toString().padLeft(2, '0')}',
       'is_completed': instance.isCompleted,
       'status': instance.status,
     };

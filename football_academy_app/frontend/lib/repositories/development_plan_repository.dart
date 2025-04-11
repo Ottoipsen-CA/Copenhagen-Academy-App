@@ -114,7 +114,7 @@ class DevelopmentPlanRepository implements BaseRepository<DevelopmentPlan> {
   // Method to get focus areas for a specific development plan
   Future<List<FocusArea>> getFocusAreas(int developmentPlanId) async {
     try {
-      final response = await _apiService.get('$_baseEndpoint/$developmentPlanId/focus-areas');
+      final response = await _apiService.get('$_baseEndpoint/$developmentPlanId/focus-areas/');
       
       if (response is List) {
         return response.map((json) => FocusArea.fromJson(json)).toList();
@@ -134,7 +134,7 @@ class DevelopmentPlanRepository implements BaseRepository<DevelopmentPlan> {
   Future<FocusArea> createFocusArea(FocusArea focusArea) async {
     try {
       final response = await _apiService.post(
-        '$_baseEndpoint/${focusArea.developmentPlanId}/focus-areas',
+        '$_baseEndpoint/${focusArea.developmentPlanId}/focus-areas/',
         focusArea.toJson(),
       );
       
@@ -149,7 +149,7 @@ class DevelopmentPlanRepository implements BaseRepository<DevelopmentPlan> {
   Future<FocusArea> updateFocusArea(FocusArea focusArea) async {
     try {
       final response = await _apiService.put(
-        '$_baseEndpoint/${focusArea.developmentPlanId}/focus-areas/${focusArea.focusAreaId}',
+        '$_baseEndpoint/${focusArea.developmentPlanId}/focus-areas/${focusArea.focusAreaId}/',
         focusArea.toJson(),
       );
       
@@ -164,7 +164,7 @@ class DevelopmentPlanRepository implements BaseRepository<DevelopmentPlan> {
   Future<FocusArea> updateFocusAreaStatus(int developmentPlanId, int focusAreaId, String status) async {
     try {
       final response = await _apiService.patch(
-        '$_baseEndpoint/$developmentPlanId/focus-areas/$focusAreaId/status',
+        '$_baseEndpoint/$developmentPlanId/focus-areas/$focusAreaId/status/',
         {'status': status},
       );
       
@@ -179,7 +179,7 @@ class DevelopmentPlanRepository implements BaseRepository<DevelopmentPlan> {
   Future<bool> deleteFocusArea(int developmentPlanId, int focusAreaId) async {
     try {
       await _apiService.delete(
-        '$_baseEndpoint/$developmentPlanId/focus-areas/$focusAreaId',
+        '$_baseEndpoint/$developmentPlanId/focus-areas/$focusAreaId/',
       );
       return true;
     } catch (e) {
