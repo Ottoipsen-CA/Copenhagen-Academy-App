@@ -3,9 +3,7 @@ import 'package:intl/intl.dart';
 import '../../models/development_plan.dart';
 import '../../repositories/development_plan_repository.dart';
 import '../../theme/colors.dart';
-import '../../widgets/custom_app_bar.dart';
 import '../../widgets/gradient_background.dart';
-import '../../widgets/navigation_drawer.dart';
 
 class DevelopmentFocusEditorPage extends StatefulWidget {
   final FocusArea? focusArea;
@@ -70,7 +68,7 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
         await widget.repository.createFocusArea(newFocusArea);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Focus area created successfully')),
+            const SnackBar(content: Text('Fokusområde oprettet')),
           );
           Navigator.pop(context, true);
         }
@@ -83,14 +81,13 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
           description: _descriptionController.text,
           priority: _priority,
           targetDate: _targetDate,
-          isCompleted: _status == 'completed',
           status: _status,
         );
 
         await widget.repository.updateFocusArea(updatedFocusArea);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Focus area updated successfully')),
+            const SnackBar(content: Text('Fokusområde opdateret')),
           );
           Navigator.pop(context, true);
         }
@@ -99,7 +96,7 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
       print('Error saving focus area: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
+          SnackBar(content: Text('Fejl: ${e.toString()}')),
         );
         setState(() => _isLoading = false);
       }
@@ -109,13 +106,13 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
   bool _validateInputs() {
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a title')),
+        const SnackBar(content: Text('Indtast venligst en titel')),
       );
       return false;
     }
     if (_descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a description')),
+        const SnackBar(content: Text('Indtast venligst en beskrivelse')),
       );
       return false;
     }
@@ -156,12 +153,13 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         title: Text(
-          widget.isCreating ? 'Add Focus Area' : 'Edit Focus Area',
+          widget.isCreating ? 'Tilføj Fokusområde' : 'Rediger Fokusområde',
           style: const TextStyle(color: Colors.white),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
+          tooltip: 'Tilbage',
         ),
         actions: [
           if (_isLoading)
@@ -173,7 +171,7 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
             IconButton(
               icon: const Icon(Icons.save, color: Colors.white),
               onPressed: _saveFocusArea,
-              tooltip: 'Save Focus Area',
+              tooltip: 'Gem Fokusområde',
             ),
         ],
       ),
@@ -185,14 +183,14 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
             children: [
               _buildTextField(
                 controller: _titleController,
-                label: 'Title',
-                hint: 'Enter a title for this focus area',
+                label: 'Titel',
+                hint: 'Indtast en titel til dette fokusområde',
               ),
               const SizedBox(height: 24),
               _buildTextField(
                 controller: _descriptionController,
-                label: 'Description',
-                hint: 'Describe what you want to achieve in this area',
+                label: 'Beskrivelse',
+                hint: 'Beskriv hvad du vil opnå i dette område',
                 maxLines: 3,
               ),
               const SizedBox(height: 24),
@@ -235,6 +233,9 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
             controller: controller,
             maxLines: maxLines,
             style: const TextStyle(color: Colors.white),
+            textCapitalization: TextCapitalization.sentences,
+            keyboardType: maxLines > 1 ? TextInputType.multiline : TextInputType.text,
+            textInputAction: maxLines > 1 ? TextInputAction.newline : TextInputAction.done,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
@@ -255,7 +256,7 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Priority',
+          'Prioritet',
           style: TextStyle(
             color: Colors.white,
             fontSize: 16,
@@ -269,25 +270,11 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
             borderRadius: BorderRadius.circular(8),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
+          child: Column(
             children: [
-              const Text('Low', style: TextStyle(color: Colors.white)),
-              Expanded(
-                child: Slider(
-                  value: _priority.toDouble(),
-                  min: 1,
-                  max: 5,
-                  divisions: 4,
-                  activeColor: AppColors.primary,
-                  inactiveColor: Colors.white24,
-                  onChanged: (value) {
-                    setState(() {
-                      _priority = value.round();
-                    });
-                  },
-                ),
-              ),
-              const Text('High', style: TextStyle(color: Colors.white)),
+              _buildPriorityItem(1, 'Høj'),
+              _buildPriorityItem(2, 'Medium'),
+              _buildPriorityItem(3, 'Lav'),
             ],
           ),
         ),
@@ -295,13 +282,31 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
     );
   }
 
+  Widget _buildPriorityItem(int value, String label) {
+    return RadioListTile<int>(
+      title: Text(
+        label,
+        style: const TextStyle(color: Colors.white),
+      ),
+      value: value,
+      groupValue: _priority,
+      activeColor: Colors.white,
+      onChanged: (newValue) {
+        if (newValue != null) {
+          setState(() {
+            _priority = newValue;
+          });
+        }
+      },
+    );
+  }
+
   Widget _buildDateSelector() {
-    final dateFormat = DateFormat('dd/MM/yyyy');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Target Date',
+          'Måldato',
           style: TextStyle(
             color: Colors.white,
             fontSize: 16,
@@ -312,24 +317,20 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
         InkWell(
           onTap: () => _selectDate(context),
           child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            padding: const EdgeInsets.all(16),
-            width: double.infinity,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  dateFormat.format(_targetDate),
-                  style: const TextStyle(color: Colors.white),
+                  DateFormat('dd/MM/yyyy').format(_targetDate),
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
-                const Icon(
-                  Icons.calendar_today,
-                  color: Colors.white70,
-                  size: 18,
-                ),
+                const Icon(Icons.calendar_today, color: Colors.white),
               ],
             ),
           ),
@@ -339,6 +340,12 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
   }
 
   Widget _buildStatusSelector() {
+    final Map<String, String> statusLabels = {
+      'not_started': 'Ikke påbegyndt',
+      'in_progress': 'I gang',
+      'completed': 'Gennemført',
+    };
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -356,36 +363,26 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
             color: Colors.white.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _status,
-              isExpanded: true,
-              dropdownColor: AppColors.cardBackground,
-              style: const TextStyle(color: Colors.white),
-              iconEnabledColor: Colors.white,
-              items: const [
-                DropdownMenuItem(
-                  value: 'not_started',
-                  child: Text('Not Started'),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Column(
+            children: statusLabels.entries.map((entry) {
+              return RadioListTile<String>(
+                title: Text(
+                  entry.value, 
+                  style: const TextStyle(color: Colors.white),
                 ),
-                DropdownMenuItem(
-                  value: 'in_progress',
-                  child: Text('In Progress'),
-                ),
-                DropdownMenuItem(
-                  value: 'completed',
-                  child: Text('Completed'),
-                ),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _status = value;
-                  });
-                }
-              },
-            ),
+                value: entry.key,
+                groupValue: _status,
+                activeColor: Colors.white,
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _status = value;
+                    });
+                  }
+                },
+              );
+            }).toList(),
           ),
         ),
       ],

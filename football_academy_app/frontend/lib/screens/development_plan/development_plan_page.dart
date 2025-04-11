@@ -206,19 +206,6 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
             Tab(text: 'Udviklingsfokus'),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.white),
-            onPressed: _createNewPlan,
-            tooltip: 'Create New Plan',
-          ),
-          if (_selectedPlan != null)
-            IconButton(
-              icon: const Icon(Icons.edit, color: Colors.white),
-              onPressed: _editPlan,
-              tooltip: 'Edit Plan',
-            ),
-        ],
       ),
       body: GradientBackground(
         child: _isLoading
@@ -227,26 +214,32 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
                 ? const Center(child: Text('Ingen udviklingsplan fundet', style: TextStyle(color: Colors.white)))
                 : Column(
                     children: [
-                      // Plan selector at the top, below app bar
-                      if (_plans.length > 1)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                          color: AppColors.primary.withOpacity(0.8),
-                          child: Row(
-                            children: [
-                              const Text(
-                                'Active Plan: ',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                      // Plan selector row with action buttons
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                        color: AppColors.primary.withOpacity(0.8),
+                        child: Row(
+                          children: [
+                            // Plan selector
+                            Expanded(child: _buildPlanSelector()),
+                            
+                            // Action buttons
+                            IconButton(
+                              icon: const Icon(Icons.add, color: Colors.white),
+                              onPressed: _createNewPlan,
+                              tooltip: 'Opret ny plan',
+                            ),
+                            if (_selectedPlan != null)
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.white),
+                                onPressed: _editPlan,
+                                tooltip: 'Rediger plan',
                               ),
-                              Expanded(child: _buildPlanSelector()),
-                            ],
-                          ),
+                          ],
                         ),
-                      // Tab content below selector
+                      ),
+                      // Tab content
                       Expanded(
                         child: TabBarView(
                           controller: _tabController,
@@ -284,7 +277,7 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
           dropdownColor: AppColors.primary,
           iconEnabledColor: Colors.white,
           style: const TextStyle(color: Colors.white),
-          hint: const Text('Select Plan', style: TextStyle(color: Colors.white70)),
+          hint: const Text('Vælg plan', style: TextStyle(color: Colors.white70)),
           items: _plans.map((plan) {
             return DropdownMenuItem<DevelopmentPlan>(
               value: plan,
@@ -313,7 +306,7 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
 
   Widget _buildDevelopmentFocus() {
     if (_selectedPlan == null) {
-      return const Center(child: Text('No development plan selected', style: TextStyle(color: Colors.white)));
+      return const Center(child: Text('Ingen udviklingsplan valgt', style: TextStyle(color: Colors.white)));
     }
 
     return SingleChildScrollView(
@@ -321,25 +314,101 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildLongTermGoalsCard(),
-          const SizedBox(height: 24),
-          const Text(
-            'Focus Areas',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          // Highlighted long-term goals section with distinct styling
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 24),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary.withOpacity(0.8),
+                  AppColors.primary.withOpacity(0.6),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.flag_outlined, color: Colors.white, size: 24),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'Langsigtede Mål',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, color: Colors.white),
+                      onPressed: _editPlan,
+                      tooltip: 'Rediger mål',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _selectedPlan?.longTermGoals ?? 'Ingen langsigtede mål defineret',
+                  style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.5),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
+          
+          // Focus areas header
+          Padding(
+            padding: const EdgeInsets.only(left: 4.0, bottom: 16.0),
+            child: Row(
+              children: [
+                const Icon(Icons.center_focus_strong, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                const Text(
+                  'Fokusområder',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                if (_focusAreas.isNotEmpty)
+                  Text(
+                    '${_focusAreas.length} ${_focusAreas.length == 1 ? 'område' : 'områder'}',
+                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+                  ),
+              ],
+            ),
+          ),
+          
+          // Focus areas list
           _focusAreas.isEmpty
-              ? const Center(
+              ? Center(
                   child: Padding(
-                    padding: EdgeInsets.all(32.0),
-                    child: Text(
-                      'No focus areas defined yet. Click the + button to add some!',
-                      style: TextStyle(color: Colors.white70, fontSize: 16),
-                      textAlign: TextAlign.center,
+                    padding: const EdgeInsets.all(32.0),
+                    child: Column(
+                      children: [
+                        Icon(Icons.add_circle_outline, color: Colors.white.withOpacity(0.7), size: 40),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Ingen fokusområder defineret endnu. Klik på + knappen for at tilføje!',
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   ),
                 )
@@ -352,34 +421,6 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
                   },
                 ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildLongTermGoalsCard() {
-    return Card(
-      color: AppColors.cardBackground.withOpacity(0.8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Long-Term Goals',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _selectedPlan?.longTermGoals ?? 'No long-term goals defined',
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -409,7 +450,7 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
                 const Icon(Icons.calendar_today, size: 14, color: Colors.white60),
                 const SizedBox(width: 4),
                 Text(
-                  'Target: ${_formatDate(focusArea.targetDate)}',
+                  'Mål: ${_formatDate(focusArea.targetDate)}',
                   style: const TextStyle(color: Colors.white60, fontSize: 12),
                 ),
                 const Spacer(),
@@ -434,12 +475,59 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
             IconButton(
               icon: const Icon(Icons.edit, color: Colors.white70, size: 20),
               onPressed: () => _editFocusArea(focusArea),
-              tooltip: 'Edit Focus Area',
+              tooltip: 'Rediger fokusområde',
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.white70, size: 20),
+              onPressed: () => _deleteFocusArea(focusArea),
+              tooltip: 'Slet fokusområde',
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _deleteFocusArea(FocusArea focusArea) async {
+    // Show confirmation dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: const Text('Slet fokusområde', style: TextStyle(color: Colors.white)),
+        content: Text('Er du sikker på, at du vil slette "${focusArea.title}"?', 
+                      style: const TextStyle(color: Colors.white)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuller', style: TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Slet', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirm == true) {
+      try {
+        await _repository.deleteFocusArea(focusArea.developmentPlanId, focusArea.focusAreaId!);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Fokusområde slettet')),
+          );
+          // Reload focus areas
+          _loadFocusAreas(_selectedPlan!.planId!);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Fejl ved sletning: ${e.toString()}')),
+          );
+        }
+      }
+    }
   }
 
   String _formatDate(DateTime date) {
@@ -462,13 +550,13 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
   String _getStatusText(String status) {
     switch (status) {
       case 'completed':
-        return 'Completed';
+        return 'Gennemført';
       case 'in_progress':
-        return 'In Progress';
+        return 'I gang';
       case 'not_started':
-        return 'Not Started';
+        return 'Ikke påbegyndt';
       default:
-        return 'In Progress';
+        return 'I gang';
     }
   }
 }

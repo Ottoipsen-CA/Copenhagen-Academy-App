@@ -39,7 +39,7 @@ class ApiService {
   // Helper method to get headers with auth token
   Future<Map<String, String>> _getHeaders({bool withAuth = true}) async {
     Map<String, String> headers = {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',
       'Accept': 'application/json',
     };
 
@@ -89,7 +89,8 @@ class ApiService {
       
       if (response.statusCode == 200) {
         try {
-          return json.decode(response.body);
+          // Use utf8.decode to properly handle special characters
+          return json.decode(utf8.decode(response.bodyBytes));
         } catch (e) {
           print('ApiService: Error decoding JSON: $e');
           print('ApiService: Response body: ${response.body}');
@@ -142,7 +143,8 @@ class ApiService {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (response.body.isEmpty) return {};
-        return json.decode(response.body);
+        // Use utf8.decode to properly handle special characters
+        return json.decode(utf8.decode(response.bodyBytes));
       } else {
         print('POST request failed with status: ${response.statusCode}');
         // Do not fall back to mock data - throw an error instead
@@ -175,7 +177,8 @@ class ApiService {
       );
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        return json.decode(response.body);
+        // Use utf8.decode to properly handle special characters
+        return json.decode(utf8.decode(response.bodyBytes));
       } else {
         print('PUT request failed with status: ${response.statusCode}');
         // Don't fall back to mock data - throw an error instead
@@ -204,7 +207,8 @@ class ApiService {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (response.body.isEmpty) return null;
-        return json.decode(response.body);
+        // Use utf8.decode to properly handle special characters
+        return json.decode(utf8.decode(response.bodyBytes));
       } else {
         print('DELETE request failed with status: ${response.statusCode}');
         // Don't fall back to mock data - throw an error instead
@@ -238,7 +242,8 @@ class ApiService {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (response.body.isEmpty) return {};
-        return json.decode(response.body);
+        // Use utf8.decode to properly handle special characters
+        return json.decode(utf8.decode(response.bodyBytes));
       } else {
         print('PATCH request failed with status: ${response.statusCode}');
         throw Exception('PATCH request failed with status: ${response.statusCode}');

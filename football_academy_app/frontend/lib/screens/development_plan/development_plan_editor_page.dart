@@ -3,9 +3,7 @@ import '../../models/development_plan.dart';
 import '../../repositories/development_plan_repository.dart';
 import '../../services/auth_service.dart';
 import '../../theme/colors.dart';
-import '../../widgets/custom_app_bar.dart';
 import '../../widgets/gradient_background.dart';
-import '../../widgets/navigation_drawer.dart';
 
 class DevelopmentPlanEditorPage extends StatefulWidget {
   final DevelopmentPlan? plan;
@@ -66,7 +64,7 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
         await widget.repository.create(newPlan);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Development plan created successfully')),
+            const SnackBar(content: Text('Udviklingsplan oprettet')),
           );
           Navigator.pop(context, true);
         }
@@ -81,7 +79,7 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
         await widget.repository.update(updatedPlan);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Development plan updated successfully')),
+            const SnackBar(content: Text('Udviklingsplan opdateret')),
           );
           Navigator.pop(context, true);
         }
@@ -90,7 +88,7 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
       print('Error saving plan: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
+          SnackBar(content: Text('Fejl: ${e.toString()}')),
         );
         setState(() => _isLoading = false);
       }
@@ -100,14 +98,14 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
   bool _validateInputs() {
     if (_titleController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a title')),
+        const SnackBar(content: Text('Indtast venligst en titel')),
       );
       return false;
     }
     
     if (_goalsController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter long-term goals')),
+        const SnackBar(content: Text('Indtast venligst langsigtede mål')),
       );
       return false;
     }
@@ -118,18 +116,15 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: CustomNavigationDrawer(currentPage: 'developmentPlan'),
       appBar: AppBar(
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            tooltip: 'Menu',
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+          tooltip: 'Tilbage til Udviklingsplaner',
         ),
         backgroundColor: AppColors.primary,
         title: Text(
-          widget.isCreating ? 'Create Development Plan' : 'Edit Development Plan',
+          widget.isCreating ? 'Opret Udviklingsplan' : 'Rediger Udviklingsplan',
           style: const TextStyle(color: Colors.white),
         ),
         actions: [
@@ -142,7 +137,7 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
             IconButton(
               icon: const Icon(Icons.save, color: Colors.white),
               onPressed: _savePlan,
-              tooltip: 'Save Plan',
+              tooltip: 'Gem Plan',
             ),
         ],
       ),
@@ -154,21 +149,21 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
             children: [
               _buildTextField(
                 controller: _titleController,
-                label: 'Title',
-                hint: 'Enter a title for this development plan',
+                label: 'Titel',
+                hint: 'Indtast en titel til denne udviklingsplan',
               ),
               const SizedBox(height: 24),
               _buildTextField(
                 controller: _goalsController,
-                label: 'Long-Term Goals',
-                hint: 'Describe your long-term development goals',
+                label: 'Langsigtede mål',
+                hint: 'Beskriv dine langsigtede udviklingsmål',
                 maxLines: 5,
               ),
               const SizedBox(height: 24),
               _buildTextField(
                 controller: _notesController,
-                label: 'Notes',
-                hint: 'Any additional notes',
+                label: 'Noter',
+                hint: 'Eventuelle yderligere noter',
                 maxLines: 3,
               ),
             ],
@@ -205,6 +200,9 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
             controller: controller,
             maxLines: maxLines,
             style: const TextStyle(color: Colors.white),
+            textCapitalization: TextCapitalization.sentences,
+            keyboardType: maxLines > 1 ? TextInputType.multiline : TextInputType.text,
+            textInputAction: maxLines > 1 ? TextInputAction.newline : TextInputAction.done,
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
