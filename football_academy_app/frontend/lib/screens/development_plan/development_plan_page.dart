@@ -146,7 +146,15 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
   }
 
   Future<void> _createFocusArea() async {
-    if (_selectedPlan == null) return;
+    if (_selectedPlan == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vælg venligst en udviklingsplan først'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
     
     final result = await Navigator.push(
       context,
@@ -230,12 +238,6 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
                               onPressed: _createNewPlan,
                               tooltip: 'Opret ny plan',
                             ),
-                            if (_selectedPlan != null)
-                              IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.white),
-                                onPressed: _editPlan,
-                                tooltip: 'Rediger plan',
-                              ),
                           ],
                         ),
                       ),
@@ -252,7 +254,7 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
                     ],
                   ),
       ),
-      floatingActionButton: _tabController.index == 1 && _selectedPlan != null
+      floatingActionButton: _tabController.index == 1
         ? FloatingActionButton(
             onPressed: _createFocusArea,
             backgroundColor: AppColors.primary,

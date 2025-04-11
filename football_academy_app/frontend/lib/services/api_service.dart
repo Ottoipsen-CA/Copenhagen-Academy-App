@@ -60,11 +60,22 @@ class ApiService {
     return headers;
   }
 
-  // Helper to ensure endpoint starts with a slash
+  // Helper to ensure endpoint has proper formatting
   String _formatEndpoint(String endpoint) {
+    print('_formatEndpoint input: $endpoint');
+    
+    // Remove any duplicate slashes
+    endpoint = endpoint.replaceAll(RegExp(r'//+'), '/');
+    
+    // Ensure endpoint starts with a slash
     if (!endpoint.startsWith('/')) {
-      return '/$endpoint';
+      endpoint = '/$endpoint';
     }
+    
+    // Don't automatically add trailing slashes anymore
+    // as they cause 307 redirects with PUT/DELETE
+    
+    print('_formatEndpoint output: $endpoint');
     return endpoint;
   }
 
@@ -170,11 +181,35 @@ class ApiService {
     try {
       final headers = await _getHeaders(withAuth: withAuth);
       final formattedEndpoint = _formatEndpoint(endpoint);
-      final response = await client.put(
+      print('PUT Request to: $baseUrl$formattedEndpoint');
+      print('PUT Headers: $headers');
+      print('PUT Body: ${json.encode(data)}');
+      
+      // First attempt with trailing slash
+      var response = await client.put(
         Uri.parse('$baseUrl$formattedEndpoint'),
         headers: headers,
         body: json.encode(data),
       );
+      
+      // If we get a 307 redirect, try without the trailing slash
+      if (response.statusCode == 307) {
+        print('Received 307 redirect, retrying without trailing slash');
+        String noTrailingSlash = formattedEndpoint;
+        if (noTrailingSlash.endsWith('/')) {
+          noTrailingSlash = noTrailingSlash.substring(0, noTrailingSlash.length - 1);
+        }
+        
+        print('Retrying PUT to: $baseUrl$noTrailingSlash');
+        response = await client.put(
+          Uri.parse('$baseUrl$noTrailingSlash'),
+          headers: headers,
+          body: json.encode(data),
+        );
+      }
+      
+      print('PUT Response status: ${response.statusCode}');
+      print('PUT Response body: ${response.body}');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         // Use utf8.decode to properly handle special characters
@@ -200,10 +235,32 @@ class ApiService {
     try {
       final headers = await _getHeaders(withAuth: withAuth);
       final formattedEndpoint = _formatEndpoint(endpoint);
-      final response = await client.delete(
+      print('DELETE Request to: $baseUrl$formattedEndpoint');
+      print('DELETE Headers: $headers');
+      
+      // First attempt with trailing slash
+      var response = await client.delete(
         Uri.parse('$baseUrl$formattedEndpoint'),
         headers: headers,
       );
+      
+      // If we get a 307 redirect, try without the trailing slash
+      if (response.statusCode == 307) {
+        print('Received 307 redirect, retrying without trailing slash');
+        String noTrailingSlash = formattedEndpoint;
+        if (noTrailingSlash.endsWith('/')) {
+          noTrailingSlash = noTrailingSlash.substring(0, noTrailingSlash.length - 1);
+        }
+        
+        print('Retrying DELETE to: $baseUrl$noTrailingSlash');
+        response = await client.delete(
+          Uri.parse('$baseUrl$noTrailingSlash'),
+          headers: headers,
+        );
+      }
+      
+      print('DELETE Response status: ${response.statusCode}');
+      print('DELETE Response body: ${response.body}');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (response.body.isEmpty) return null;

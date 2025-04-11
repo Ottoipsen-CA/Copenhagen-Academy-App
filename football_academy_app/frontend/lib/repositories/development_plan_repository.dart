@@ -148,8 +148,10 @@ class DevelopmentPlanRepository implements BaseRepository<DevelopmentPlan> {
   // Method to update an existing focus area
   Future<FocusArea> updateFocusArea(FocusArea focusArea) async {
     try {
+      final endpoint = '$_baseEndpoint/${focusArea.developmentPlanId}/focus-areas/${focusArea.focusAreaId}';
+      print('Update focus area endpoint: $endpoint');
       final response = await _apiService.put(
-        '$_baseEndpoint/${focusArea.developmentPlanId}/focus-areas/${focusArea.focusAreaId}/',
+        endpoint,
         focusArea.toJson(),
       );
       
@@ -163,8 +165,10 @@ class DevelopmentPlanRepository implements BaseRepository<DevelopmentPlan> {
   // Method to update the status of a focus area
   Future<FocusArea> updateFocusAreaStatus(int developmentPlanId, int focusAreaId, String status) async {
     try {
+      // Ensure consistent URL pattern
+      final endpoint = '$_baseEndpoint/$developmentPlanId/focus-areas/$focusAreaId/status';
       final response = await _apiService.patch(
-        '$_baseEndpoint/$developmentPlanId/focus-areas/$focusAreaId/status/',
+        endpoint,
         {'status': status},
       );
       
@@ -178,9 +182,9 @@ class DevelopmentPlanRepository implements BaseRepository<DevelopmentPlan> {
   // Method to delete a focus area
   Future<bool> deleteFocusArea(int developmentPlanId, int focusAreaId) async {
     try {
-      await _apiService.delete(
-        '$_baseEndpoint/$developmentPlanId/focus-areas/$focusAreaId/',
-      );
+      final endpoint = '$_baseEndpoint/$developmentPlanId/focus-areas/$focusAreaId';
+      print('Delete focus area endpoint: $endpoint');
+      await _apiService.delete(endpoint);
       return true;
     } catch (e) {
       debugPrint('Error deleting focus area: $e');
