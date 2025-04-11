@@ -33,25 +33,9 @@ class CustomNavigationDrawer extends StatelessWidget {
                     Icons.dashboard_outlined,
                     () => _navigateTo(context, 'dashboard'),
                   ),
-                  if (FeatureFlags.trainingPlanEnabled)
-                    _buildNavItem(
-                      context,
-                      'training',
-                      'Training Plan',
-                      Icons.fitness_center,
-                      () => _navigateTo(context, 'training'),
-                    ),
-                  if (FeatureFlags.exercisesEnabled)
-                    _buildNavItem(
-                      context,
-                      'exercises',
-                      'Exercise Library',
-                      Icons.video_library_outlined,
-                      () => _navigateTo(context, 'exercises'),
-                    ),
                   _buildNavItem(
                     context,
-                    'achievements',
+                    'leagueTable',
                     'League Table',
                     Icons.leaderboard,
                     () => _navigateTo(context, 'leagueTable'),
@@ -227,16 +211,6 @@ class CustomNavigationDrawer extends StatelessWidget {
     switch (page) {
       case 'dashboard':
         Navigator.pushNamed(context, '/dashboard');
-        break;
-      case 'training':
-        if (FeatureFlags.trainingPlanEnabled) {
-          Navigator.pushNamed(context, '/training-schedule');
-        }
-        break;
-      case 'exercises':
-        if (FeatureFlags.exercisesEnabled) {
-          Navigator.pushNamed(context, '/exercises');
-        }
         break;
       case 'leagueTable':
         Navigator.pushNamed(context, '/league-table');

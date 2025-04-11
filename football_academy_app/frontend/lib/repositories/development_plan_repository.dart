@@ -195,4 +195,19 @@ class DevelopmentPlanRepository implements BaseRepository<DevelopmentPlan> {
       rethrow;
     }
   }
+
+  Future<List<FocusArea>> getFocusAreas(int developmentPlanId) async {
+    try {
+      final response = await _apiService.get('/development-plans/$developmentPlanId/focus-areas/');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => FocusArea.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load focus areas: \\${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error getting focus areas: $e');
+      rethrow;
+    }
+  }
 } 

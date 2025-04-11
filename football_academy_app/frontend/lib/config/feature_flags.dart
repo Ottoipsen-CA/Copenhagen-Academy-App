@@ -6,11 +6,6 @@ class FeatureFlags {
   // Core features
   static const bool authEnabled = true;     // Authentication (should always be true)
   
-  // Training features
-  static const bool trainingPlanEnabled = false;    // Training plans
-  static const bool trainingScheduleEnabled = true; // Training schedule
-  static const bool exercisesEnabled = false;       // Exercise library
-  
   // Challenge and competition features
   static const bool challengesEnabled = true;       // Challenges feature
   static const bool badgesEnabled = true;           // Achievement badges

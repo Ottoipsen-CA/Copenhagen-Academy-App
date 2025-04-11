@@ -16,9 +16,6 @@ import 'repositories/api_auth_repository.dart';
 
 import 'screens/auth/login_page.dart';
 import 'screens/dashboard/dashboard_page.dart';
-import 'screens/exercises/exercises_page.dart';
-import 'screens/training_schedule/training_schedule_page.dart';
-import 'screens/challenges/challenges_page.dart';
 import 'screens/league_table/league_table_page.dart';
 import 'screens/player_stats/player_stats_page.dart';
 import 'screens/info/info_page.dart';
@@ -92,11 +89,6 @@ class MyApp extends StatelessWidget {
           service: DevelopmentPlanService(),
         ),
         '/profile': (context) => const ProfilePage(),
-        if (FeatureFlags.exercisesEnabled)
-          '/exercises': (context) => const ExercisesPage(),
-        if (FeatureFlags.challengesEnabled)
-          '/challenges': (context) => const ChallengesPage(),
-        '/training-schedule': (context) => const TrainingSchedulePage(),
         if (FeatureFlags.leagueTableEnabled)
           '/league-table': (context) => const LeagueTablePage(),
         if (FeatureFlags.playerStatsEnabled)
