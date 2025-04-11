@@ -32,6 +32,9 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {});
+    });
     _repository = DevelopmentPlanRepository(Provider.of<ApiService>(context, listen: false));
     _loadPlans();
   }
@@ -47,22 +50,26 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
     try {
       final plans = await _repository.getUserPlans();
       
-      // Sort plans by created_at date, most recent first
-      plans.sort((a, b) {
-        if (a.createdAt == null) return 1;
-        if (b.createdAt == null) return -1;
-        return b.createdAt!.compareTo(a.createdAt!);
-      });
-      
       if (mounted) {
+        // Sort plans by created_at date, most recent first
+        plans.sort((a, b) {
+          if (a.createdAt == null) return 1;
+          if (b.createdAt == null) return -1;
+          return b.createdAt!.compareTo(a.createdAt!);
+        });
+        
+        // Select the first (most recent) plan if available
+        final mostRecentPlan = plans.isNotEmpty ? plans.first : null;
+        
         setState(() {
           _plans = plans;
-          _selectedPlan = plans.isNotEmpty ? plans.first : null;
+          _selectedPlan = mostRecentPlan;
           _isLoading = false;
         });
         
-        if (_selectedPlan != null) {
-          _loadFocusAreas(_selectedPlan!.planId!);
+        // Load focus areas for the selected plan
+        if (mostRecentPlan != null) {
+          _loadFocusAreas(mostRecentPlan.planId!);
         }
       }
     } catch (e) {
@@ -190,6 +197,92 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
     }
   }
 
+  Future<void> _deleteFocusArea(FocusArea focusArea) async {
+    // Show confirmation dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: const Text('Slet fokusområde', style: TextStyle(color: Colors.white)),
+        content: Text('Er du sikker på, at du vil slette "${focusArea.title}"?', 
+                      style: const TextStyle(color: Colors.white)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuller', style: TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Slet', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirm == true) {
+      try {
+        await _repository.deleteFocusArea(focusArea.developmentPlanId, focusArea.focusAreaId!);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Fokusområde slettet')),
+          );
+          // Reload focus areas
+          _loadFocusAreas(_selectedPlan!.planId!);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Fejl ved sletning: ${e.toString()}')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _deletePlan() async {
+    if (_selectedPlan == null) return;
+    
+    // Show confirmation dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: const Text('Slet udviklingsplan', style: TextStyle(color: Colors.white)),
+        content: Text('Er du sikker på, at du vil slette "${_selectedPlan!.title}"? Dette vil også slette alle tilhørende fokusområder.', 
+                      style: const TextStyle(color: Colors.white)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuller', style: TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Slet', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirm == true) {
+      try {
+        await _repository.delete(_selectedPlan!.planId.toString());
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Udviklingsplan slettet')),
+          );
+          // Reload plans
+          _loadPlans();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Fejl ved sletning: ${e.toString()}')),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -218,8 +311,9 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
       body: GradientBackground(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(color: Colors.white))
-            : _selectedPlan == null
-                ? const Center(child: Text('Ingen udviklingsplan fundet', style: TextStyle(color: Colors.white)))
+            : _plans.isEmpty
+                ? const Center(child: Text('Ingen udviklingsplaner fundet. Klik på + for at oprette en ny plan.', 
+                    style: TextStyle(color: Colors.white, fontSize: 16), textAlign: TextAlign.center))
                 : Column(
                     children: [
                       // Plan selector row with action buttons
@@ -254,7 +348,7 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
                     ],
                   ),
       ),
-      floatingActionButton: _tabController.index == 1
+      floatingActionButton: _tabController.index == 1 && !_isLoading && !_plans.isEmpty
         ? FloatingActionButton(
             onPressed: _createFocusArea,
             backgroundColor: AppColors.primary,
@@ -307,8 +401,31 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
   }
 
   Widget _buildDevelopmentFocus() {
+    if (_selectedPlan == null && _plans.isNotEmpty) {
+      // If we have plans but none selected, automatically select the first one
+      Future.microtask(() {
+        setState(() {
+          _selectedPlan = _plans.first;
+        });
+        _loadFocusAreas(_plans.first.planId!);
+      });
+      
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+    
     if (_selectedPlan == null) {
-      return const Center(child: Text('Ingen udviklingsplan valgt', style: TextStyle(color: Colors.white)));
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24.0),
+          child: Text(
+            'Vælg en udviklingsplan for at se fokusområder, eller opret en ny plan ved at klikke på + knappen øverst.',
+            style: TextStyle(color: Colors.white, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
     }
 
     return SingleChildScrollView(
@@ -359,6 +476,11 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
                       icon: const Icon(Icons.edit_outlined, color: Colors.white),
                       onPressed: _editPlan,
                       tooltip: 'Rediger mål',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.white),
+                      onPressed: _deletePlan,
+                      tooltip: 'Slet plan',
                     ),
                   ],
                 ),
@@ -488,48 +610,6 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
         ),
       ),
     );
-  }
-
-  Future<void> _deleteFocusArea(FocusArea focusArea) async {
-    // Show confirmation dialog
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.cardBackground,
-        title: const Text('Slet fokusområde', style: TextStyle(color: Colors.white)),
-        content: Text('Er du sikker på, at du vil slette "${focusArea.title}"?', 
-                      style: const TextStyle(color: Colors.white)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annuller', style: TextStyle(color: Colors.white70)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Slet', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-    
-    if (confirm == true) {
-      try {
-        await _repository.deleteFocusArea(focusArea.developmentPlanId, focusArea.focusAreaId!);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Fokusområde slettet')),
-          );
-          // Reload focus areas
-          _loadFocusAreas(_selectedPlan!.planId!);
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Fejl ved sletning: ${e.toString()}')),
-          );
-        }
-      }
-    }
   }
 
   String _formatDate(DateTime date) {
