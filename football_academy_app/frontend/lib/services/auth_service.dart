@@ -166,4 +166,18 @@ class AuthService {
       isCoach: false,
     );
   }
+
+  Future<Map<String, dynamic>> getUserInfo() async {
+    try {
+      final response = await _apiService.get('/api/v2/auth/me');
+      return response;
+    } catch (e) {
+      // If we can't get the user info, return a default ID of 1
+      return {'id': 1};
+    }
+  }
+
+  Future<String?> getToken() async {
+    return await secureStorage.read(key: 'access_token');
+  }
 }

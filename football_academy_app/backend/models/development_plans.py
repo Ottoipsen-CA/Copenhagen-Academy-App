@@ -18,4 +18,5 @@ class DevelopmentPlan(Base):
 
     # Relationships
     user = relationship("User", back_populates="development_plans")
-    focus_areas = relationship("FocusArea", back_populates="development_plan", cascade="all, delete-orphan") 
+    focus_areas = relationship("FocusArea", back_populates="development_plan", cascade="all, delete-orphan")
+    training_schedules = relationship("TrainingSchedule", back_populates="development_plan") 

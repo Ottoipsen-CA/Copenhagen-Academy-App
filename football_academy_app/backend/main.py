@@ -11,7 +11,8 @@ from routers import (
     skill_tests, 
     challenges, 
     league_table,
-    development_plans
+    development_plans,
+    training_schedules
 )
 
 # Configure logging
@@ -59,6 +60,7 @@ app.include_router(skill_tests.router, prefix="/api/v2")
 app.include_router(challenges.router, prefix="/api/v2")
 app.include_router(league_table.router, prefix="/api/v2")
 app.include_router(development_plans.router, prefix="/api/v2")
+app.include_router(training_schedules.router, prefix="/api/v2")
 
 @app.get("/")
 async def root():

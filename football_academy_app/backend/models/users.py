@@ -27,6 +27,7 @@ class User(Base):
     tests = relationship("PlayerTest", foreign_keys="PlayerTest.player_id", back_populates="player")
     recorded_tests = relationship("PlayerTest", foreign_keys="PlayerTest.recorded_by", back_populates="coach")
     development_plans = relationship("DevelopmentPlan", back_populates="user")
+    training_schedules = relationship("TrainingSchedule", back_populates="user")
     
     @property
     def age(self):

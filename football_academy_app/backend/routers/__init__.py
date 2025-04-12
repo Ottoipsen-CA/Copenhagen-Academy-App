@@ -4,6 +4,7 @@ from . import skill_tests
 from . import challenges
 from . import league_table
 from . import development_plans
+from . import training_schedules
 
 # Export routers
 __all__ = [
@@ -11,5 +12,6 @@ __all__ = [
     'skill_tests',
     'challenges',
     'league_table',
-    'development_plans'
+    'development_plans',
+    'training_schedules'
 ] 

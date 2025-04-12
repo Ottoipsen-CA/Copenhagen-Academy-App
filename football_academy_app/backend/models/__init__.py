@@ -5,6 +5,7 @@ from .challenges import Challenge, ChallengeStatus, ChallengeCompletion, Challen
 from .league_table import LeagueTableEntry, ChallengeEntry
 from .development_plans import DevelopmentPlan
 from .focus_areas import FocusArea
+from .training_schedules import TrainingSchedule, TrainingSession
 
 # Export all models
 __all__ = [
@@ -22,5 +23,7 @@ __all__ = [
     "LeagueTableEntry",
     "ChallengeEntry",
     "DevelopmentPlan",
-    "FocusArea"
+    "FocusArea",
+    "TrainingSchedule",
+    "TrainingSession"
 ] 

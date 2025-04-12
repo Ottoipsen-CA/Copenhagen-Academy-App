@@ -25,6 +25,10 @@ class ApiConfig {
   // Development Plan endpoints
   static const String developmentPlans = '/api/v2/development-plans/';
   
+  // Training Schedule endpoints
+  static const String trainingSchedules = '/api/v2/training-schedules/';
+  static const String trainingSessions = '/api/v2/training-schedules/sessions'; // No trailing slash to match backend
+  
   // Skill tests endpoints
   static const String playerTests = '/api/v2/skill-tests/player-tests';
   static const String playerTestsByPlayer = '/api/v2/skill-tests/player-tests/player'; // Append /{userId}

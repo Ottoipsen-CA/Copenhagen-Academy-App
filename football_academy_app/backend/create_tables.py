@@ -21,7 +21,9 @@ from models import (
     LeagueTableEntry, 
     ChallengeEntry,
     DevelopmentPlan,
-    FocusArea
+    FocusArea,
+    TrainingSchedule,
+    TrainingSession
 )
 
 def create_tables():
