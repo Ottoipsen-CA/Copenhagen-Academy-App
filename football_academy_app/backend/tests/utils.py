@@ -14,21 +14,17 @@ def get_auth_header(client, email: str = "test@example.com", password: str = "pa
     
     Args:
         client: The TestClient instance
-        email: The email to use for login (default hardcoded value)
-        password: The password to use for login (default hardcoded value)
+        email: The email to use for login
+        password: The password to use for login
         
     Returns:
         Dict with Authorization header
     """
-    # Use hardcoded values for consistency
-    email = "test@example.com"
-    password = "password123"
-    
     # First try to create a test user
     try:
         register_data = {
-            "email": "test@example.com",
-            "password": "password123",
+            "email": email,
+            "password": password,
             "full_name": "Test User",
             "position": "striker",  # Use lowercase "striker" from enum
             "current_club": "Test FC",
@@ -45,13 +41,13 @@ def get_auth_header(client, email: str = "test@example.com", password: str = "pa
         print(f"Registration exception: {str(e)}")
         pass
     
-    # Try multiple login methods with hardcoded credentials
+    # Try multiple login methods with the provided credentials
     
     # 1. Try form data (username/password)
     try:
         form_response = client.post(
             "/api/v2/auth/login",
-            data={"username": "test@example.com", "password": "password123"}
+            data={"username": email, "password": password}
         )
         
         if form_response.status_code == 200 and "access_token" in form_response.json():
@@ -64,7 +60,7 @@ def get_auth_header(client, email: str = "test@example.com", password: str = "pa
     try:
         json_response = client.post(
             "/api/v2/auth/login",
-            json={"email": "test@example.com", "password": "password123"}
+            json={"email": email, "password": password}
         )
         
         if json_response.status_code == 200 and "access_token" in json_response.json():
@@ -77,7 +73,7 @@ def get_auth_header(client, email: str = "test@example.com", password: str = "pa
     try:
         json_username_response = client.post(
             "/api/v2/auth/login",
-            json={"username": "test@example.com", "password": "password123"}
+            json={"username": email, "password": password}
         )
         
         if json_username_response.status_code == 200 and "access_token" in json_username_response.json():

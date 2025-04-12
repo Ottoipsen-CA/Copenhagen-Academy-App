@@ -15,14 +15,13 @@ from models import (
     Challenge, 
     ChallengeStatus, 
     ChallengeCompletion, 
+    ChallengeResult,
     Badge, 
     Achievement,
     LeagueTableEntry, 
     ChallengeEntry,
-    TrainingPlan, 
-    TrainingDay, 
-    TrainingDayEntry,
-    ExerciseLibrary
+    DevelopmentPlan,
+    FocusArea
 )
 
 def create_tables():

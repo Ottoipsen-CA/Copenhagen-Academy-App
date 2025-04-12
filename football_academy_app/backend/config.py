@@ -20,10 +20,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # Database
-    # Construct the default path relative to the backend directory
-    DEFAULT_DB_PATH = BACKEND_DIR / "football_academy.db"
-    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
+    # Database - PostgreSQL only
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://oskaripsen:postgres@localhost:5432/football_academy")
     
     # CORS
     BACKEND_CORS_ORIGINS: list = ["*"]

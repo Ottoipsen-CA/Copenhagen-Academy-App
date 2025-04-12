@@ -3,17 +3,22 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from config import settings
+import sys
 
-# Create SQLAlchemy engine
+# Ensure we're using PostgreSQL
+if not settings.DATABASE_URL.startswith("postgresql"):
+    print("ERROR: Database URL must be a PostgreSQL connection string")
+    print(f"Current DATABASE_URL: {settings.DATABASE_URL}")
+    sys.exit(1)
+
+# Create SQLAlchemy engine - PostgreSQL only
 engine = create_engine(
-    settings.DATABASE_URL,
-    connect_args={"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
+    settings.DATABASE_URL
 )
 
-# Create async engine
+# Create async engine - PostgreSQL only
 async_engine = create_async_engine(
-    settings.DATABASE_URL.replace("sqlite://", "sqlite+aiosqlite://"),
-    connect_args={"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
+    settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
 )
 
 # Create session factory
