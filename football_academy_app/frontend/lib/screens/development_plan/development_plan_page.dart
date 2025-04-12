@@ -32,17 +32,26 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      setState(() {});
-    });
+    // Safe way to add a tab controller listener
+    _tabController.addListener(_handleTabChange);
     _repository = DevelopmentPlanRepository(Provider.of<ApiService>(context, listen: false));
     _loadPlans();
   }
 
   @override
   void dispose() {
+    // Remove the listener before disposing
+    _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
     super.dispose();
+  }
+  
+  // Safe tab change listener
+  void _handleTabChange() {
+    if (_tabController.indexIsChanging) {
+      // Only trigger setState when needed, avoiding lookup errors
+      setState(() {});
+    }
   }
 
   Future<void> _loadPlans() async {
@@ -78,11 +87,18 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
         setState(() {
           _isLoading = false;
           _selectedPlan = null;
+          _plans = []; // Ensure plans list is empty on error
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading development plans: $e'),
+            content: Text('Fejl ved indlæsning af udviklingsplaner: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Prøv igen',
+              onPressed: _loadPlans,
+              textColor: Colors.white,
+            ),
           ),
         );
       }
@@ -100,10 +116,19 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
     } catch (e) {
       print('Error loading focus areas: $e');
       if (mounted) {
+        setState(() {
+          _focusAreas = []; // Ensure focus areas list is empty on error
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading focus areas: $e'),
+            content: Text('Fejl ved indlæsning af fokusområder: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Prøv igen',
+              onPressed: () => _loadFocusAreas(planId),
+              textColor: Colors.white,
+            ),
           ),
         );
       }
@@ -312,8 +337,37 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(color: Colors.white))
             : _plans.isEmpty
-                ? const Center(child: Text('Ingen udviklingsplaner fundet. Klik på + for at oprette en ny plan.', 
-                    style: TextStyle(color: Colors.white, fontSize: 16), textAlign: TextAlign.center))
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.description_outlined, size: 48, color: Colors.white.withOpacity(0.7)),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Ingen udviklingsplaner fundet.',
+                          style: TextStyle(color: Colors.white, fontSize: 18),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Klik på + for at oprette en ny plan.',
+                          style: TextStyle(color: Colors.white70, fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: _createNewPlan,
+                          icon: const Icon(Icons.add),
+                          label: const Text('Opret Udviklingsplan'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
                 : TabBarView(
                     controller: _tabController,
                     children: [
@@ -321,35 +375,11 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
                       const WeeklyTrainingSchedulePage(),
                       
                       // Development Focus View
-                      Column(
-                        children: [
-                          // Plan selector for the Development Focus tab
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                            color: AppColors.primary.withOpacity(0.8),
-                            child: Row(
-                              children: [
-                                // Plan selector
-                                Expanded(child: _buildPlanSelector()),
-                                
-                                // Action buttons
-                                IconButton(
-                                  icon: const Icon(Icons.add, color: Colors.white),
-                                  onPressed: _createNewPlan,
-                                  tooltip: 'Opret ny plan',
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Development focus content
-                          Expanded(child: _buildDevelopmentFocus()),
-                        ],
-                      ),
+                      _buildDevelopmentFocusTab(),
                     ],
                   ),
       ),
-      floatingActionButton: _tabController.index == 1 && !_isLoading && !_plans.isEmpty
+      floatingActionButton: _shouldShowFloatingActionButton() 
         ? FloatingActionButton(
             onPressed: _createFocusArea,
             backgroundColor: AppColors.primary,
@@ -357,6 +387,40 @@ class _DevelopmentPlanPageState extends State<DevelopmentPlanPage> with SingleTi
             tooltip: 'Tilføj Fokusområde',
           )
         : null,
+    );
+  }
+  
+  // Helper to determine when to show the FAB
+  bool _shouldShowFloatingActionButton() {
+    return _tabController.index == 1 && !_isLoading && _plans.isNotEmpty;
+  }
+  
+  // Extracted development focus tab as separate widget for better organization
+  Widget _buildDevelopmentFocusTab() {
+    return Column(
+      children: [
+        // Plan selector for the Development Focus tab
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          color: AppColors.primary.withOpacity(0.8),
+          child: Row(
+            children: [
+              // Plan selector
+              Expanded(child: _buildPlanSelector()),
+              
+              // Action buttons
+              IconButton(
+                icon: const Icon(Icons.add, color: Colors.white),
+                onPressed: _createNewPlan,
+                tooltip: 'Opret ny plan',
+              ),
+            ],
+          ),
+        ),
+        // Development focus content
+        Expanded(child: _buildDevelopmentFocus()),
+      ],
     );
   }
 

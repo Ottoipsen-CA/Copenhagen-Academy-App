@@ -61,7 +61,10 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
           notes: _notesController.text,
         );
 
-        await widget.repository.create(newPlan);
+        print('Creating new development plan: ${newPlan.toJson()}');
+        final createdPlan = await widget.repository.create(newPlan);
+        print('Development plan created successfully: ${createdPlan.planId}');
+        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Udviklingsplan oprettet')),
@@ -76,7 +79,10 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
           notes: _notesController.text,
         );
 
-        await widget.repository.update(updatedPlan);
+        print('Updating development plan: ${updatedPlan.toJson()}');
+        final updatedResult = await widget.repository.update(updatedPlan);
+        print('Development plan updated successfully: ${updatedResult.planId}');
+        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Udviklingsplan opdateret')),
@@ -87,10 +93,19 @@ class _DevelopmentPlanEditorPageState extends State<DevelopmentPlanEditorPage> {
     } catch (e) {
       print('Error saving plan: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fejl: ${e.toString()}')),
-        );
         setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Prøv igen',
+              onPressed: _savePlan,
+              textColor: Colors.white,
+            ),
+          ),
+        );
       }
     }
   }

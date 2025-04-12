@@ -11,7 +11,6 @@ import '../../services/auth_service.dart';
 import '../../services/player_stats_service.dart';
 import '../../services/challenge_service.dart';
 import '../../services/player_tests_service.dart';
-import '../../services/profile_image_service.dart';
 import '../../widgets/navigation_drawer.dart';
 import '../../widgets/player_stats_radar_chart.dart';
 import '../../widgets/fifa_player_card.dart';
@@ -29,6 +28,7 @@ import '../badges/badges_page.dart';
 import '../challenges/challenges_page.dart';
 import '../../utils/image_picker_helper.dart';
 import '../player_tests/player_tests_page.dart';
+import 'dart:io'; // For File
 
 // Temporary class for dashboard display until backend integration
 class TrainingSession {
@@ -64,31 +64,21 @@ class _DashboardPageState extends State<DashboardPage> {
   int _xpProgress = 440;
   int _xpTarget = 1200;
   bool _hasRecordBreakingScores = false;
-  final ProfileImageService _profileImageService = ProfileImageService();
-  String? _profileImageUrl;
+  String? _profileImagePath;
   DevelopmentPlanService _developmentPlanService = DevelopmentPlanService();
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-    _initializeProfileImage();
-  }
-
-  Future<void> _initializeProfileImage() async {
-    await _profileImageService.initialize();
-    setState(() {
-      _profileImageUrl = _profileImageService.getCurrentProfileImage();
-    });
   }
 
   Future<void> _pickImage() async {
-    final String? imageResult = await ImagePickerHelper.pickImage();
-    if (imageResult != null) {
+    final String? imagePath = await ImagePickerHelper.pickImage();
+    if (imagePath != null && mounted) {
       setState(() {
-        _profileImageUrl = imageResult;
+        _profileImagePath = imagePath;
       });
-      await _profileImageService.saveProfileImage(imageResult);
     }
   }
 
@@ -376,7 +366,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             stats: _playerStats!,
                             rating: _playerStats?.overallRating?.toInt() ?? 0,
                             cardType: _getPlayerCardType(),
-                            profileImageUrl: _profileImageUrl,
+                            profileImageUrl: _profileImagePath,
                           ),
                           // Add a button to change profile image
                           Positioned(
@@ -478,7 +468,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               stats: _playerStats!,
                               rating: _playerStats?.overallRating?.toInt() ?? 0,
                               cardType: _getPlayerCardType(),
-                              profileImageUrl: _profileImageUrl,
+                              profileImageUrl: _profileImagePath,
                             ),
                             // Add a button to change profile image
                             Positioned(

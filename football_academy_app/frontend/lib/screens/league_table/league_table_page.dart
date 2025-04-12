@@ -33,7 +33,7 @@ class _LeagueTablePageState extends State<LeagueTablePage> {
   
   // Add ScrollController
   final ScrollController _leagueTableScrollController = ScrollController();
-  
+
   @override
   void initState() {
     super.initState();
@@ -206,132 +206,132 @@ class _LeagueTablePageState extends State<LeagueTablePage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 400;
     
-    return Scrollbar(
-      controller: _leagueTableScrollController,
-      thumbVisibility: true,
-      child: SingleChildScrollView(
-        controller: _leagueTableScrollController,
+        return Scrollbar(
+          controller: _leagueTableScrollController,
+          thumbVisibility: true,
+          child: SingleChildScrollView(
+            controller: _leagueTableScrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         child: ConstrainedBox(
           constraints: BoxConstraints(
             minHeight: MediaQuery.of(context).size.height - AppBar().preferredSize.height,
           ),
-          child: Column(
-            children: [
-              // Current Challenge Header
-              if (_currentChallenge != null)
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Card(
-                    color: Colors.amber.withOpacity(0.15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(
-                        color: Colors.amber.withOpacity(0.5),
-                        width: 1,
+            child: Column(
+              children: [
+                // Current Challenge Header
+                if (_currentChallenge != null)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Card(
+                      color: Colors.amber.withOpacity(0.15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: BorderSide(
+                          color: Colors.amber.withOpacity(0.5),
+                          width: 1,
+                        ),
                       ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.star,
-                                color: Colors.amber,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'CURRENT CHALLENGE',
-                                style: TextStyle(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.star,
                                   color: Colors.amber,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                                  size: 20,
                                 ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'CURRENT CHALLENGE',
+                                  style: TextStyle(
+                                    color: Colors.amber,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _currentChallenge!.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _currentChallenge!.title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _currentChallenge!.description,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.8),
-                              fontSize: 14,
+                            const SizedBox(height: 4),
+                            Text(
+                              _currentChallenge!.description,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.8),
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Target: ${_currentChallenge!.targetValue} ${_currentChallenge!.unit}',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                              fontSize: 13,
+                            const SizedBox(height: 8),
+                            Text(
+                              'Target: ${_currentChallenge!.targetValue} ${_currentChallenge!.unit}',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 13,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              
-              // League Table
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Card(
-                  color: Colors.white.withOpacity(0.15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: isSmallScreen 
-                      ? _buildMobileLeagueTable() 
-                      : _buildDesktopLeagueTable(),
-                  ),
-                ),
-              ),
-              
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.info_outline,
-                      color: Colors.white70,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _currentChallenge != null
-                            ? 'League table shows rankings for the current challenge: ${_currentChallenge!.title}'
-                            : 'Table shows best scores from completed challenges',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 12,
+                          ],
                         ),
                       ),
                     ),
-                  ],
+                  ),
+                
+                // League Table
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Card(
+                    color: Colors.white.withOpacity(0.15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: isSmallScreen 
+                          ? _buildMobileLeagueTable() 
+                          : _buildDesktopLeagueTable(),
+                    ),
+                  ),
                 ),
-              ),
+                
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        color: Colors.white70,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _currentChallenge != null
+                              ? 'League table shows rankings for the current challenge: ${_currentChallenge!.title}'
+                              : 'Table shows best scores from completed challenges',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               
               // Add extra space at the bottom to ensure the gradient extends
               const SizedBox(height: 100),
-            ],
+              ],
+            ),
           ),
-        ),
       ),
     );
   }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/player_stats.dart';
-import '../services/profile_image_service.dart';
 
 class FifaPlayerCard extends StatelessWidget {
   final String playerName;
@@ -81,9 +80,7 @@ class FifaPlayerCard extends StatelessWidget {
     final positionIcon = _getPositionIcon();
     final positionColor = _getPositionColor();
     
-    // Get profile image from service if not provided
-    final String? imageUrl = profileImageUrl ?? ProfileImageService().getCurrentProfileImage();
-    
+
     // Skill colors matching the performance section
     final Map<String, Color> skillColors = {
       'Pace': const Color(0xFF02D39A),
@@ -227,14 +224,14 @@ class FifaPlayerCard extends StatelessWidget {
                           color: positionColor,
                           width: 2,
                         ),
-                        image: imageUrl != null
+                        image: profileImageUrl != null && profileImageUrl!.isNotEmpty
                             ? DecorationImage(
-                                image: NetworkImage(imageUrl),
+                                image: NetworkImage(profileImageUrl!),
                                 fit: BoxFit.cover,
                               )
                             : null,
                       ),
-                      child: imageUrl == null
+                      child: profileImageUrl == null || profileImageUrl!.isEmpty
                           ? Icon(
                               positionIcon,
                               size: cardWidth * 0.2,

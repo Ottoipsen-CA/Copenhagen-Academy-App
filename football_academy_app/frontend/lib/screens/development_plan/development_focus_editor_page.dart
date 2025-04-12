@@ -65,7 +65,10 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
           status: _status,
         );
 
-        await widget.repository.createFocusArea(newFocusArea);
+        print('Creating new focus area: ${newFocusArea.toJson()}');
+        final createdFocusArea = await widget.repository.createFocusArea(newFocusArea);
+        print('Focus area created successfully: ${createdFocusArea.focusAreaId}');
+        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Fokusområde oprettet')),
@@ -84,7 +87,10 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
           status: _status,
         );
 
-        await widget.repository.updateFocusArea(updatedFocusArea);
+        print('Updating focus area: ${updatedFocusArea.toJson()}');
+        final updatedResult = await widget.repository.updateFocusArea(updatedFocusArea);
+        print('Focus area updated successfully: ${updatedResult.focusAreaId}');
+        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Fokusområde opdateret')),
@@ -95,10 +101,19 @@ class _DevelopmentFocusEditorPageState extends State<DevelopmentFocusEditorPage>
     } catch (e) {
       print('Error saving focus area: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fejl: ${e.toString()}')),
-        );
         setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Prøv igen',
+              onPressed: _saveFocusArea,
+              textColor: Colors.white,
+            ),
+          ),
+        );
       }
     }
   }

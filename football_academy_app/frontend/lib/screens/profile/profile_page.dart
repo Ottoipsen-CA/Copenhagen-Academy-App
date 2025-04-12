@@ -14,7 +14,6 @@ import 'package:http/http.dart' as http; // Added for http.Client
 import 'package:intl/intl.dart'; // Import for date formatting
 import 'package:image_picker/image_picker.dart'; // Needed for ImageSource
 import 'dart:io'; // Needed for File
-import '../../services/profile_image_service.dart'; // Import ProfileImageService
 import '../../utils/image_picker_helper.dart'; // Import ImagePickerHelper
 
 class ProfilePage extends StatefulWidget {
@@ -30,8 +29,7 @@ class _ProfilePageState extends State<ProfilePage> {
   User? _currentUser;
   bool _isLoading = true;
   String? _errorMessage;
-  String? _profileImageUrl; // Add state for image URL
-  final ProfileImageService _profileImageService = ProfileImageService(); // Instantiate service
+  String? _profileImagePath; // Store local image path
 
   // Controllers for editable fields
   final _nameController = TextEditingController();
@@ -56,7 +54,6 @@ class _ProfilePageState extends State<ProfilePage> {
     const storage = FlutterSecureStorage(); // Use the same storage instance
     final apiService = ApiService(client: httpClient, secureStorage: storage); // Provide both client and storage
     _authRepository = ApiAuthRepository(apiService, storage);
-    _initializeProfileImage(); // Initialize image service
     _loadUserData();
     _selectedPosition = _positionController.text.isNotEmpty ? _positionController.text : null;
   }
@@ -67,24 +64,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _emailController.dispose();
     _clubController.dispose();
     _positionController.dispose();
-    _profileImageService.profileImageNotifier.removeListener(_updateProfileImage); // Remove listener
     super.dispose();
-  }
-
-  Future<void> _initializeProfileImage() async {
-    // Listener approach for updates
-    _profileImageService.profileImageNotifier.addListener(_updateProfileImage);
-    await _profileImageService.initialize(); 
-    // Initial value set by listener or directly
-    // _profileImageUrl = _profileImageService.getCurrentProfileImage(); 
-  }
-
-  void _updateProfileImage() {
-     if (mounted) {
-      setState(() {
-        _profileImageUrl = _profileImageService.profileImageNotifier.value;
-      });
-    }
   }
 
   Future<void> _loadUserData() async {
@@ -184,10 +164,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // Add image picking logic
   Future<void> _pickImage() async {
-    final String? imageResult = await ImagePickerHelper.pickImage();
-    if (imageResult != null && mounted) {
-      // Service saves and notifies listeners (including this page)
-      await _profileImageService.saveProfileImage(imageResult);
+    final String? imagePath = await ImagePickerHelper.pickImage();
+    if (imagePath != null && mounted) {
+      setState(() {
+        _profileImagePath = imagePath;
+      });
     }
   }
 
@@ -252,8 +233,8 @@ class _ProfilePageState extends State<ProfilePage> {
         : '?';
 
     // Determine if we have a valid image path (assuming local path for now)
-    bool hasImage = _profileImageUrl != null && _profileImageUrl!.isNotEmpty;
-    ImageProvider? backgroundImage = hasImage ? FileImage(File(_profileImageUrl!)) : null;
+    bool hasImage = _profileImagePath != null && _profileImagePath!.isNotEmpty;
+    ImageProvider? backgroundImage = hasImage ? FileImage(File(_profileImagePath!)) : null;
 
     return Row(
       children: [
