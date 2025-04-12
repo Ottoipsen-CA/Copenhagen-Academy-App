@@ -5,6 +5,7 @@ import '../repositories/auth_repository.dart';
 import '../repositories/api_auth_repository.dart';
 import 'navigation_service.dart';
 import 'api_service.dart';
+import '../config/api_config.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 

@@ -5,6 +5,7 @@ import '../models/player_stats.dart';
 import '../models/challenge.dart';
 import 'auth_service.dart';
 import 'api_service.dart';
+import '../config/api_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/material.dart';
@@ -36,7 +37,7 @@ class PlayerStatsService {
       final apiService = ApiService(client: client, secureStorage: secureStorage);
       
       // Fetch player stats from the API
-      final response = await apiService.get('/api/v2/skill-tests/player-stats/$userId');
+      final response = await apiService.get('${ApiConfig.playerStats}/$userId');
       
       if (response is Map<String, dynamic>) {
         return PlayerStats.fromJson(response);
@@ -64,7 +65,7 @@ class PlayerStatsService {
       final payload = stats.toJson();
       
       // Send update request
-      await apiService.put('/api/v2/skill-tests/player-stats/$userId', payload);
+      await apiService.put('${ApiConfig.playerStats}/$userId', payload);
       
       return true;
     } catch (e) {

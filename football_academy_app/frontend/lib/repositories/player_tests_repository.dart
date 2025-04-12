@@ -16,7 +16,7 @@ class PlayerTestsRepository {
       final userId = await AuthService.getCurrentUserId();
       
       // Fetch tests for current player
-      final response = await _apiService.get('/api/v2/skill-tests/player-tests/player/$userId');
+      final response = await _apiService.get('${ApiConfig.playerTestsByPlayer}/$userId');
       
       if (response is List) {
         return response.map((test) => PlayerTest.fromJson(test)).toList();
@@ -42,7 +42,7 @@ class PlayerTestsRepository {
       payload['player_id'] = int.parse(userId);
       
       // Submit test results
-      final response = await _apiService.post('/api/v2/skill-tests/player-tests', payload);
+      final response = await _apiService.post(ApiConfig.playerTests, payload);
       
       // Return the created test with ID and other server-added fields
       return PlayerTest.fromJson(response);
@@ -55,7 +55,7 @@ class PlayerTestsRepository {
   /// Delete a specific test by ID
   Future<bool> deletePlayerTest(int testId) async {
     try {
-      await _apiService.delete('/api/v2/skill-tests/player-tests/$testId');
+      await _apiService.delete('${ApiConfig.playerTests}/$testId');
       return true;
     } catch (e) {
       print('Error deleting player test: $e');

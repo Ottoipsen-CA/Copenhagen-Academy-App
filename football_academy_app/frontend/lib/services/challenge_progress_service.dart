@@ -5,6 +5,7 @@ import '../models/challenge_completion.dart';
 import '../models/badge.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
+import '../config/api_config.dart';
 
 class ChallengeProgressService {
   final ApiService apiService;
@@ -26,7 +27,7 @@ class ChallengeProgressService {
     };
 
     final response = await apiService.post(
-      '/challenge-progress/complete',
+      ApiConfig.challengeComplete,
       data,
       withAuth: true,
     );
@@ -37,7 +38,7 @@ class ChallengeProgressService {
   // Get all challenge completions for current user
   Future<List<ChallengeCompletionWithDetails>> getUserCompletions() async {
     final response = await apiService.get(
-      '/challenge-progress/completions',
+      ApiConfig.challengeCompletions,
       withAuth: true,
     );
 
@@ -49,7 +50,7 @@ class ChallengeProgressService {
   // Get all challenge completions for a specific challenge
   Future<List<ChallengeCompletion>> getChallengeCompletions(int challengeId) async {
     final response = await apiService.get(
-      '/challenge-progress/completions/$challengeId',
+      '${ApiConfig.challengeCompletions}/$challengeId',
       withAuth: true,
     );
 
@@ -61,7 +62,7 @@ class ChallengeProgressService {
   // Get all badges for current user
   Future<List<BadgeWithChallenge>> getUserBadges() async {
     final response = await apiService.get(
-      '/challenge-progress/badges',
+      ApiConfig.badges,
       withAuth: true,
     );
 
@@ -73,7 +74,7 @@ class ChallengeProgressService {
   // Get badge statistics (by category)
   Future<Map<String, int>> getBadgeStats() async {
     final response = await apiService.get(
-      '/challenge-progress/badge-stats',
+      ApiConfig.badgeStats,
       withAuth: true,
     );
 
@@ -83,7 +84,7 @@ class ChallengeProgressService {
   // Get challenge statistics
   Future<Map<String, dynamic>> getChallengeStatistics() async {
     final response = await apiService.get(
-      '/challenge-progress/statistics',
+      ApiConfig.challengeStatistics,
       withAuth: true,
     );
 

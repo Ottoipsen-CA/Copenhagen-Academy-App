@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../config/api_config.dart';
 
 class ApiService {
   late final String baseUrl;
@@ -15,8 +16,8 @@ class ApiService {
     required this.client,
     required this.secureStorage,
   }) {
-    // Use localhost for development
-    baseUrl = 'http://localhost:8080';
+    // Use baseUrl from ApiConfig
+    baseUrl = ApiConfig.baseUrl;
     
     // In production, use the actual API URL
     // baseUrl = 'https://api.footballacademy.dev';
