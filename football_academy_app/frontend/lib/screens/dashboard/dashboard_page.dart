@@ -158,38 +158,45 @@ class _DashboardPageState extends State<DashboardPage> {
       // Load user challenge status
       UserChallenge? userWeeklyChallenge;
       if (weeklyChallenge != null) {
-        // Check if the challenge has status information directly
-        if (weeklyChallenge.status != ChallengeStatus.locked) {
-          // Create a user challenge from the challenge's own status
-          userWeeklyChallenge = UserChallenge(
-            challengeId: weeklyChallenge.id,
-            status: weeklyChallenge.status,
-            startedAt: weeklyChallenge.optedInAt ?? DateTime.now(),
-            completedAt: weeklyChallenge.completedAt,
-            currentValue: weeklyChallenge.userValue?.toInt() ?? 0,
-          );
-        } else {
-          // Fall back to getting user challenges from local storage
-          try {
-            final userChallenges = await ChallengeService.getUserChallenges();
-            userWeeklyChallenge = userChallenges.firstWhere(
-              (uc) => uc.challengeId == weeklyChallenge.id,
-              orElse: () => UserChallenge(
+        try {
+          // Try getting all user challenges and find the one matching our weekly challenge
+          final userChallenges = await ChallengeService.getUserChallenges();
+          userWeeklyChallenge = userChallenges.firstWhere(
+            (uc) => uc.challengeId == weeklyChallenge.id,
+            orElse: () {
+              // If not found in user challenges, check if challenge has status info
+              if (weeklyChallenge.status != ChallengeStatus.locked && 
+                  weeklyChallenge.status != ChallengeStatus.available) {
+                // Create from challenge status if it's not locked/available
+                return UserChallenge(
+                  challengeId: weeklyChallenge.id,
+                  status: weeklyChallenge.status,
+                  startedAt: weeklyChallenge.optedInAt ?? DateTime.now(),
+                  completedAt: weeklyChallenge.completedAt,
+                  currentValue: weeklyChallenge.userValue?.toInt() ?? 0,
+                );
+              }
+              // Otherwise, return as available
+              return UserChallenge(
                 challengeId: weeklyChallenge.id,
                 status: ChallengeStatus.available,
                 startedAt: DateTime.now(),
-              ),
-            );
-          } catch (e) {
-            print('Error getting user challenge status: $e');
-            // Create a default user challenge if not found
-            userWeeklyChallenge = UserChallenge(
-              challengeId: weeklyChallenge.id,
-              status: ChallengeStatus.available,
-              startedAt: DateTime.now(),
-            );
-          }
+              );
+            },
+          );
+        } catch (e) {
+          print('Error getting user challenge status: $e');
+          // Create a default user challenge if not found or on error
+          userWeeklyChallenge = UserChallenge(
+            challengeId: weeklyChallenge.id,
+            status: ChallengeStatus.available,
+            startedAt: DateTime.now(),
+          );
         }
+        
+        // Print debug info about the challenge status
+        print("Weekly challenge loaded - ID: ${weeklyChallenge.id}");
+        print("User challenge status: ${userWeeklyChallenge.status}");
       }
       
       // Load badges (just get the top 4 for dashboard)
@@ -743,11 +750,29 @@ class _DashboardPageState extends State<DashboardPage> {
       );
     }
     
-    // Calculate progress
-    final progress = _userWeeklyChallenge != null 
-        ? _userWeeklyChallenge!.currentValue / _weeklyChallenge!.targetValue 
+    // Calculate progress - default to 0 if not available
+    final progress = _userWeeklyChallenge != null && _weeklyChallenge!.targetValue > 0
+        ? (_userWeeklyChallenge!.currentValue / _weeklyChallenge!.targetValue).clamp(0.0, 1.0)
         : 0.0;
-    final isCompleted = _userWeeklyChallenge?.status == ChallengeStatus.completed;
+    
+    // Determine the challenge status
+    final status = _userWeeklyChallenge?.status ?? ChallengeStatus.available;
+    final isCompleted = status == ChallengeStatus.completed;
+    final isInProgress = status == ChallengeStatus.inProgress;
+    final isAvailable = status == ChallengeStatus.available || status == ChallengeStatus.locked;
+    
+    // Debug log for development
+    print('Challenge Widget Debug:');
+    print('Challenge ID: ${_weeklyChallenge!.id}');
+    print('Challenge Status: $status');
+    print('Is Completed: $isCompleted');
+    print('Is In Progress: $isInProgress');
+    print('Is Available: $isAvailable');
+    print('User Challenge: ${_userWeeklyChallenge != null ? 'Exists' : 'Null'}');
+    if (_userWeeklyChallenge != null) {
+      print('User Challenge Status: ${_userWeeklyChallenge!.status}');
+      print('User Challenge Current Value: ${_userWeeklyChallenge!.currentValue}');
+    }
     
     return Card(
       elevation: 3,
@@ -755,213 +780,220 @@ class _DashboardPageState extends State<DashboardPage> {
         borderRadius: BorderRadius.circular(16.0),
       ),
       color: const Color(0xFF1E1E1E),
-      child: InkWell(
-        onTap: () {
-          if (FeatureFlags.challengesEnabled) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ChallengesPage(),
-              ),
-            );
-          }
-        },
-        borderRadius: BorderRadius.circular(16.0),
-        child: Stack(
-          children: [
-            // Content
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.star,
+      child: Stack(
+        children: [
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.star,
+                      color: Color(0xFFFFD700),
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'DENNE UGES CHALLENGE',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
                         color: Color(0xFFFFD700),
-                        size: 24,
+                        letterSpacing: 1.0,
                       ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'DENNE UGES CHALLENGE',
-                        style: TextStyle(
+                    ),
+                    const Spacer(),
+                    if (_weeklyChallenge!.deadline != null) ...[
+                      Text(
+                        _getRemainingDays(_weeklyChallenge!.deadline!),
+                        style: const TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFFFD700),
-                          letterSpacing: 1.0,
+                          color: Colors.white70,
                         ),
                       ),
-                      const Spacer(),
-                      if (_weeklyChallenge!.deadline != null) ...[
+                    ],
+                  ],
+                ),
+                
+                const SizedBox(height: 12),
+                Text(
+                  _weeklyChallenge!.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                
+                const SizedBox(height: 8),
+                Text(
+                  _weeklyChallenge!.description,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.white70,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Stats row
+                Row(
+                  children: [
+                    // Target info
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.people,
+                          color: Colors.white54,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 4),
                         Text(
-                          _getRemainingDays(_weeklyChallenge!.deadline!),
+                          'Target: ${_weeklyChallenge!.targetValue} ${_weeklyChallenge!.unit}',
                           style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.white70,
+                            fontSize: 12,
+                            color: Colors.white54,
                           ),
                         ),
                       ],
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 12),
-                  Text(
-                    _weeklyChallenge!.title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
                     ),
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  Text(
-                    _weeklyChallenge!.description,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Stats
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Participants info
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.people,
-                            color: Colors.white54,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Target: ${_weeklyChallenge!.targetValue} ${_weeklyChallenge!.unit}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.white54,
+                  ],
+                ),
+                
+                // Action buttons
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // LEFT SIDE: Challenge action button - only one of these should appear
+                    if (isCompleted)
+                      // Completed status indicator
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.check_circle,
+                              color: Colors.green,
+                              size: 16,
                             ),
-                          ),
-                        ],
-                      ),
-                      
-                      const Spacer(),
-                      
-                      // User status
-                      if (isCompleted) 
-                        // Completed
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          margin: const EdgeInsets.only(right: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withOpacity(0.2),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'COMPLETED',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (isInProgress)
+                      // In progress - "Indtast resultat!" button
+                      ElevatedButton(
+                        onPressed: () => _submitChallengeResult(_weeklyChallenge!.id),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4CAF50), // Green
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 4),
-                              const Text(
-                                'COMPLETED',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      else if (_userWeeklyChallenge?.status == ChallengeStatus.inProgress)
-                        // In progress - Show "Indtast resultat!" button
-                        Padding(
-                          padding: const EdgeInsets.only(right: 16, top: 4, bottom: 4),
-                          child: ElevatedButton(
-                            onPressed: () => _submitChallengeResult(_weeklyChallenge!.id),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF4CAF50), // Green
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              minimumSize: const Size(120, 36),
-                            ),
-                            child: const Text(
-                              'INDTAST RESULTAT!',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        // Not started - Show "Deltag" (participate) button
-                        Padding(
-                          padding: const EdgeInsets.only(right: 16, top: 4, bottom: 4),
-                          child: ElevatedButton(
-                            onPressed: () => _optInToChallenge(_weeklyChallenge!.id),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFFA500),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              minimumSize: const Size(100, 36),
-                            ),
-                            child: const Text(
-                              'DELTAG',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          minimumSize: const Size(120, 36),
+                        ),
+                        child: const Text(
+                          'INDTAST RESULTAT!',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                    ],
-                  ),
-                ],
+                      )
+                    else
+                      // Not started - "Deltag!" button 
+                      ElevatedButton(
+                        onPressed: () => _optInToChallenge(_weeklyChallenge!.id),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFA500),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          minimumSize: const Size(100, 36),
+                        ),
+                        child: const Text(
+                          'DELTAG!',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      
+                    // RIGHT SIDE: League table button - always visible
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/league-table');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3F51B5), // Blue
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        minimumSize: const Size(120, 36),
+                      ),
+                      child: const Text(
+                        'SE LEAUGETABLE!',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          
+          // Progress bar at the bottom
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+              ),
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  isCompleted ? Colors.green : const Color(0xFFFFD700)
+                ),
+                minHeight: 4,
               ),
             ),
-            
-            // Progress bar at the bottom
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(16),
-                  bottomRight: Radius.circular(16),
-                ),
-                child: LinearProgressIndicator(
-                  value: progress.clamp(0.0, 1.0),
-                  backgroundColor: Colors.transparent,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    isCompleted ? Colors.green : const Color(0xFFFFD700)
-                  ),
-                  minHeight: 4,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1339,8 +1371,13 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _optInToChallenge(String challengeId) async {
+    setState(() {
+      _isLoading = true; // Show loading state
+    });
+    
     try {
       final success = await ChallengeService.optInToChallenge(challengeId);
+      
       if (success) {
         // Show popup
         if (mounted) {
@@ -1373,20 +1410,58 @@ class _DashboardPageState extends State<DashboardPage> {
           );
         }
         
-        await _loadUserData(); // Reload data to update UI
+        // Immediate UI update while waiting for full data refresh
+        if (mounted && _userWeeklyChallenge != null) {
+          setState(() {
+            _userWeeklyChallenge = _userWeeklyChallenge!.copyWith(
+              status: ChallengeStatus.inProgress,
+            );
+          });
+        }
+        
+        // Reload complete data to ensure everything is in sync
+        await _loadUserData(); 
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to opt in to the challenge. Please try again.')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to opt in to the challenge. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to opt in to the challenge: ${e.toString()}')),
-      );
+      print('Error opting in to challenge: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to opt in to the challenge: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // Hide loading state
+        });
+      }
     }
   }
 
   Future<void> _submitChallengeResult(String challengeId) async {
+    // Verify that user has opted in to the challenge before allowing result submission
+    if (_userWeeklyChallenge?.status != ChallengeStatus.inProgress) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Du skal først tilmelde dig udfordringen før du kan indtaste et resultat.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+  
     final TextEditingController resultController = TextEditingController();
     bool isSubmitting = false;
     
@@ -1474,6 +1549,19 @@ class _DashboardPageState extends State<DashboardPage> {
                               backgroundColor: Colors.green,
                             ),
                           );
+                          
+                          // Immediate UI update while waiting for full data refresh
+                          if (mounted && _userWeeklyChallenge != null) {
+                            setState(() {
+                              _userWeeklyChallenge = _userWeeklyChallenge!.copyWith(
+                                currentValue: value!.toInt(),
+                                // If value exceeds target, mark as completed
+                                status: value! >= (_weeklyChallenge?.targetValue ?? double.infinity)
+                                    ? ChallengeStatus.completed
+                                    : ChallengeStatus.inProgress,
+                              );
+                            });
+                          }
                           
                           // Reload user data to reflect the new status
                           _loadUserData();

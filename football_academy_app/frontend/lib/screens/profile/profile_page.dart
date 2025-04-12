@@ -12,9 +12,6 @@ import '../../widgets/navigation_drawer.dart';
 import '../../theme/colors.dart';
 import 'package:http/http.dart' as http; // Added for http.Client
 import 'package:intl/intl.dart'; // Import for date formatting
-import 'package:image_picker/image_picker.dart'; // Needed for ImageSource
-import 'dart:io'; // Needed for File
-import '../../utils/image_picker_helper.dart'; // Import ImagePickerHelper
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -29,7 +26,6 @@ class _ProfilePageState extends State<ProfilePage> {
   User? _currentUser;
   bool _isLoading = true;
   String? _errorMessage;
-  String? _profileImagePath; // Store local image path
 
   // Controllers for editable fields
   final _nameController = TextEditingController();
@@ -162,16 +158,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Add image picking logic
-  Future<void> _pickImage() async {
-    final String? imagePath = await ImagePickerHelper.pickImage();
-    if (imagePath != null && mounted) {
-      setState(() {
-        _profileImagePath = imagePath;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -232,41 +218,12 @@ class _ProfilePageState extends State<ProfilePage> {
         ? _currentUser!.fullName.trim().split(' ').map((e) => e[0]).take(2).join().toUpperCase()
         : '?';
 
-    // Determine if we have a valid image path (assuming local path for now)
-    bool hasImage = _profileImagePath != null && _profileImagePath!.isNotEmpty;
-    ImageProvider? backgroundImage = hasImage ? FileImage(File(_profileImagePath!)) : null;
-
     return Row(
       children: [
-        Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            CircleAvatar(
-              radius: 40, // Slightly larger radius
-              backgroundColor: AppColors.primary.withOpacity(0.8),
-              backgroundImage: backgroundImage, // Use image if available
-              child: !hasImage 
-                  ? Text(initials, style: const TextStyle(fontSize: 32, color: Colors.white, fontWeight: FontWeight.bold)) 
-                  : null, // Don't show initials if image exists
-            ),
-            // Edit button
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[800], 
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5)
-              ),
-              margin: const EdgeInsets.all(2), // Offset slightly
-              child: InkWell(
-                onTap: _pickImage,
-                customBorder: const CircleBorder(),
-                child: const Padding(
-                  padding: EdgeInsets.all(5.0),
-                  child: Icon(Icons.edit, size: 16, color: Colors.white),
-                ),
-              ),
-            )
-          ],
+        CircleAvatar(
+          radius: 40, // Slightly larger radius
+          backgroundColor: AppColors.primary.withOpacity(0.8),
+          child: Text(initials, style: const TextStyle(fontSize: 32, color: Colors.white, fontWeight: FontWeight.bold)),
         ),
         const SizedBox(width: 16),
         Expanded(
