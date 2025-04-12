@@ -26,7 +26,6 @@ import '../../main.dart';
 // Import pages
 import '../badges/badges_page.dart';
 import '../challenges/challenges_page.dart';
-import '../../utils/image_picker_helper.dart';
 import '../player_tests/player_tests_page.dart';
 import 'dart:io'; // For File
 
@@ -64,22 +63,12 @@ class _DashboardPageState extends State<DashboardPage> {
   int _xpProgress = 440;
   int _xpTarget = 1200;
   bool _hasRecordBreakingScores = false;
-  String? _profileImagePath;
   DevelopmentPlanService _developmentPlanService = DevelopmentPlanService();
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-  }
-
-  Future<void> _pickImage() async {
-    final String? imagePath = await ImagePickerHelper.pickImage();
-    if (imagePath != null && mounted) {
-      setState(() {
-        _profileImagePath = imagePath;
-      });
-    }
   }
 
   Future<void> _loadUserData() async {
@@ -299,14 +288,10 @@ class _DashboardPageState extends State<DashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome message with Academy Logo
+            // Welcome message title (removed Academy Logo)
             Center(
               child: Column(
                 children: [
-                  Image.asset(
-                    'assets/images/copenhagen_academy_logo.png',
-                    height: 80,
-                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'COPENHAGEN ACADEMY',
@@ -354,42 +339,17 @@ class _DashboardPageState extends State<DashboardPage> {
                   
                   const SizedBox(height: 20),
                   
-                  // FIFA Player Card - Centered
+                  // FIFA Player Card - Centered (removed profile picture functionality)
                   Center(
                     child: SizedBox(
                       width: 280, // Fixed width for small screens
-                      child: Stack(
-                        children: [
-                          FifaPlayerCard(
-                            playerName: _user!.fullName,
-                            position: _user!.position ?? 'ST',
-                            stats: _playerStats!,
-                            rating: _playerStats?.overallRating?.toInt() ?? 0,
-                            cardType: _getPlayerCardType(),
-                            profileImageUrl: _profileImagePath,
-                          ),
-                          // Add a button to change profile image
-                          Positioned(
-                            top: 10,
-                            right: 10,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.amber[700],
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
-                              ),
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.camera_alt,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                                onPressed: _pickImage,
-                                tooltip: 'Change profile picture',
-                              ),
-                            ),
-                          ),
-                        ],
+                      child: FifaPlayerCard(
+                        playerName: _user!.fullName,
+                        position: _user!.position ?? 'ST',
+                        stats: _playerStats!,
+                        rating: _playerStats?.overallRating?.toInt() ?? 0,
+                        cardType: _getPlayerCardType(),
+                        profileImageUrl: null,
                       ),
                     ),
                   ),
@@ -456,42 +416,16 @@ class _DashboardPageState extends State<DashboardPage> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start, // Align tops
                     children: [
-                      // 1. Left Side: FIFA Player Card
+                      // 1. Left Side: FIFA Player Card (removed profile picture functionality)
                       SizedBox(
                         width: 360, // Increased width from 300
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            FifaPlayerCard(
-                              playerName: _user!.fullName,
-                              position: _user!.position ?? 'ST',
-                              stats: _playerStats!,
-                              rating: _playerStats?.overallRating?.toInt() ?? 0,
-                              cardType: _getPlayerCardType(),
-                              profileImageUrl: _profileImagePath,
-                            ),
-                            // Add a button to change profile image
-                            Positioned(
-                              top: 10,
-                              right: 10,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.amber[700],
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.camera_alt,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                  onPressed: _pickImage,
-                                  tooltip: 'Change profile picture',
-                                ),
-                              ),
-                            ),
-                          ],
+                        child: FifaPlayerCard(
+                          playerName: _user!.fullName,
+                          position: _user!.position ?? 'ST',
+                          stats: _playerStats!,
+                          rating: _playerStats?.overallRating?.toInt() ?? 0,
+                          cardType: _getPlayerCardType(),
+                          profileImageUrl: null,
                         ),
                       ),
 
@@ -1327,21 +1261,6 @@ class _DashboardPageState extends State<DashboardPage> {
       ],
     );
   }
-
-// Build the academy logo
-Widget _buildLogo(double size) {
-  return SizedBox(
-    width: size,
-    height: size,
-    child: ClipOval(
-      child: Image.asset(
-        'assets/images/copenhagen_academy_logo.png',
-        fit: BoxFit.cover,
-      ),
-    ),
-  );
-}
-
 
   // Determine player card type based on various criteria
   CardType _getPlayerCardType() {
