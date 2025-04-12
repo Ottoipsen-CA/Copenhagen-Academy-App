@@ -10,13 +10,12 @@ import 'register_page.dart';
 import '../../services/challenge_service.dart';
 import '../info/info_page.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import '../../services/profile_image_service.dart';
 import '../../widgets/fifa_player_card.dart';
+import '../../models/player_stats.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
-import '../../../utils/image_picker_helper.dart';
 import '../../widgets/decorative_backgrounds.dart';
 
 // Platform-specific imports
@@ -36,9 +35,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   
   bool _isLoading = false;
   String? _errorMessage;
-  String? _profileImageUrl;
-  final ProfileImageService _profileImageService = ProfileImageService();
-
+  
   // Animation state
   late AnimationController _starController;
   List<_FallingStar> _stars = [];
@@ -47,15 +44,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    _loadProfileImage();
     _initializeStars();
-  }
-
-  Future<void> _loadProfileImage() async {
-    await _profileImageService.initialize();
-    setState(() {
-      _profileImageUrl = _profileImageService.getCurrentProfileImage();
-    });
   }
 
   @override
@@ -109,13 +98,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   }
 
   Future<void> _pickImage() async {
-    final String? imageResult = await ImagePickerHelper.pickImage();
-    if (imageResult != null) {
-      setState(() {
-        _profileImageUrl = imageResult;
-      });
-      await _profileImageService.saveProfileImage(imageResult);
-    }
+    // No longer needed - removed profile image functionality
   }
 
   // --- STAR ANIMATION LOGIC ---
@@ -212,23 +195,6 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   }
                 },
               ),
-              // --- ADD FOOTER TEXT HERE ---
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0), // Space from bottom
-                  child: Text(
-                    "BY COPENHAGEN ACADEMY",
-                    style: TextStyle(
-                      color: Colors.amber[300], // Gold color
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                ),
-              )
-              // --- END FOOTER TEXT ---
             ],
           ),
         ),
@@ -459,156 +425,23 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   }
   
   Widget _buildPlayerCard() {
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.4,
-        maxWidth: 300,
-      ),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFD700),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            spreadRadius: 2,
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-        border: Border.all(
-          color: Colors.amber[300]!,
-          width: 2,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 45, height: 45,
-                        alignment: Alignment.center,
-                        child: const Text(
-                          "94",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        "PAC",
-                        style: TextStyle(
-                          color: Color(0xFF1E22AA),
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        child: const Text(
-                          "ST",
-                          style: TextStyle(
-                            color: Color(0xFF1E22AA),
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: AspectRatio(
-                      aspectRatio: 1.0,
-                      child: GestureDetector(
-                        onTap: _pickImage,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0A3BAA).withOpacity(0.5),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.amber[300]!, width: 2),
-                            image: _profileImageUrl != null
-                                ? DecorationImage(
-                                    image: NetworkImage(_profileImageUrl!),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
-                          ),
-                          child: _profileImageUrl == null
-                              ? const Center(child: Icon(Icons.sports_soccer, color: Colors.white, size: 40))
-                              : null,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.amber[700]!,
-                    Colors.amber[300]!,
-                    Colors.amber[700]!,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: const Text(
-                "Christian",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Color(0xFF1E22AA),
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 12, right: 12, bottom: 12, top: 4),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [_buildStat("97", "PAC"), _buildStat("92", "DRI"), _buildStat("90", "SHO"), ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [_buildStat("80", "PAS"), _buildStat("78", "PHY"), _buildStat("39", "DEF"), ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    // Create dummy player stats for the login page
+    final dummyStats = PlayerStats(
+      pace: 94,
+      shooting: 93,
+      passing: 88,
+      dribbling: 94,
+      juggles: 92,
+      firstTouch: 95
     );
-  }
-  
-  Widget _buildStat(String value, String label) {
-    return Column(
-       mainAxisSize: MainAxisSize.min,
-       children: [
-          Text(value, style: const TextStyle(color: Color(0xFF1E22AA), fontSize: 16, fontWeight: FontWeight.bold)),
-          Text(label, style: const TextStyle(color: Color(0xFF1E22AA), fontSize: 12, fontWeight: FontWeight.bold)),
-       ],
+    
+    return FifaPlayerCard(
+      playerName: "C. RONALDO",
+      position: "ST",
+      stats: dummyStats,
+      rating: 93,
+      cardType: CardType.normal,
+      width: 300,
     );
   }
   
@@ -778,42 +611,31 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
   }
   
   Widget _buildSignUpSection() {
-    return Column(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          "Har du ikke en bruger?",
+          "Har du ikke en bruger? ",
           style: TextStyle(
             color: Colors.yellow.shade200,
             fontSize: 16,
           ),
         ),
-        const SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          height: 56,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.yellow,
-              width: 3,
-            ),
-          ),
-          child: TextButton(
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const RegisterPage(),
-                ),
-              );
-            },
-            child: const Text(
-              'OPRET BRUGER',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.yellow,
+        TextButton(
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const RegisterPage(),
               ),
+            );
+          },
+          child: const Text(
+            'Opret en her',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.yellow,
             ),
           ),
         ),

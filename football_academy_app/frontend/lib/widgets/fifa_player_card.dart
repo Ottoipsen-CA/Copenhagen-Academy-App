@@ -80,6 +80,9 @@ class FifaPlayerCard extends StatelessWidget {
     final positionIcon = _getPositionIcon();
     final positionColor = _getPositionColor();
     
+    // Check if this is the login page card
+    final isLoginCard = playerName == "C. RONALDO";
+    
 
     // Skill colors matching the performance section
     final Map<String, Color> skillColors = {
@@ -215,13 +218,13 @@ class FifaPlayerCard extends StatelessWidget {
                 Expanded(
                   child: Center(
                     child: Container(
-                      width: cardWidth * imageSizeRatio,
-                      height: cardWidth * imageSizeRatio,
+                      width: cardWidth * (isLoginCard ? 0.6 : imageSizeRatio),
+                      height: cardWidth * (isLoginCard ? 0.6 : imageSizeRatio),
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: positionColor.withOpacity(0.2),
+                        color: isLoginCard ? Colors.red.withOpacity(0.7) : positionColor.withOpacity(0.2),
                         border: Border.all(
-                          color: positionColor,
+                          color: isLoginCard ? Colors.red : positionColor,
                           width: 2,
                         ),
                         image: profileImageUrl != null && profileImageUrl!.isNotEmpty
@@ -232,50 +235,55 @@ class FifaPlayerCard extends StatelessWidget {
                             : null,
                       ),
                       child: profileImageUrl == null || profileImageUrl!.isEmpty
-                          ? Icon(
-                              positionIcon,
-                              size: cardWidth * 0.2,
-                              color: positionColor,
+                          ? Center(
+                              child: Icon(
+                                positionIcon,
+                                size: cardWidth * (isLoginCard ? 0.3 : 0.2),
+                                color: isLoginCard ? Colors.white : positionColor,
+                              ),
                             )
                           : null,
                     ),
                   ),
                 ),
                 
-                // Player name
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: cardWidth * 0.03),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      playerName.toUpperCase(),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                        shadows: const [
-                          Shadow(
-                            blurRadius: 3.0,
-                            color: Colors.black,
-                            offset: Offset(1, 1),
-                          ),
-                        ],
+                // Player name - hide for login card
+                if (!isLoginCard)
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(vertical: cardWidth * 0.03),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1,
                       ),
-                      overflow: TextOverflow.ellipsis,
+                    ),
+                    child: Center(
+                      child: Text(
+                        playerName.toUpperCase(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                          shadows: const [
+                            Shadow(
+                              blurRadius: 3.0,
+                              color: Colors.black,
+                              offset: Offset(1, 1),
+                            ),
+                          ],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
-                ),
                 
-                SizedBox(height: cardWidth * 0.03), // Scaled spacing
+                // Add spacing only if player name is shown
+                if (!isLoginCard)
+                  SizedBox(height: cardWidth * 0.03), // Scaled spacing
                 
                 // Stats - updated to match performance section names and icons
                 Row(
@@ -341,8 +349,8 @@ class FifaPlayerCard extends StatelessWidget {
             ),
           ),
           
-          // Special card indicator - kept this for the card types
-          if (cardType != CardType.normal)
+          // Special card indicator - don't show for login card
+          if (cardType != CardType.normal && !isLoginCard)
             Positioned(
               top: cardHeight * 0.18,
               left: cardWidth * 0.05,

@@ -398,20 +398,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
               ),
-              const Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: 16.0),
-                  child: Text(
-                    "BY COPENHAGEN ACADEMY",
-                    style: TextStyle(
-                      color: Colors.amber,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ),
