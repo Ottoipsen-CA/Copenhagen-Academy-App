@@ -36,11 +36,13 @@ class _InfoPageState extends State<InfoPage> with SingleTickerProviderStateMixin
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Football Academy App', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        centerTitle: true,
+        title: const Text(''),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         backgroundColor: const Color(0xFF0B0057),
       ),
-      drawer: const CustomNavigationDrawer(currentPage: 'info'),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
