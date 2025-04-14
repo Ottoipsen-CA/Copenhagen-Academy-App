@@ -111,9 +111,16 @@ class TrainingScheduleRepository {
   // Helper method to calculate current week number
   int getCurrentWeekNumber() {
     final now = DateTime.now();
+    // Get the first day of the year
     final firstDayOfYear = DateTime(now.year, 1, 1);
-    final dayOfYear = now.difference(firstDayOfYear).inDays;
-    return ((dayOfYear - firstDayOfYear.weekday + 10) / 7).floor();
+    
+    // Calculate the number of days between the first day of the year and now
+    final days = now.difference(firstDayOfYear).inDays;
+    
+    // Calculate the ISO week number
+    // The formula: ((days + firstDayOfYear.weekday + 6) / 7).floor()
+    // This ensures correct week calculation for any date
+    return ((days + firstDayOfYear.weekday + 6) / 7).floor();
   }
 
   // Helper method to get dates for a specific week

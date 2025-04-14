@@ -19,8 +19,8 @@ class WeeklyTrainingSchedulePage extends StatefulWidget {
 class _WeeklyTrainingSchedulePageState extends State<WeeklyTrainingSchedulePage> {
   late TrainingScheduleRepository _repository;
   late int _userId;
-  late int _currentWeek;
-  late int _currentYear;
+  int _currentWeek = 0;  // Initialize with default value
+  int _currentYear = 0;  // Initialize with default value
   bool _isLoading = true;
   TrainingSchedule? _currentSchedule;
   List<TrainingSession> _sessions = [];
