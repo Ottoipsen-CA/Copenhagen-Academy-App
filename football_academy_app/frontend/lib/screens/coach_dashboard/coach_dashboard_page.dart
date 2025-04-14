@@ -42,22 +42,34 @@ class _CoachDashboardPageState extends State<CoachDashboardPage> {
       drawer: const CustomNavigationDrawer(currentPage: 'coachDashboard'),
       body: GradientBackground(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Welcome, Coach!',
-                style: Theme.of(context).textTheme.headlineMedium,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(
                 "Manage your team's challenges and activities",
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white70,
+                    ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               Expanded(
-                child: ChallengeAdminWidget(apiService: apiService),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  padding: const EdgeInsets.all(16.0),
+                  child: ChallengeAdminWidget(apiService: apiService),
+                ),
               ),
             ],
           ),
