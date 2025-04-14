@@ -82,19 +82,19 @@ class _ChallengeAdminWidgetState extends State<ChallengeAdminWidget> {
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: titleController,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
                         decoration: const InputDecoration(
                           labelText: 'Title',
                           border: OutlineInputBorder(),
                         ),
-                      ),
+              ),
                       const SizedBox(height: 16),
-                      TextField(
-                        controller: descriptionController,
+              TextField(
+                controller: descriptionController,
                         decoration: const InputDecoration(
                           labelText: 'Description',
                           border: OutlineInputBorder(),
@@ -102,102 +102,139 @@ class _ChallengeAdminWidgetState extends State<ChallengeAdminWidget> {
                         maxLines: 3,
                       ),
                       const SizedBox(height: 16),
-                      TextField(
-                        controller: categoryController,
+              TextField(
+                controller: categoryController,
                         decoration: const InputDecoration(
                           labelText: 'Category',
                           border: OutlineInputBorder(),
                         ),
-                      ),
+              ),
                       const SizedBox(height: 16),
-                      TextField(
-                        controller: difficultyController,
+              TextField(
+                controller: difficultyController,
                         decoration: const InputDecoration(
                           labelText: 'Difficulty',
                           border: OutlineInputBorder(),
                         ),
-                      ),
+              ),
                       const SizedBox(height: 16),
-                      TextField(
-                        controller: pointsController,
+              TextField(
+                controller: pointsController,
                         decoration: const InputDecoration(
                           labelText: 'Points',
                           border: OutlineInputBorder(),
                         ),
-                        keyboardType: TextInputType.number,
-                      ),
+                keyboardType: TextInputType.number,
+              ),
                       const SizedBox(height: 16),
-                      ListTile(
-                        title: const Text('Start Date'),
-                        subtitle: Text(_formatDate(startDate)),
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: startDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2030),
-                          );
-                          if (date != null) {
-                            setState(() => startDate = date);
-                          }
-                        },
-                      ),
-                      ListTile(
-                        title: const Text('End Date'),
-                        subtitle: Text(_formatDate(endDate)),
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: endDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2030),
-                          );
-                          if (date != null) {
-                            setState(() => endDate = date);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Start Date',
+                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                ),
+                                InkWell(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: startDate,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime(2030),
+                  );
+                  if (date != null) {
+                    setState(() => startDate = date);
+                  }
+                },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                    child: Text(
+                                      _formatDate(startDate),
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'End Date',
+                                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                                ),
+                                InkWell(
+                onTap: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: endDate,
+                                      firstDate: startDate,
+                    lastDate: DateTime(2030),
+                  );
+                  if (date != null) {
+                    setState(() => endDate = date);
+                  }
+                },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                    child: Text(
+                                      _formatDate(endDate),
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+              ),
+            ],
+          ),
+        ),
               ),
               Container(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
                       child: const Text('Cancel'),
-                    ),
+          ),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      onPressed: () async {
-                        final updatedChallenge = ChallengeAdmin(
-                          id: challenge.id,
-                          title: titleController.text,
-                          description: descriptionController.text,
-                          category: categoryController.text,
-                          difficulty: difficultyController.text,
-                          points: int.tryParse(pointsController.text) ?? 0,
-                          criteria: challenge.criteria,
-                          startDate: startDate,
-                          endDate: endDate,
-                          isActive: challenge.isActive,
-                          createdBy: challenge.createdBy,
+            onPressed: () async {
+              final updatedChallenge = ChallengeAdmin(
+                id: challenge.id,
+                title: titleController.text,
+                description: descriptionController.text,
+                category: categoryController.text,
+                difficulty: difficultyController.text,
+                points: int.tryParse(pointsController.text) ?? 0,
+                criteria: challenge.criteria,
+                startDate: startDate,
+                endDate: endDate,
+                isActive: challenge.isActive,
+                createdBy: challenge.createdBy,
                           badgeId: null,
-                        );
+              );
 
-                        try {
-                          await widget.apiService.updateChallenge(updatedChallenge);
-                          Navigator.pop(context);
+              try {
+                await widget.apiService.updateChallenge(updatedChallenge);
+                Navigator.pop(context);
                           _loadChallenges();
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error updating challenge: $e')),
-                          );
-                        }
-                      },
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error updating challenge: $e')),
+                );
+              }
+            },
                       child: const Text('Save'),
                     ),
                   ],
@@ -221,162 +258,203 @@ class _ChallengeAdminWidgetState extends State<ChallengeAdminWidget> {
 
     await showDialog(
       context: context,
-      builder: (context) => Dialog(
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.85,
-          constraints: BoxConstraints(
-            maxWidth: 500,
-            maxHeight: MediaQuery.of(context).size.height * 0.8,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppBar(
-                title: const Text('Create Challenge'),
-                automaticallyImplyLeading: false,
-                backgroundColor: Colors.black.withOpacity(0.3),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return Dialog(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.85,
+              constraints: BoxConstraints(
+                maxWidth: 500,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
               ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: titleController,
-                        decoration: const InputDecoration(
-                          labelText: 'Title',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: descriptionController,
-                        decoration: const InputDecoration(
-                          labelText: 'Description',
-                          border: OutlineInputBorder(),
-                        ),
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: categoryController,
-                        decoration: const InputDecoration(
-                          labelText: 'Category',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: difficultyController,
-                        decoration: const InputDecoration(
-                          labelText: 'Difficulty',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: pointsController,
-                        decoration: const InputDecoration(
-                          labelText: 'Points',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.number,
-                      ),
-                      const SizedBox(height: 16),
-                      ListTile(
-                        title: const Text('Start Date'),
-                        subtitle: Text(startDate != null ? _formatDate(startDate!) : 'Not set'),
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime.now(),
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2030),
-                          );
-                          if (date != null) {
-                            setState(() => startDate = date);
-                          }
-                        },
-                      ),
-                      ListTile(
-                        title: const Text('End Date'),
-                        subtitle: Text(endDate != null ? _formatDate(endDate!) : 'Not set'),
-                        onTap: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: startDate ?? DateTime.now(),
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2030),
-                          );
-                          if (date != null) {
-                            setState(() => endDate = date);
-                          }
-                        },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppBar(
+                    title: const Text('Create Challenge'),
+                    automaticallyImplyLeading: false,
+                    backgroundColor: Colors.black.withOpacity(0.3),
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
                       ),
                     ],
                   ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                            decoration: const InputDecoration(
+                              labelText: 'Title',
+                              border: OutlineInputBorder(),
+                            ),
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (startDate != null && endDate != null) {
-                          final userResponse = await widget.apiService.get('/api/v2/auth/me');
-                          final userId = userResponse['id'];
-                          
-                          final challenge = {
-                            'title': titleController.text,
-                            'description': descriptionController.text,
-                            'category': categoryController.text,
-                            'difficulty': difficultyController.text,
-                            'points': int.tryParse(pointsController.text) ?? 0,
-                            'criteria': {},
-                            'start_date': startDate!.toIso8601String(),
-                            'end_date': endDate!.toIso8601String(),
-                            'is_active': true,
-                            'badge_id': null,
-                            'created_by': userId,
-                          };
-
-                          try {
-                            await widget.apiService.post('/api/v2/challenges/', challenge);
-                            Navigator.pop(context);
-                            _loadChallenges();
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error creating challenge: $e')),
-                            );
-                          }
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please select both start and end dates')),
-                          );
-                        }
-                      },
-                      child: const Text('Create'),
-                    ),
-                  ],
+                          const SizedBox(height: 16),
+                TextField(
+                  controller: descriptionController,
+                            decoration: const InputDecoration(
+                              labelText: 'Description',
+                              border: OutlineInputBorder(),
+                            ),
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 16),
+                TextField(
+                  controller: categoryController,
+                            decoration: const InputDecoration(
+                              labelText: 'Category',
+                              border: OutlineInputBorder(),
+                            ),
                 ),
-              ),
-            ],
+                          const SizedBox(height: 16),
+                TextField(
+                  controller: difficultyController,
+                            decoration: const InputDecoration(
+                              labelText: 'Difficulty',
+                              border: OutlineInputBorder(),
+                            ),
+                ),
+                          const SizedBox(height: 16),
+                TextField(
+                  controller: pointsController,
+                            decoration: const InputDecoration(
+                              labelText: 'Points',
+                              border: OutlineInputBorder(),
+                            ),
+                  keyboardType: TextInputType.number,
+                ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Start Date',
+                                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                                    ),
+                                    InkWell(
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime(2030),
+                    );
+                    if (date != null) {
+                                          setDialogState(() => startDate = date);
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                        child: Text(
+                                          startDate != null ? _formatDate(startDate!) : 'Not set',
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'End Date',
+                                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                                    ),
+                                    InkWell(
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: startDate ?? DateTime.now(),
+                                          firstDate: startDate ?? DateTime.now(),
+                      lastDate: DateTime(2030),
+                    );
+                    if (date != null) {
+                                          setDialogState(() => endDate = date);
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                        child: Text(
+                                          endDate != null ? _formatDate(endDate!) : 'Not set',
+                                          style: const TextStyle(fontSize: 16),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                ),
+              ],
+            ),
           ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+            ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+              onPressed: () async {
+                if (startDate != null && endDate != null) {
+                              final userResponse = await widget.apiService.get('/api/v2/auth/me');
+                              final userId = userResponse['id'];
+                              
+                  final challenge = {
+                    'title': titleController.text,
+                    'description': descriptionController.text,
+                    'category': categoryController.text,
+                    'difficulty': difficultyController.text,
+                    'points': int.tryParse(pointsController.text) ?? 0,
+                    'criteria': {},
+                    'start_date': startDate!.toIso8601String(),
+                    'end_date': endDate!.toIso8601String(),
+                    'is_active': true,
+                    'badge_id': null,
+                                'created_by': userId,
+                  };
+
+                  try {
+                    await widget.apiService.post('/api/v2/challenges/', challenge);
+                    Navigator.pop(context);
+                                _loadChallenges();
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error creating challenge: $e')),
+                    );
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please select both start and end dates')),
+                  );
+                }
+              },
+                          child: const Text('Create'),
+                        ),
+                      ],
+                    ),
+            ),
+          ],
         ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -462,13 +540,64 @@ class _ChallengeAdminWidgetState extends State<ChallengeAdminWidget> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  subtitle: Text(
-                    'Points: ${challenge.points} | Category: ${challenge.category} | Difficulty: ${challenge.difficulty}\n'
-                    '${_formatDate(challenge.startDate)} - ${_formatDate(challenge.endDate)}',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 14,
-                    ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Points: ${challenge.points} | Category: ${challenge.category} | Difficulty: ${challenge.difficulty}',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Start Date',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.5),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  _formatDate(challenge.startDate),
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'End Date',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.5),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  _formatDate(challenge.endDate),
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
