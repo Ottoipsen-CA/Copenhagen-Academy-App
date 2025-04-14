@@ -452,24 +452,51 @@ class ChallengeService {
     }
   }
   
-  // Get weekly challenge
+  // Get weekly challenge based on stored ID
   static Future<Challenge?> getWeeklyChallenge() async {
-    if (_challengeRepository == null) {
+    if (_apiService == null || _challengeRepository == null) {
       throw Exception('ChallengeService not initialized. Call initialize() first.');
     }
     
+    final prefs = await SharedPreferences.getInstance();
+    final weeklyChallengeId = prefs.getInt('current_weekly_challenge_id');
+    
+    if (weeklyChallengeId == null) {
+      print('No weekly challenge ID stored. Cannot determine weekly challenge.');
+      return null; // No ID stored, cannot determine weekly challenge
+    }
+    
+    // Attempt to fetch the specific challenge by the stored ID
     try {
-      // Instead of using the dedicated weekly endpoint, get all challenges and find the active one
-      final challenges = await _challengeRepository!.getAll();
-      
-      // Return the first challenge or null if empty
-      return challenges.isNotEmpty ? challenges.first : null;
+      final challenge = await _challengeRepository!.getById(weeklyChallengeId.toString());
+      if (challenge != null) {
+        print('Fetched weekly challenge (ID: $weeklyChallengeId) successfully.');
+        return challenge;
+      } else {
+        print('Weekly challenge (ID: $weeklyChallengeId) not found via API.');
+        return null;
+      }
     } catch (e) {
-      print('Error getting active challenge from API: $e');
+      print('Error fetching weekly challenge by ID ($weeklyChallengeId) from API: $e');
       
-      // Fallback to local storage
-      final challenges = await _getLocalChallenges();
-      return challenges.isNotEmpty ? challenges.first : null;
+      // Fallback: Try finding it in the locally stored full list
+      try {
+        final allChallenges = await _getLocalChallenges();
+        final challenge = allChallenges.firstWhere(
+          (c) => c.id == weeklyChallengeId.toString(),
+          orElse: () => null as Challenge, // Return null if not found
+        );
+        if (challenge != null) {
+          print('Found weekly challenge (ID: $weeklyChallengeId) in local cache.');
+          return challenge;
+        } else {
+          print('Weekly challenge (ID: $weeklyChallengeId) not found in local cache either.');
+          return null;
+        }
+      } catch (localError) {
+        print('Error searching local cache for weekly challenge (ID: $weeklyChallengeId): $localError');
+        return null;
+      }
     }
   }
   

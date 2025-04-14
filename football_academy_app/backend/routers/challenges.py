@@ -90,7 +90,7 @@ async def get_challenge(
     current_user: User = Depends(get_current_user_dependency)
 ):
     service = ChallengesService(db)
-    return service.get_challenge(challenge_id)
+    return service.get_challenge_by_id(challenge_id)
 
 @router.post("/{challenge_id}/complete", response_model=ChallengeCompletionResponse)
 async def complete_challenge(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/challenge_admin.dart';
 import '../services/api_service.dart';
 
@@ -18,11 +19,28 @@ class ChallengeAdminWidget extends StatefulWidget {
 class _ChallengeAdminWidgetState extends State<ChallengeAdminWidget> {
   List<ChallengeAdmin> _challenges = [];
   bool _isLoading = true;
+  int? _selectedWeeklyChallengeId;
 
   @override
   void initState() {
     super.initState();
+    _loadSelectedWeeklyChallengeId();
     _loadChallenges();
+  }
+
+  Future<void> _loadSelectedWeeklyChallengeId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _selectedWeeklyChallengeId = prefs.getInt('current_weekly_challenge_id');
+    });
+  }
+
+  Future<void> _setSelectedWeeklyChallengeId(int challengeId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('current_weekly_challenge_id', challengeId);
+    setState(() {
+      _selectedWeeklyChallengeId = challengeId;
+    });
   }
 
   Future<void> _loadChallenges() async {
@@ -524,11 +542,14 @@ class _ChallengeAdminWidgetState extends State<ChallengeAdminWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             itemBuilder: (context, index) {
               final challenge = _challenges[index];
+              final isSelectedWeekly = challenge.id == _selectedWeeklyChallengeId;
+
               return Container(
                 margin: const EdgeInsets.only(bottom: 12.0),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(12),
+                  border: isSelectedWeekly ? Border.all(color: Colors.amber, width: 2) : null,
                 ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -602,6 +623,16 @@ class _ChallengeAdminWidgetState extends State<ChallengeAdminWidget> {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      IconButton(
+                        icon: Icon(
+                          isSelectedWeekly ? Icons.star : Icons.star_border,
+                          color: isSelectedWeekly ? Colors.amber : Colors.white.withOpacity(0.7),
+                        ),
+                        tooltip: 'Set as Weekly Challenge',
+                        onPressed: () {
+                          _setSelectedWeeklyChallengeId(challenge.id);
+                        },
+                      ),
                       IconButton(
                         icon: const Icon(Icons.edit, color: Colors.white),
                         onPressed: () => _showEditDialog(challenge),
