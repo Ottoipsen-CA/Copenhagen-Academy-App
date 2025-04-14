@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/api_config.dart';
+import '../models/challenge.dart';
+import '../models/challenge_admin.dart';
 
 class ApiService {
   late final String baseUrl;
@@ -428,5 +430,12 @@ class ApiService {
         'created_at': '2023-01-03T00:00:00Z',
       },
     ];
+  }
+
+  Future<void> updateChallenge(ChallengeAdmin challenge) async {
+    await put(
+      '/api/v2/challenges/${challenge.id}',
+      challenge.toJson(),
+    );
   }
 }

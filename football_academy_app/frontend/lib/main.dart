@@ -23,6 +23,7 @@ import 'screens/player_stats/player_stats_page.dart';
 import 'screens/info/info_page.dart';
 import 'screens/development_plan/development_plan_page.dart';
 import 'screens/profile/profile_page.dart';
+import 'screens/coach_dashboard/coach_dashboard_page.dart';
 import 'theme/colors.dart';
 import 'config/feature_flags.dart';
 
@@ -100,6 +101,7 @@ class MyApp extends StatelessWidget {
         '/dashboard': (context) => const DashboardPage(),
         '/development-plan': (context) => const DevelopmentPlanPage(),
         '/profile': (context) => const ProfilePage(),
+        '/coach-dashboard': (context) => const CoachDashboardPage(),
         if (FeatureFlags.leagueTableEnabled)
           '/league-table': (context) => const LeagueTablePage(),
         if (FeatureFlags.playerStatsEnabled)

@@ -26,42 +26,69 @@ class CustomNavigationDrawer extends StatelessWidget {
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  _buildNavItem(
-                    context,
-                    'dashboard',
-                    'Dashboard',
-                    Icons.dashboard_outlined,
-                    () => _navigateTo(context, 'dashboard'),
+                  FutureBuilder<Widget>(
+                    future: _buildNavItem(
+                      context,
+                      'dashboard',
+                      'Dashboard',
+                      Icons.dashboard_outlined,
+                      () => _navigateTo(context, 'dashboard'),
+                    ),
+                    builder: (context, snapshot) => snapshot.data ?? const SizedBox.shrink(),
                   ),
-                  _buildNavItem(
-                    context,
-                    'leagueTable',
-                    'League Table',
-                    Icons.leaderboard,
-                    () => _navigateTo(context, 'leagueTable'),
+                  FutureBuilder<Widget>(
+                    future: _buildNavItem(
+                      context,
+                      'leagueTable',
+                      'League Table',
+                      Icons.leaderboard,
+                      () => _navigateTo(context, 'leagueTable'),
+                    ),
+                    builder: (context, snapshot) => snapshot.data ?? const SizedBox.shrink(),
                   ),
-                  _buildNavItem(
-                    context,
-                    'developmentPlan',
-                    'Udviklingsplan',
-                    Icons.track_changes,
-                    () => _navigateTo(context, 'developmentPlan'),
+                  FutureBuilder<Widget>(
+                    future: _buildNavItem(
+                      context,
+                      'developmentPlan',
+                      'Udviklingsplan',
+                      Icons.track_changes,
+                      () => _navigateTo(context, 'developmentPlan'),
+                    ),
+                    builder: (context, snapshot) => snapshot.data ?? const SizedBox.shrink(),
+                  ),
+                  FutureBuilder<Widget>(
+                    future: _buildNavItem(
+                      context,
+                      'coachDashboard',
+                      'Coach Dashboard',
+                      Icons.sports_soccer,
+                      () => _navigateTo(context, 'coachDashboard'),
+                      requiresAuth: true,
+                      requiresCoach: true,
+                    ),
+                    builder: (context, snapshot) => snapshot.data ?? const SizedBox.shrink(),
                   ),
                   const Divider(),
-                  _buildNavItem(
-                    context,
-                    'profile',
-                    'Min Profil',
-                    Icons.person_outline,
-                    () => _navigateTo(context, 'profile'),
+                  FutureBuilder<Widget>(
+                    future: _buildNavItem(
+                      context,
+                      'profile',
+                      'Min Profil',
+                      Icons.person_outline,
+                      () => _navigateTo(context, 'profile'),
+                    ),
+                    builder: (context, snapshot) => snapshot.data ?? const SizedBox.shrink(),
                   ),
-                  _buildNavItem(
-                    context,
-                    'info',
-                    'Hvem er vi?',
-                    Icons.info_outline,
-                    () => Navigator.pushNamed(context, '/info'),
-                    requiresAuth: false,
+                  FutureBuilder<Widget>(
+                    future: _buildNavItem(
+                      context,
+                      'info',
+                      'Hvem er vi?',
+                      Icons.info_outline,
+                      () => Navigator.pushNamed(context, '/info'),
+                      requiresAuth: false,
+                    ),
+                    builder: (context, snapshot) => snapshot.data ?? const SizedBox.shrink(),
                   ),
                 ],
               ),
@@ -124,15 +151,25 @@ class CustomNavigationDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(
+  Future<Widget> _buildNavItem(
     BuildContext context,
     String route,
     String title,
     IconData icon,
     VoidCallback onTap, {
     bool requiresAuth = true,
-  }) {
+    bool requiresCoach = false,
+  }) async {
     final isSelected = currentPage == route;
+    
+    // Check if user is a coach if required
+    if (requiresCoach) {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = await authService.getCurrentUser();
+      if (user == null || !user.isCoach) {
+        return const SizedBox.shrink(); // Hide the item if user is not a coach
+      }
+    }
 
     return ListTile(
       selected: isSelected,
@@ -223,6 +260,9 @@ class CustomNavigationDrawer extends StatelessWidget {
         break;
       case 'info':
         Navigator.pushNamed(context, '/info');
+        break;
+      case 'coachDashboard':
+        Navigator.pushNamed(context, '/coach-dashboard');
         break;
       default:
         print('Unknown page route: $page');

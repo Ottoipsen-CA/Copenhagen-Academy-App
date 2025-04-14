@@ -21,6 +21,10 @@ class ChallengesService:
         self.achievement_service = BaseService[Achievement, AchievementCreate, AchievementUpdate, Achievement](Achievement, db)
     
     # Challenge methods
+    def get_challenges(self) -> List[Challenge]:
+        """Get all challenges."""
+        return self.db.query(Challenge).all()
+    
     def get_all_challenges(
         self, 
         category: Optional[str] = None, 
@@ -43,10 +47,49 @@ class ChallengesService:
     def get_challenge_by_id(self, challenge_id: int) -> Optional[Challenge]:
         return self.challenge_service.get_by_id(challenge_id)
     
-    def create_challenge(self, challenge: ChallengeCreate) -> Challenge:
-        return self.challenge_service.create(challenge)
+    def create_challenge(self, challenge: ChallengeCreate, created_by: int) -> Challenge:
+        """Create a new challenge.
+        
+        Args:
+            challenge: The challenge data to create
+            created_by: The ID of the user creating the challenge
+            
+        Returns:
+            The created challenge
+        """
+        # Create a new ChallengeCreate object with the created_by field set
+        challenge_data = ChallengeCreate(
+            title=challenge.title,
+            description=challenge.description,
+            category=challenge.category,
+            difficulty=challenge.difficulty,
+            points=challenge.points,
+            criteria=challenge.criteria,
+            start_date=challenge.start_date,
+            end_date=challenge.end_date,
+            is_active=challenge.is_active,
+            created_by=created_by,
+            badge_id=challenge.badge_id
+        )
+        
+        return self.challenge_service.create(challenge_data)
     
     def update_challenge(self, challenge_id: int, challenge: ChallengeUpdate) -> Challenge:
+        """Update a challenge.
+        
+        Args:
+            challenge_id: The ID of the challenge to update
+            challenge: The challenge data to update
+            
+        Returns:
+            The updated challenge
+        """
+        # Convert badge_id=0 to None for the database
+        if hasattr(challenge, 'badge_id') and challenge.badge_id == 0:
+            challenge_dict = challenge.dict()
+            challenge_dict['badge_id'] = None
+            challenge = ChallengeUpdate(**challenge_dict)
+        
         return self.challenge_service.update(challenge_id, challenge)
     
     def delete_challenge(self, challenge_id: int) -> bool:

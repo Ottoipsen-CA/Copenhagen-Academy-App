@@ -122,6 +122,7 @@ class Challenge {
   final DateTime? optedInAt;
   final DateTime? completedAt;
   final double? userValue;
+  final int? badgeId;
 
   const Challenge({
     required this.id,
@@ -146,6 +147,7 @@ class Challenge {
     this.optedInAt,
     this.completedAt,
     this.userValue,
+    this.badgeId,
   });
   
   factory Challenge.fromJson(Map<String, dynamic> json) {
@@ -209,6 +211,7 @@ class Challenge {
       optedInAt: json['opted_in_at'] != null ? DateTime.parse(json['opted_in_at']) : null,
       completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']) : null,
       userValue: json['user_value']?.toDouble(),
+      badgeId: json['badge_id'],
     );
   }
   
@@ -236,6 +239,7 @@ class Challenge {
       'opted_in_at': optedInAt?.toIso8601String(),
       'completed_at': completedAt?.toIso8601String(),
       'user_value': userValue,
+      'badge_id': badgeId,
     };
   }
 
@@ -267,6 +271,7 @@ class Challenge {
     DateTime? optedInAt,
     DateTime? completedAt,
     double? userValue,
+    int? badgeId,
   }) {
     return Challenge(
       id: id ?? this.id,
@@ -291,6 +296,7 @@ class Challenge {
       optedInAt: optedInAt ?? this.optedInAt,
       completedAt: completedAt ?? this.completedAt,
       userValue: userValue ?? this.userValue,
+      badgeId: badgeId ?? this.badgeId,
     );
   }
 }

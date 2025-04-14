@@ -14,8 +14,10 @@ from schemas import (
     ChallengeCreate, ChallengeResponse, ChallengeWithStatus,
     ChallengeStatusResponse, ChallengeCompletionCreate, ChallengeCompletionResponse,
     ChallengeCompletionWithDetails, BadgeWithChallenge, AchievementCreate, AchievementResponse,
-    ChallengeStatusEnum, ChallengeResultCreate, ChallengeResultResponse
+    ChallengeStatusEnum, ChallengeResultCreate, ChallengeResultResponse,
+    ChallengeUpdate
 )
+from services.challenges import ChallengesService
 
 router = APIRouter(
     prefix="/challenges",
@@ -49,7 +51,7 @@ def format_challenge_completion_response(completion: ChallengeCompletion) -> Dic
 
 # -------------- Challenge Management Endpoints --------------
 
-@router.post("/", response_model=ChallengeResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=ChallengeResponse)
 async def create_challenge(
     challenge: ChallengeCreate,
     db: Session = Depends(get_db),
@@ -62,24 +64,150 @@ async def create_challenge(
             detail="Only coaches can create challenges"
         )
     
-    # Set creator ID to current user if not specified
-    challenge_data = challenge.dict()
-    challenge_data["created_by"] = current_user.id
-    
-    # Create the challenge
-    db_challenge = Challenge(**challenge_data)
-    db.add(db_challenge)
-    db.commit()
-    db.refresh(db_challenge)
-    return db_challenge
+    service = ChallengesService(db)
+    return service.create_challenge(challenge, current_user.id)
 
 @router.get("/", response_model=List[ChallengeResponse])
-async def get_all_challenges(
+async def get_challenges(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_dependency)
 ):
-    challenges = db.query(Challenge).all()
-    return challenges
+    service = ChallengesService(db)
+    return service.get_challenges()
+
+@router.get("/active", response_model=List[ChallengeWithStatus])
+async def get_active_challenges(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    service = ChallengesService(db)
+    return service.get_active_challenges(current_user.id)
+
+@router.get("/{challenge_id}", response_model=ChallengeResponse)
+async def get_challenge(
+    challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    service = ChallengesService(db)
+    return service.get_challenge(challenge_id)
+
+@router.post("/{challenge_id}/complete", response_model=ChallengeCompletionResponse)
+async def complete_challenge(
+    challenge_id: int,
+    completion: ChallengeCompletionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    service = ChallengesService(db)
+    return service.complete_challenge(challenge_id, current_user.id, completion)
+
+@router.get("/{challenge_id}/status", response_model=ChallengeStatusResponse)
+async def get_challenge_status(
+    challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    service = ChallengesService(db)
+    return service.get_challenge_status(challenge_id, current_user.id)
+
+@router.put("/{challenge_id}/status", response_model=ChallengeStatusResponse)
+async def update_challenge_status(
+    challenge_id: int,
+    status: ChallengeStatusEnum,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    service = ChallengesService(db)
+    return service.update_challenge_status(challenge_id, current_user.id, status)
+
+@router.post("/{challenge_id}/results", response_model=ChallengeResultResponse)
+async def add_challenge_result(
+    challenge_id: int,
+    result: ChallengeResultCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    service = ChallengesService(db)
+    return service.add_challenge_result(challenge_id, current_user.id, result)
+
+@router.get("/{challenge_id}/results", response_model=List[ChallengeResultResponse])
+async def get_challenge_results(
+    challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    service = ChallengesService(db)
+    return service.get_challenge_results(challenge_id)
+
+@router.get("/{challenge_id}/badges", response_model=List[BadgeWithChallenge])
+async def get_challenge_badges(
+    challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    service = ChallengesService(db)
+    return service.get_challenge_badges(challenge_id)
+
+@router.post("/{challenge_id}/achievements", response_model=AchievementResponse)
+async def create_achievement(
+    challenge_id: int,
+    achievement: AchievementCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    # Only coaches can create achievements
+    if not current_user.is_coach:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only coaches can create achievements"
+        )
+    
+    service = ChallengesService(db)
+    return service.create_achievement(challenge_id, achievement)
+
+@router.get("/{challenge_id}/achievements", response_model=List[AchievementResponse])
+async def get_challenge_achievements(
+    challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    service = ChallengesService(db)
+    return service.get_challenge_achievements(challenge_id)
+
+@router.put("/{challenge_id}", response_model=ChallengeResponse)
+async def update_challenge(
+    challenge_id: int,
+    challenge: ChallengeUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    # Only coaches can update challenges
+    if not current_user.is_coach:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only coaches can update challenges"
+        )
+    
+    service = ChallengesService(db)
+    return service.update_challenge(challenge_id, challenge)
+
+@router.delete("/{challenge_id}")
+async def delete_challenge(
+    challenge_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_dependency)
+):
+    # Only coaches can delete challenges
+    if not current_user.is_coach:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only coaches can delete challenges"
+        )
+    
+    service = ChallengesService(db)
+    service.delete_challenge(challenge_id)
+    return {"detail": "Challenge deleted successfully"}
 
 @router.get("/with-status", response_model=List[ChallengeWithStatus])
 async def get_challenges_with_status(
@@ -168,132 +296,6 @@ async def initialize_challenge_statuses(
     db.commit()
     
     return {"detail": f"Initialized {len(statuses_to_add)} challenge statuses"}
-
-@router.post("/complete/{challenge_id}", response_model=ChallengeStatusResponse)
-async def complete_challenge(
-    challenge_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_dependency)
-):
-    # 1. Find challenge
-    challenge = db.query(Challenge).filter(Challenge.id == challenge_id).first()
-    
-    if not challenge:
-        raise HTTPException(status_code=404, detail="Challenge not found")
-    
-    # 2. Check challenge status
-    challenge_status = db.query(ChallengeStatus).filter(
-        ChallengeStatus.user_id == current_user.id,
-        ChallengeStatus.challenge_id == challenge_id
-    ).first()
-    
-    if not challenge_status:
-        raise HTTPException(status_code=404, detail="Challenge status not found")
-    
-    if challenge_status.status != "AVAILABLE":
-        if challenge_status.status == "COMPLETED":
-            raise HTTPException(status_code=400, detail="Challenge already completed")
-        else:
-            raise HTTPException(status_code=400, detail="Challenge is not available")
-    
-    # 3. Mark challenge as completed
-    now = datetime.utcnow()
-    challenge_status.status = "COMPLETED"
-    challenge_status.completed_at = now
-    
-    # 4. Update player stats based on challenge category
-    stats = db.query(PlayerStats).filter(PlayerStats.player_id == current_user.id).first()
-    
-    # Create stats if they don't exist
-    if not stats:
-        stats = PlayerStats(
-            player_id=current_user.id,
-            pace=50, shooting=50, passing=50, dribbling=50, juggles=50, first_touch=50,
-            overall_rating=60,
-            last_updated=now
-        )
-        db.add(stats)
-    
-    # Determine which stat to improve based on challenge category
-    xp_boost = challenge.xp_reward  # Base XP boost from the challenge
-    base_boost = xp_boost * 2  # Overall rating boost
-    specific_boost = xp_boost * 5  # Larger boost for the specific skill
-    
-    # Update specific attribute based on challenge category
-    if challenge.category.lower() == "passing":
-        stats.passing += specific_boost
-        stats.first_touch += specific_boost * 0.5
-    elif challenge.category.lower() == "shooting":
-        stats.shooting += specific_boost
-    elif challenge.category.lower() == "dribbling":
-        stats.dribbling += specific_boost
-        stats.first_touch += specific_boost * 0.3
-    elif challenge.category.lower() == "fitness":
-        stats.pace += specific_boost 
-    elif challenge.category.lower() == "juggles":
-        stats.juggles += specific_boost
-        stats.first_touch += specific_boost * 0.3
-    elif challenge.category.lower() == "first_touch" or challenge.category.lower() == "first touch":
-        stats.first_touch += specific_boost
-        stats.dribbling += specific_boost * 0.3
-    elif challenge.category.lower() == "tactical":
-        # Tactical challenges improve all stats
-        all_stats_boost = specific_boost / 2
-        stats.passing += all_stats_boost
-        stats.shooting += all_stats_boost
-        stats.dribbling += all_stats_boost
-        stats.pace += all_stats_boost
-        stats.juggles += all_stats_boost
-        stats.first_touch += all_stats_boost
-    
-    # Make sure no stat goes over 99
-    stats.pace = min(stats.pace, 99)
-    stats.shooting = min(stats.shooting, 99)
-    stats.passing = min(stats.passing, 99)
-    stats.dribbling = min(stats.dribbling, 99)
-    stats.juggles = min(stats.juggles, 99)
-    stats.first_touch = min(stats.first_touch, 99)
-    
-    # Calculate overall rating as average of all stats
-    new_overall = (stats.pace + stats.shooting + stats.passing + stats.dribbling + stats.juggles + stats.first_touch) / 6
-    
-    # Apply additional base boost to the calculated overall rating
-    stats.overall_rating = min(new_overall + base_boost, 99)
-    
-    # Update the last_updated timestamp
-    stats.last_updated = now
-    
-    # 5. Unlock next challenge in the progression if available
-    next_challenge = db.query(Challenge).filter(
-        Challenge.prerequisite_id == challenge_id
-    ).first()
-    
-    if next_challenge:
-        # Check if player already has a status for this challenge
-        next_status = db.query(ChallengeStatus).filter(
-            ChallengeStatus.user_id == current_user.id,
-            ChallengeStatus.challenge_id == next_challenge.id
-        ).first()
-        
-        if not next_status:
-            # Create new status record
-            next_status = ChallengeStatus(
-                user_id=current_user.id,
-                challenge_id=next_challenge.id,
-                status="AVAILABLE",
-                unlocked_at=now
-            )
-            db.add(next_status)
-        else:
-            # Update existing status record
-            next_status.status = "AVAILABLE"
-            next_status.unlocked_at = now
-    
-    db.commit()
-    db.refresh(challenge_status)
-    return challenge_status
-
-# -------------- Challenge Completion Endpoints --------------
 
 @router.post("/completion", response_model=ChallengeCompletionResponse)
 async def record_challenge_completion(
